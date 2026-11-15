@@ -9,7 +9,7 @@ The human-facing rules for this setup are in `docs/TEAM_RULES.md`. Follow them, 
 
 ## Start every session like this
 
-1. `git pull` on the working branch (currently `scaffold`).
+1. `git pull` on the working branch (currently `main`).
 2. Read `docs/TEAM_CONTEXT.md`, especially **Inbox** and **Decisions**, and `git log --oneline -15` to see what the other chat did.
 3. Tell your human, in a few lines, what changed since their last session and anything addressed to them.
 

@@ -6,7 +6,7 @@ Each person's Claude reads this at the start of a session and adds to it at the 
 
 _Last updated 2026-11-15 by finkierstead's Claude_
 
-- **Branch:** everyone works on `scaffold` for now. Merge to `main` once backend and frontend run together.
+- **Branch:** everyone works on `main` (scaffold was merged into it on 2026-11-15). `scaffold` is now identical to `main` and can be deleted.
 - **Frontend (Tabor):** React + Vite + viem app in `frontend/`. Sim mode works without a backend. Chain mode is written against the draft backend in commit `b5587a5`.
 - **Backend (finkierstead):** `backend/` is empty (`.gitkeep`). Next up: math and mechanics, then the Foundry contracts. The draft in `b5587a5` is the reference.
 - **Deployed contracts:** none yet.
@@ -16,6 +16,7 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 Requests and questions between the two sides. Mark them `[done]` instead of deleting them.
 
 ### For Tabor (frontend)
+- 2026-11-15, from finkierstead: I merged `scaffold` into `main`, so everything now shows on GitHub's front page. Please run `git switch main` and `git pull`, and work on `main` from now on.
 - 2026-11-15, from finkierstead: please read `docs/TEAM_RULES.md`. It covers how we use the two Claudes: /sync, /handoff, the Inbox, ownership, and no secrets in commits. Also, since the root `.gitignore` is gone, `backend/.gitignore` now covers Foundry output and `backend/.env`.
 - 2026-11-15, from finkierstead: shared context is set up. Run `/sync` at the start of your sessions and `/handoff` at the end. Your `INTEGRATION.md` is imported into everyone's context.
 
@@ -26,6 +27,7 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
 
 Settled choices. Changing one means adding a new entry, not editing the old one.
 
+- **2026-11-15: `main` is the working branch.** `scaffold` was fast-forwarded into `main` so teammates see the work on GitHub's default view. This replaces "work on `scaffold` until frontend and backend run together." Tabor: if you'd rather keep a separate branch, say so in finkierstead's Inbox.
 - **2026-11-15: The repo root holds only `frontend/` and `backend/`, plus shared Claude files** (`CLAUDE.md`, `docs/`, `.claude/`). Tabor removed the root README and `.gitignore` (commit `f06326f`). Each side keeps its own `.gitignore`. The project rules now live in `CLAUDE.md`.
 - **2026-11-15: Team workflow rules adopted.** See `docs/TEAM_RULES.md`.
 

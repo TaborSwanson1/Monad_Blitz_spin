@@ -53,7 +53,7 @@ open repo → /sync → work (Claude commits as it goes) → /handoff → push
 
 ## Setting up on a new computer or editor
 
-1. Clone the repo, run `git switch scaffold`, then `git pull`.
+1. Clone the repo (or, in an existing copy, run `git switch main`), then `git pull`.
 2. Open the repo folder (the one containing `CLAUDE.md`) in VS Code, or start Claude Code from that folder.
 3. Start a **new** Claude session. It loads `CLAUDE.md` and the shared files automatically.
 4. Run `/sync`.
