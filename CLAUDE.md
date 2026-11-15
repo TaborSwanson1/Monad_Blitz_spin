@@ -19,7 +19,7 @@ The `/sync` command does all three.
 
 | Area | Owner | Their Claude may edit |
 |---|---|---|
-| `frontend/` | **Tabor** (TaborSwanson1) | `frontend/**` |
+| `frontend/` | **Tabor** (TaborSwanson1) and **Lucas** | `frontend/**` |
 | `backend/` (Foundry contracts, tests, scripts, keeper) | **finkierstead** | `backend/**` |
 | `CLAUDE.md`, `docs/`, `.claude/` | Both | Shared, append-only where possible |
 

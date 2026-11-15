@@ -24,7 +24,7 @@ Teammate's Claude ◀──/sync── reads TEAM_CONTEXT.md ◀── pull ◀�
 1. **Start every session with `/sync`.** It pulls, then tells you what your teammate did and what's waiting in your Inbox.
 2. **End every session with `/handoff`, then push.** It records your decisions and requests in `TEAM_CONTEXT.md`. Nothing reaches your teammate until you push.
 3. **Stay in your lane.**
-   - **Tabor** owns `frontend/`.
+   - **Tabor** and **Lucas** own `frontend/`. Since you share it, tell each other which files you're working on so you don't edit the same ones at once.
    - **finkierstead** owns `backend/`.
    - Your Claude doesn't edit the other person's folder.
    - Shared files (`CLAUDE.md`, `docs/`, `.claude/`) can be edited by both. Add to them rather than rewriting.

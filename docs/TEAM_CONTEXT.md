@@ -28,6 +28,7 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
 
 Settled choices. Changing one means adding a new entry, not editing the old one.
 
+- **2026-11-15: Lucas co-owns `frontend/` with Tabor** (Tabor). This adds to the "Split of ownership" decision below: `frontend/` is now Tabor and Lucas, `backend/` is still finkierstead. Inbox items "For Tabor (frontend)" are for both frontend owners. `docs/TEAM_RULES.md` and `CLAUDE.md` are updated to match.
 - **2026-11-15: Game lineup is High / Low, Crash, Beauty Contest, Block Walk** (Tabor). Details in `frontend/GAMES.md`. Exact Digit and Block Race get dropped, but they stay in the contract and frontend until the backend supports the new games, so the game order in the seam doesn't change yet. How to build the new games on the backend is still open.
 - **2026-11-15: `main` is the working branch.** `scaffold` was fast-forwarded into `main` so teammates see the work on GitHub's default view. This replaces "work on `scaffold` until frontend and backend run together." Tabor: if you'd rather keep a separate branch, say so in finkierstead's Inbox.
 - **2026-11-15: The repo root holds only `frontend/` and `backend/`, plus shared Claude files** (`CLAUDE.md`, `docs/`, `.claude/`). Tabor removed the root README and `.gitignore` (commit `f06326f`). Each side keeps its own `.gitignore`. The project rules now live in `CLAUDE.md`.
