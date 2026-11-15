@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {ChipToken} from "./ChipToken.sol";
 import {IGame} from "./interfaces/IGame.sol";
 import {IRandomnessSource, IRandomnessConsumer} from "./interfaces/IRandomness.sol";
+import {SeedLib} from "./lib/SeedLib.sol";
 
 /// @title BlockCasino
 /// @notice Play-money rounds timed by Monad blocks, settled by a VRF.
@@ -229,7 +230,7 @@ contract BlockCasino is IRandomnessConsumer {
     }
 
     function gameSeed(uint256 roundId, uint8 gameId) public view returns (bytes32) {
-        return keccak256(abi.encode(rounds[roundId].seed, gameId));
+        return SeedLib.gameSeed(rounds[roundId].seed, gameId);
     }
 
     /// @notice Result for a settled round and game, for the UI and for anyone checking.
