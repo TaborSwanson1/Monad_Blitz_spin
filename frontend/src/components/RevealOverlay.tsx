@@ -7,7 +7,7 @@ import { BeautyResult } from './BeautyResult'
 import { CrashClimb } from './CrashClimb'
 import { OutcomeStrip } from './OutcomeStrip'
 import { WinEffects } from '../effects/WinEffects'
-import { Embers, LossVignette } from '../effects/LoseEffects'
+import { LoseEffects } from '../effects/LoseEffects'
 import { useLoseEffects, useWinEffects } from '../effects/useOutcomeEffects'
 
 /*
@@ -40,9 +40,10 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
   const lose = useLoseEffects(record, climbDone)
   const up = win.intensity > 0
 
+  // A winning round stays open until the player closes it. Others close after 3.2 s.
   useEffect(() => {
-    if (!climbDone) return
-    const t = setTimeout(onClose, up ? 5200 : 3200)
+    if (!climbDone || up) return
+    const t = setTimeout(onClose, 3200)
     return () => clearTimeout(t)
   }, [record, up, onClose, climbDone])
 
@@ -56,9 +57,8 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
       aria-live="polite"
     >
       {win.particles && <WinEffects {...win} />}
-      {lose.particles && <LossVignette />}
+      {lose.particles && <LoseEffects />}
       <div className={`reveal-card ${win.cardClass} ${lose.cardClass}`} style={win.cardStyle}>
-        {lose.particles && <Embers />}
         <div className="reveal-round">Round {record.roundId.toString()} settled</div>
 
         {crashBets.length > 0 && <CrashClimb crashX100={crashBets[0].raw} targetsX100={crashTargets} onDone={markDone} />}
@@ -104,6 +104,11 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
           </>
         )}
         <div className="reveal-seed">seed {record.seed.slice(0, 18)}…</div>
+        {up && (
+          <button className="btn reveal-close" onClick={onClose}>
+            Close
+          </button>
+        )}
       </div>
     </div>
   )

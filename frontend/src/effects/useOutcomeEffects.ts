@@ -31,14 +31,14 @@ export function useTimedFlag(on: boolean, ms: number): boolean {
 /** `ready` is false while something (the crash replay) still hides the result. */
 export function useWinEffects(record: RoundRecord, ready: boolean) {
   const intensity = ready ? winIntensity(record) : 0
-  const durationMs = Math.round(1300 + 700 * intensity)
-  const particles = useTimedFlag(intensity > 0 && !reducedMotion(), durationMs + 300)
+  const durationMs = Math.round(2400 + 1400 * intensity)
+  const particles = useTimedFlag(intensity > 0 && !reducedMotion(), durationMs + 1400)
   return {
     intensity,
     particles,
     durationMs,
-    coinCount: Math.round(15 + 15 * intensity),
-    confettiCount: Math.round(40 + 120 * intensity),
+    coinCount: Math.round(30 + 50 * intensity),
+    confettiCount: Math.round(160 + 340 * intensity),
     cardClass: intensity > 0 ? 'fx-glow' : '',
     cardStyle: { '--intensity': intensity, '--glow-pulses': intensity >= 0.6 ? 3 : 2 } as CSSProperties,
   }
@@ -48,6 +48,6 @@ export function useWinEffects(record: RoundRecord, ready: boolean) {
 export function useLoseEffects(record: RoundRecord, ready: boolean) {
   const lost = ready && record.net < 0n
   const motion = !reducedMotion()
-  const particles = useTimedFlag(lost && motion, 1200)
+  const particles = useTimedFlag(lost && motion, 2400)
   return { lost, particles, cardClass: lost && motion ? 'fx-shake' : '' }
 }
