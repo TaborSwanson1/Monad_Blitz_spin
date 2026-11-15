@@ -74,6 +74,8 @@ A reference backend draft exists in commit `b5587a5` (`git show b5587a5:backend/
 ```bash
 # backend: deps via npm (forge-std + Pyth SDK), then Foundry
 cd backend && npm install && forge build && forge test
+# read-only checks against real Pyth Entropy on Monad testnet (spends nothing)
+cd backend && forge test --match-path "test/fork/*" --fork-url https://testnet-rpc.monad.xyz -vv
 # deploy to Monad testnet (you type the keystore password; the key never goes in .env)
 cd backend && forge script script/Deploy.s.sol --rpc-url monad_testnet --account monad-deployer --broadcast
 # frontend

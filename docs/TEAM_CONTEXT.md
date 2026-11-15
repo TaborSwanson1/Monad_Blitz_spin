@@ -8,7 +8,7 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 
 - **Branch:** everyone works on `main`. The `scaffold` branch has been deleted.
 - **Frontend (Tabor):** React + Vite + viem app in `frontend/`. Sim mode works without a backend. Chain mode is written against the draft backend, which is now restored in `backend/`.
-- **Backend (finkierstead):** Tabor's draft is restored, plus a Pyth Entropy adapter on Pyth's official SDK, `SeedLib` (the randomness derivation), a safer deploy script, and tests. **Not compiled or tested yet**, because Foundry isn't installed on finkierstead's machine. Mechanics write-up for game designers: `backend/docs/MECHANICS.md`.
+- **Backend (finkierstead):** Tabor's draft is restored, plus a Pyth Entropy adapter on Pyth's official SDK, `SeedLib` (the randomness derivation), a safer deploy script, and tests. **Compiles. 27 unit tests pass, and 2 fork tests pass against live Monad testnet** (Foundry 1.9.0). Mechanics write-up for game designers: `backend/docs/MECHANICS.md`.
 - **Deployed contracts:** none yet.
 
 ## Verified Monad testnet facts (2026-11-15)
@@ -71,7 +71,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
-- 2026-11-15, finkierstead + Claude: verified Monad testnet and Pyth Entropy. Restored the draft backend (`933d17d`), npm deps and verified config (`a8050e5`), SeedLib and the Pyth adapter on the official SDK (`4583286`), tests and MECHANICS.md (`f306119`). Not compiled yet.
+- 2026-11-15, finkierstead + Claude: verified Monad testnet and Pyth Entropy. Restored the draft backend, set up npm deps and verified config, added SeedLib and the Pyth adapter on the official SDK, plus tests and MECHANICS.md (7 commits, from "chore: restore Tabor's draft backend" to "docs: fork-test command"). Installed Foundry 1.9.0. All tests pass, including live testnet checks (fee 0.1238 MON, provider `0x6CC1…6344`).
 - 2026-11-15, Tabor + Claude: added `frontend/GAMES.md` with the new game lineup and an Inbox request for the backend.
 - 2026-11-15, finkierstead + Claude: added `docs/TEAM_RULES.md` and `backend/.gitignore`. Made CLAUDE.md stand on its own now that the README is gone.
 - 2026-11-15, finkierstead + Claude: added the shared `CLAUDE.md`, this file, and the `/sync` and `/handoff` commands.

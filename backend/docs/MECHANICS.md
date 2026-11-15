@@ -72,7 +72,13 @@ Example: a Block Race where each of the 4 lanes gets a random speed and the fast
 ```bash
 cd backend
 npm install            # once: forge-std + Pyth's SDK
-forge test             # all unit tests, including a full round through Pyth's MockEntropy
+forge test             # 27 unit tests, including a full round through Pyth's MockEntropy
 ```
 
-With `backend/.env` set up from `.env.example`, `forge test` also runs `test/fork/`, read-only checks against the real Entropy contract on testnet. They spend nothing.
+`test/fork/` holds read-only checks against the **real** Entropy contract on Monad testnet. They spend nothing, and they show as skipped unless you fork Monad:
+
+```bash
+forge test --match-path "test/fork/*" --fork-url https://testnet-rpc.monad.xyz -vv
+```
+
+Last run (2026-11-15): passing, with a live fee of 123,805,606,509,000,001 wei (≈0.1238 MON) and default provider `0x6CC14824Ea2918f5De5C2f75A9Da968ad4BD6344`.
