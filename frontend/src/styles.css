@@ -258,7 +258,7 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 :root[data-theme='monad'] .reveal-up .reveal-card { border-color: rgb(131 110 249 / 0.6); }
 
 /* ---------- loss effect: burning wallet (Monad theme) */
-.fire-canvas { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); pointer-events: none; }
+.fire-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 /* Wallet effects: big, fixed to the bottom of the screen, behind the result card. */
 .fx-bottom { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 0; pointer-events: none; display: grid; place-items: end center; }
 .fx-bottom .burn-wallet { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
@@ -350,7 +350,7 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 @keyframes scorch { 100% { filter: saturate(0.8) brightness(0.85); } }
 @keyframes scorch-top { to { opacity: 1; } }
 
-.nuke-canvas { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); pointer-events: none; }
+.nuke-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
 .nuke-wallet { position: absolute; bottom: 4px; left: 50%; width: 132px; margin-left: -66px; animation: vaporize 0.55s 0.35s ease-in forwards; }
 .nuke-wallet .burn-wallet { width: 100%; animation: none; }
 .nuke-wallet .wallet-char, .nuke-wallet .wallet-char-top { display: none; }
@@ -528,3 +528,23 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .fx-demo .btn.fx-demo-btn { height: auto; padding: 7px 10px; flex-direction: column; align-items: flex-start; gap: 0; text-align: left; }
 .fx-demo .note { margin: 4px 2px 0; }
 .demo-tag { color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 2px 10px; font-size: 12px; }
+
+/* ---------- live Crash climb (in the game page) */
+.crash-live { border-color: var(--pos); box-shadow: 0 0 0 1px rgb(11 191 88 / 0.25), 0 10px 30px rgb(0 0 0 / 0.3); }
+.crash-live.is-crashed { border-color: var(--neg); box-shadow: 0 0 0 1px rgb(243 18 96 / 0.3); }
+.crash-live-body { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 20px; align-items: stretch; }
+@media (max-width: 760px) { .crash-live-body { grid-template-columns: 1fr; } }
+.crash-live-mult { font-family: var(--display, var(--sans)); font-size: clamp(56px, 9vw, 92px); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--pos); }
+.crash-live.is-crashed .crash-live-mult { color: var(--neg); }
+.crash-live-status { margin: 6px 0 14px; color: var(--muted); font-size: 14px; font-weight: 500; }
+.crash-live.is-crashed .crash-live-status { color: var(--neg); }
+.btn.crash-cashout { width: 100%; height: 56px; font-size: 20px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; background: var(--pos); border-color: var(--pos); color: #fff; }
+.btn.crash-cashout:disabled { background: var(--card-2); border-color: var(--line-2); color: var(--muted); }
+.crash-cashout-amt { font-variant-numeric: tabular-nums; margin-left: 6px; opacity: 0.9; }
+.crash-live-bets { list-style: none; padding: 0; margin: 12px 0 0; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.crash-live-bets li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; font-variant-numeric: tabular-nums; }
+.crash-live-chart { width: 100%; height: 100%; min-height: 160px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card-2); }
+.crash-live-grid line { stroke: var(--line-2); stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.crash-live-grid text { fill: var(--faint); font-size: 10px; }
+.crash-live .crash-line { stroke: var(--pos); }
+.crash-live.is-crashed .crash-line { stroke: var(--neg); }

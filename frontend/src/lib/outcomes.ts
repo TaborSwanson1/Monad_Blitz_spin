@@ -1,7 +1,7 @@
 import { encodeAbiParameters, keccak256, type Hex } from 'viem'
 import { beautyPayout, resolveBeauty } from './beauty'
-import { CRASH_TARGETS_X100, crashPointX100, fmtX } from './crash'
-import { GAMES, payoutBpsFor, type GameDef } from './games'
+import { CRASH_TARGETS_X100, crashPointX100, effectiveCashoutX100, fmtX } from './crash'
+import { GAMES, type GameDef } from './games'
 
 /** Same as BlockCasino.gameSeed: keccak256(abi.encode(roundSeed, gameId)). */
 export function gameSeed(roundSeed: Hex, gameId: number): Hex {
@@ -21,10 +21,15 @@ export interface BetResult {
   outcome: number
   won: boolean
   payout: bigint
+  /** Crash only: the cash-out that counted (manual click or auto target), in hundredths. */
+  cashoutX100?: number
 }
 
-/** Works for every game kind. Payouts round down, same as the contract. */
-export function resolveBet(roundSeed: Hex, gameId: number, choice: number, amount: bigint): BetResult {
+/**
+ * Works for every game kind. Payouts round down, same as the contract.
+ * `manualCashoutX100`: Crash only, the multiplier the player cashed out at by hand.
+ */
+export function resolveBet(roundSeed: Hex, gameId: number, choice: number, amount: bigint, manualCashoutX100?: number): BetResult {
   const g = GAMES[gameId]
   if (g.kind === 'beauty') {
     const r = resolveBeauty(gameSeed(roundSeed, g.id), choice)
@@ -42,8 +47,15 @@ export function resolveBet(roundSeed: Hex, gameId: number, choice: number, amoun
     CRASH_TARGETS_X100.forEach((t, i) => {
       if (raw >= t) outcome = i
     })
-    const won = raw >= CRASH_TARGETS_X100[choice]
-    return { raw, outcome, won, payout: won ? (amount * BigInt(payoutBpsFor(g, choice))) / 10_000n : 0n }
+    const at = effectiveCashoutX100(choice, manualCashoutX100)
+    const won = Number.isFinite(at) && raw >= at
+    return {
+      raw,
+      outcome,
+      won,
+      payout: won ? (amount * BigInt(at)) / 100n : 0n,
+      cashoutX100: Number.isFinite(at) ? at : undefined,
+    }
   }
   const { raw, outcome } = resolveGame(roundSeed, g)
   const won = outcome === choice

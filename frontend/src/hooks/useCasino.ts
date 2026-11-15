@@ -5,12 +5,17 @@ import { resolveBet } from '../lib/outcomes'
 import { GAMES } from '../lib/games'
 import { lockBlock, type RoundConfig } from '../lib/rounds'
 import { errMsg } from '../lib/format'
+import { advance, cashOutAll, settleLive, startLive, type LiveBet, type LiveState } from '../lib/liveCrash'
 
 export interface ResolvedBet extends PlacedBet {
   outcome: number
   raw: number
   won: boolean
   payout: bigint
+  /** Crash only: the cash-out that counted, in hundredths. */
+  cashoutX100?: number
+  /** Crash only: true when that cash-out was the auto target, not a click. */
+  autoCashout?: boolean
 }
 
 export interface RoundRecord {
@@ -20,6 +25,15 @@ export interface RoundRecord {
   staked: bigint
   paid: bigint
   net: bigint
+  /** True when a Crash climb already played live, so the result screen skips the replay. */
+  live?: boolean
+}
+
+/** A Crash climb running right now, after betting locked. */
+export interface LiveCrash {
+  roundId: bigint
+  state: LiveState
+  bets: LiveBet[]
 }
 
 const MAX_BLOCKS = 28
@@ -45,24 +59,29 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
   const inFlight = useRef(new Set<bigint>())
   const done = useRef(new Set<bigint>())
   const unpublished = useRef<(() => void) | null>(null)
+  // Live Crash: the run state lives in a ref (a timer moves it every 40 ms); `liveTick`
+  // re-renders whatever shows it.
+  const live = useRef<(LiveCrash & { seed: Hex; timer: ReturnType<typeof setInterval> }) | null>(null)
+  const [liveTick, setLiveTick] = useState(0)
 
   const refreshBalance = useCallback(() => {
     client.balance().then(setBalance).catch(() => {})
   }, [client])
 
   const resolveRound = useCallback(
-    async (roundId: bigint, seed: Hex) => {
+    async (roundId: bigint, seed: Hex, liveState?: LiveState) => {
       const bets = pendingRef.current.filter((b) => b.roundId === roundId)
-      const resolved: ResolvedBet[] = bets.map((b) => ({
-        ...b,
-        ...resolveBet(seed, b.gameId, b.choice, b.amount),
-      }))
+      const resolved: ResolvedBet[] = bets.map((b) =>
+        liveState && GAMES[b.gameId].kind === 'crash'
+          ? { ...b, ...settleLive(liveState, b), autoCashout: liveState.auto.has(b.index) }
+          : { ...b, ...resolveBet(seed, b.gameId, b.choice, b.amount) },
+      )
       // Losing bets have nothing to claim, so they cost no gas.
       for (const b of resolved) if (b.won) await client.claim(b, b.payout)
 
       const staked = resolved.reduce((s, b) => s + b.amount, 0n)
       const paid = resolved.reduce((s, b) => s + b.payout, 0n)
-      const record: RoundRecord = { roundId, seed, bets: resolved, staked, paid, net: paid - staked }
+      const record: RoundRecord = { roundId, seed, bets: resolved, staked, paid, net: paid - staked, live: !!liveState }
 
       done.current.add(roundId)
       setPending((p) => p.filter((b) => b.roundId !== roundId))
@@ -78,11 +97,54 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
       }
       unpublished.current?.() // an older round still waiting: publish it first
       unpublished.current = null
-      if (resolved.some((b) => GAMES[b.gameId].kind === 'crash')) unpublished.current = publish
+      // A live Crash climb was already watched in real time, so it publishes right away.
+      if (!liveState && resolved.some((b) => GAMES[b.gameId].kind === 'crash')) unpublished.current = publish
       else publish()
     },
     [client, refreshBalance],
   )
+
+  /** Settlement arrived for a round with Crash bets: run the climb live, settle at the crash. */
+  const beginLive = useCallback(
+    (roundId: bigint, seed: Hex) => {
+      if (live.current) return
+      const bets: LiveBet[] = pendingRef.current
+        .filter((b) => b.roundId === roundId && GAMES[b.gameId].kind === 'crash')
+        .map((b) => ({ index: b.index, choice: b.choice, amount: b.amount }))
+      const state = startLive(performance.now())
+      const finish = () => {
+        const L = live.current
+        if (!L || L.roundId !== roundId) return
+        clearInterval(L.timer)
+        live.current = null
+        setLiveTick((t) => t + 1)
+        resolveRound(roundId, seed, state)
+      }
+      const tick = () => {
+        advance(state, bets, performance.now())
+        setLiveTick((t) => t + 1)
+        if (state.crashedX100 !== null) {
+          clearInterval(timer)
+          setTimeout(finish, 1200) // hold the crash on screen for a moment
+        }
+      }
+      const timer = setInterval(tick, 40)
+      live.current = { roundId, seed, state, bets, timer }
+      done.current.add(roundId)
+      tick()
+    },
+    [resolveRound],
+  )
+
+  /** Cash out every Crash bet still riding, at this exact moment. */
+  const cashOut = useCallback(() => {
+    const L = live.current
+    if (!L) return null
+    const x = cashOutAll(L.state, L.bets, performance.now())
+    setLiveTick((t) => t + 1)
+    if (x === null) setError('Too late, it crashed first.')
+    return x
+  }, [])
 
   const checkRounds = useCallback(
     (head: bigint) => {
@@ -95,7 +157,11 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
         client
           .roundState(id)
           .then(async (st) => {
-            if (st.status === 'settled' && st.seed) await resolveRound(id, st.seed)
+            if (st.status === 'settled' && st.seed) {
+              const hasCrash = pendingRef.current.some((b) => b.roundId === id && GAMES[b.gameId].kind === 'crash')
+              if (hasCrash) beginLive(id, st.seed)
+              else await resolveRound(id, st.seed)
+            }
             else if (st.status === 'none' && !client.autoSettles)
               setNeedsSettle((s) => (s.includes(id) ? s : [...s, id]))
             else if (st.status === 'expired') setError(`Round ${id} expired. Your stake can be refunded on-chain.`)
@@ -104,7 +170,7 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
           .finally(() => inFlight.current.delete(id))
       }
     },
-    [client, resolveRound],
+    [client, resolveRound, beginLive],
   )
 
   useEffect(() => {
@@ -179,6 +245,9 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
     reveal,
     dismissReveal,
     finishReplay,
+    liveCrash: live.current ? { roundId: live.current.roundId, state: live.current.state, bets: live.current.bets } : null,
+    liveTick,
+    cashOut,
     needsSettle,
     busy,
     error,
