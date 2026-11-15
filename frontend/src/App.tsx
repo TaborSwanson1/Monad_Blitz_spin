@@ -25,6 +25,7 @@ import { THEMES, themeForGame, themeForRound } from './lib/themes'
 import { EffectsDemo, effectsDemoEnabled } from './components/EffectsDemo'
 import { GAMES } from './lib/games'
 import { Backdrop } from './fx/Backdrop'
+import { SpaceBackdrop } from './fx/SpaceBackdrop'
 import { Overlay } from './fx/Overlay'
 import { FxControls } from './fx/FxControls'
 import { GameSign } from './fx/GameSign'
@@ -135,6 +136,12 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
   return (
     <div className={`app ${view === 'game' && clock && !clock.open ? 'is-locked' : ''}`}>
       <Backdrop mode={theme.id === 'americana' ? 'americana' : theme.id === 'vegas' ? 'vegas' : 'off'} />
+      {theme.id === 'space' && (
+        // Stars speed up with the live Crash multiplier on screen (never the crash point).
+        <SpaceBackdrop
+          warp={casino.liveCrash && casino.liveCrash.state.crashedX100 === null ? casino.liveCrash.state.m : 1}
+        />
+      )}
       <SiteHeader
         mode={client.mode}
         label={client.label}

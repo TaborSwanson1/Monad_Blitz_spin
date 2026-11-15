@@ -9,7 +9,7 @@ import type { RoundRecord } from '../hooks/useCasino'
 import { toChips } from './format'
 import { motionOff } from '../fx/prefs'
 
-export type ThemeId = 'calm' | 'midnight' | 'monad' | 'americana' | 'vegas'
+export type ThemeId = 'calm' | 'midnight' | 'monad' | 'americana' | 'vegas' | 'space'
 export type WinEffect = 'off' | 'sparks' | 'monad-tokens' | 'americana' | 'vegas'
 export type LossEffect = 'off' | 'burning-wallet' | 'americana'
 
@@ -30,6 +30,9 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
   // 1970s Strip sign meets 2010 glossy web app: neon on purple, coin fountain on a net
   // win, burning wallet on a net loss. Also the look of the lobby.
   vegas: { id: 'vegas', name: 'Vegas', win: 'vegas', loss: 'burning-wallet' },
+  // Crash: deep space. A starfield that speeds up with the live multiplier (fx/SpaceBackdrop),
+  // sparks on a net win, burning wallet on a net loss.
+  space: { id: 'space', name: 'Space', win: 'sparks', loss: 'burning-wallet' },
 }
 
 /** One theme per game id. Games not listed use Calm. */
@@ -37,7 +40,7 @@ export const GAME_THEMES: Record<number, ThemeId> = {
   0: 'americana', // High / Low
   1: 'vegas', // Exact Digit
   2: 'vegas', // Block Race
-  3: 'vegas', // Crash
+  3: 'space', // Crash
   4: 'vegas', // Beauty Contest
 }
 
