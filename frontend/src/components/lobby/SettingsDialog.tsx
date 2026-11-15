@@ -1,13 +1,9 @@
-import { PRESETS } from '../../lib/themes'
 import type { WalletApi } from '../../hooks/useWallet'
 import { NETWORK_NAMES, hasContracts } from '../../wallet/session'
 import { shortHash } from '../../lib/format'
 
 interface Props {
   mode: 'sim' | 'chain'
-  presetId: string | null
-  onPreset: (id: string) => void
-  onCustomize: () => void
   onLimits: () => void
   wallet: WalletApi
   onClose: () => void
@@ -15,9 +11,9 @@ interface Props {
 
 /**
  * Settings, reached from the gear in the top bar. It gathers what already exists
- * (Tabor's theme panel, the session limits) plus the wallet. Owner: Zander.
+ * (a note on the per-game themes, the session limits) plus the wallet. Owner: Zander.
  */
-export function SettingsDialog({ mode, presetId, onPreset, onCustomize, onLimits, wallet, onClose }: Props) {
+export function SettingsDialog({ mode, onLimits, wallet, onClose }: Props) {
   const { state } = wallet
   const network = NETWORK_NAMES[state.targetChainId] ?? `Chain ${state.targetChainId}`
 
@@ -33,24 +29,11 @@ export function SettingsDialog({ mode, presetId, onPreset, onCustomize, onLimits
 
         <section className="settings-sec">
           <div className="settings-title">Appearance</div>
-          <div className="theme-picker" role="radiogroup" aria-label="Theme preset">
-            {PRESETS.map((t) => (
-              <button
-                key={t.id}
-                role="radio"
-                aria-checked={t.id === presetId}
-                className={`theme-opt ${t.id === presetId ? 'on' : ''}`}
-                onClick={() => onPreset(t.id)}
-                title={t.describe}
-              >
-                <span className={`swatch swatch-${t.settings.base}`} aria-hidden />
-                {t.name}
-              </button>
-            ))}
-          </div>
-          <button className="btn wide settings-btn" onClick={onCustomize}>
-            Customize colors and effects…
-          </button>
+          {/* Themes are fixed per game (team decision 2026-11-15, Tabor), so there's no picker. */}
+          <p className="muted small">
+            Each game has its own look and win and loss effects. High / Low is Americana. Effects turn off when your
+            system is set to reduce motion.
+          </p>
         </section>
 
         <section className="settings-sec">

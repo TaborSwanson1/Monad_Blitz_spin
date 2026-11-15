@@ -259,46 +259,29 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 }
 :root[data-theme='monad'] .reveal-up .reveal-card { border-color: rgb(131 110 249 / 0.6); }
 
-/* ---------- theme picker */
-.theme-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; padding: 3px; background: var(--card); border-radius: var(--radius-sm); margin: 0 4px 4px; }
-.theme-opt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 46px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 11px; min-width: 0; }
-.theme-opt:hover { color: var(--text); }
-.theme-opt.on { background: var(--card-2); color: var(--text); box-shadow: 0 0 0 1px var(--line-2); }
-.swatch { width: 10px; height: 10px; border-radius: 3px; }
-.swatch-calm { background: linear-gradient(135deg, #ededed, #333); }
-.swatch-monad { background: linear-gradient(135deg, #a796ff, #6a4ff0); transform: rotate(45deg); }
-.nav-title-gap { margin-top: 16px; }
-
 /* ---------- loss effect: burning wallet (Monad theme) */
-.burn { margin: 10px auto 2px; width: 240px; max-width: 100%; }
-.burn-stage { position: relative; height: 150px; display: grid; place-items: end center; }
+.fire-canvas { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); pointer-events: none; }
+/* Wallet effects: big, fixed to the bottom of the screen, behind the result card. */
+.fx-bottom { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 0; pointer-events: none; display: grid; place-items: end center; }
+.fx-bottom .burn-wallet { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
+.reveal-sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
+/* With a wallet effect at the bottom, the card moves up so the fire and the whole
+   mushroom cloud have room below it. */
+.reveal.has-bottom-fx { place-items: start center; padding-top: max(16px, 5vh); }
+.wallet-cash { fill: #c9dcb8; stroke: #4c7a44; stroke-width: 1; }
 .burn-wallet { width: 168px; overflow: visible; animation: char 2.6s ease-in forwards; }
-.wallet-body { fill: #3b2f6b; stroke: #6a5bc0; stroke-width: 1.5; }
-.wallet-flap { fill: #2a2150; stroke: #6a5bc0; stroke-width: 1.2; }
-.wallet-clasp { fill: #a796ff; }
-.wallet-top { fill: none; stroke: #6a5bc0; stroke-width: 1.5; }
-.wallet-addr { fill: #d8d0ff; font-family: var(--mono); font-size: 9px; }
+.fx-bottom.burn-full .burn-wallet { animation-name: char-fixed; }
+@keyframes char-fixed { 70% { filter: saturate(0.4) brightness(0.75); } 100% { transform: translateX(-50%) translateY(6px) scale(0.96); filter: saturate(0) brightness(0.45); } }
+.wallet-body { fill: var(--wallet-body, #3b2f6b); stroke: var(--wallet-edge, #6a5bc0); stroke-width: 1.5; }
+.wallet-flap { fill: var(--wallet-flap, #2a2150); stroke: var(--wallet-edge, #6a5bc0); stroke-width: 1.2; }
+.wallet-clasp { fill: var(--wallet-clasp, #a796ff); }
+.wallet-addr { fill: var(--wallet-text, #d8d0ff); font-family: var(--mono); font-size: 9px; }
 .wallet-char { opacity: 0; animation: charup 2.2s 0.3s ease-in forwards; }
-.flames { position: absolute; inset: 0; pointer-events: none; }
-.flame {
-  position: absolute; bottom: 16px; left: var(--x); width: 28px; margin-left: -14px;
-  height: calc(76px * var(--h) * (0.55 + 0.45 * var(--burn)));
-  border-radius: 50% 50% 38% 38% / 62% 62% 38% 38%;
-  background: radial-gradient(ellipse at 50% 85%, #fff4b8 0%, #ffb02e 32%, #ff5a1f 62%, rgb(255 60 20 / 0) 76%);
-  filter: blur(1px); mix-blend-mode: screen; transform-origin: 50% 100%; opacity: 0;
-  animation: flame-rise 0.5s var(--d) ease-out forwards, flicker 0.16s var(--d) ease-in-out infinite alternate, flame-die 0.6s 2s ease-in forwards;
-}
-.ember { position: absolute; bottom: 34px; left: var(--x); width: 3px; height: 3px; border-radius: 50%; background: #ffb347; opacity: 0; animation: ember 1.4s var(--d) ease-out 2; }
-.burn-caption { margin-top: 6px; font-size: 14px; color: var(--muted); }
-.burn-caption .neg { font-size: 22px; font-weight: 600; margin-right: 4px; }
+.wallet-char-top { opacity: 0; }
 .burn-static .burn-wallet { animation: none; filter: saturate(0.3) brightness(0.6); }
 .burn-static .wallet-char { animation: none; opacity: 0.7; }
 @keyframes char { 70% { filter: saturate(0.4) brightness(0.75); } 100% { transform: translateY(6px) scale(0.96); filter: saturate(0) brightness(0.45); } }
 @keyframes charup { to { opacity: calc(0.55 + 0.45 * var(--burn)); } }
-@keyframes flame-rise { from { opacity: 0; translate: 0 18px; } to { opacity: 0.95; translate: 0 0; } }
-@keyframes flicker { from { scale: 1 1; } to { scale: 0.86 1.14; } }
-@keyframes flame-die { to { opacity: 0; } }
-@keyframes ember { 0% { opacity: 0; translate: 0 0; } 20% { opacity: 1; } 100% { opacity: 0; translate: 12px -96px; } }
 
 /* ---------- theme: Midnight. Blue-gray dashboard palette. */
 :root[data-theme='midnight'] {
@@ -315,40 +298,75 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
   --primary-soft: rgb(55 141 255 / 0.14);
 }
 .swatch-midnight { background: linear-gradient(135deg, #378dff, #22262a); }
-.nav-tag-on { color: var(--primary) !important; background: var(--primary-soft) !important; }
 
-/* ---------- theme panel */
-.theme-modal { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; }
-.theme-modal-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
-.seg { display: flex; gap: 2px; padding: 3px; background: var(--card-2); border-radius: var(--radius-sm); margin-bottom: 16px; }
-.seg-opt { flex: 1; height: 32px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; }
-.seg-opt:hover { color: var(--text); }
-.seg-opt.on { background: var(--card); color: var(--text); box-shadow: 0 0 0 1px var(--line-2); }
-.opt-list { display: flex; flex-direction: column; gap: 8px; }
-.opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 4px; }
-.opt-card { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: transparent; text-align: left; }
-.opt-card:hover { background: var(--card-2); }
-.opt-card.on { border-color: var(--primary); background: var(--primary-soft); }
-.opt-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.opt-text strong { font-weight: 500; }
-.preset-chip { flex: none; width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; border: 1px solid var(--line-2); }
-.preset-chip i { width: 12px; height: 12px; border-radius: 3px; }
-.base-calm { background: #1a1a1a; }
-.base-calm i { background: #1f8fff; }
-.base-midnight { background: #181c20; }
-.base-midnight i { background: #378dff; }
-.base-monad { background: #18122f; }
-.base-monad i { background: #836ef9; transform: rotate(45deg); }
-.field-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); font-weight: 500; margin: 16px 0 8px; }
-.field-label:first-child { margin-top: 0; }
-.accent-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.accent { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; background: var(--a); box-shadow: inset 0 0 0 2px var(--card); }
-.accent.on { border-color: var(--text); }
-.accent.auto { width: auto; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--card-2); border: 1px solid var(--line-2); box-shadow: none; color: var(--muted); font-size: 12px; }
-.accent.auto.on { border-color: var(--primary); color: var(--text); }
-.accent-sample { display: flex; gap: 10px; align-items: center; margin-top: 14px; padding: 12px; border: 1px dashed var(--line-2); border-radius: var(--radius-sm); }
-.preview-box { position: relative; margin-top: 12px; padding: 12px 8px 4px; border: 1px dashed var(--line-2); border-radius: var(--radius-sm); text-align: center; }
-.preview-tag { position: absolute; top: 8px; left: 10px; font-size: 11px; color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 1px 8px; }
+/* ---------- theme: Americana (High / Low). High energy: navy, flag red, bold type, stripes. */
+:root[data-theme='americana'] {
+  --page: #0a1128;
+  --pane: #0d1631;
+  --card: #111c3d;
+  --card-2: #18254c;
+  --line: #233262;
+  --line-2: #33467e;
+  --text: #f6f3ec;
+  --muted: rgb(246 243 236 / 0.66);
+  --faint: rgb(246 243 236 / 0.4);
+  --primary: #d62839;
+  --primary-soft: rgb(214 40 57 / 0.18);
+  --secondary: #3c6be0;
+  --display: 'Oswald', var(--sans);
+  --wallet-body: #6b3e22;
+  --wallet-edge: #b8783f;
+  --wallet-flap: #4e2b17;
+  --wallet-clasp: #e0b84a;
+  --wallet-text: #f5e9d6;
+}
+:root[data-theme='americana'] .topbar { border-bottom: 4px solid transparent; border-image: repeating-linear-gradient(90deg, #d62839 0 28px, #f6f3ec 28px 56px) 1; }
+:root[data-theme='americana'] .round-card { border-top: 3px solid var(--primary); }
+:root[data-theme='americana'] .brand-mark { color: var(--primary); }
+:root[data-theme='americana'] .game-name,
+:root[data-theme='americana'] .count-num,
+:root[data-theme='americana'] .stat-value,
+:root[data-theme='americana'] .reveal-raw,
+:root[data-theme='americana'] .reveal-net,
+:root[data-theme='americana'] .reveal-sub { font-family: var(--display); letter-spacing: 0.02em; }
+:root[data-theme='americana'] .game-name { text-transform: uppercase; font-size: 24px; }
+:root[data-theme='americana'] .choice { font-family: var(--display); font-size: 16px; letter-spacing: 0.04em; }
+:root[data-theme='americana'] .choice.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+:root[data-theme='americana'] .btn.wide.primary { font-family: var(--display); font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; }
+:root[data-theme='americana'] .cell-open.past { background: linear-gradient(180deg, #d62839 50%, #f6f3ec 50%); }
+
+/* ---------- Americana effects */
+.eagle { position: absolute; width: min(80vw, 760px); left: -50vw; top: 26%; animation: glide 3.8s cubic-bezier(.45, .05, .35, 1) forwards; filter: drop-shadow(0 18px 28px rgb(0 0 0 / 0.5)); }
+.eagle .wing { transform-origin: 200px 76px; animation: wing-flex 1.1s ease-in-out infinite alternate; }
+.eagle-wing { fill: url(#wing-shade); stroke: #1a1008; stroke-width: 0.8; stroke-linejoin: round; }
+.eagle-coverts { fill: #7a5232; opacity: 0.55; }
+.eagle-feathers { stroke: #1a1008; stroke-width: 0.9; opacity: 0.55; fill: none; }
+.eagle-body { fill: #3a2412; }
+.eagle-tail { fill: #f1ede4; stroke: #c9c2b3; stroke-width: 0.8; }
+.eagle-tail-lines { stroke: #c9c2b3; stroke-width: 0.8; fill: none; }
+.eagle-beak { fill: #f2b01e; stroke: #b9800c; stroke-width: 0.6; }
+.eagle-foot { fill: #f2b01e; }
+/* Arcs through the open space above the result card, so the whole bird is visible. */
+@keyframes glide { 0% { left: -80vw; top: 30%; transform: rotate(-8deg) scale(0.6); } 50% { top: -4%; transform: rotate(2deg) scale(1); } 100% { left: 105vw; top: -18%; transform: rotate(-6deg) scale(0.85); } }
+@keyframes wing-flex { from { scale: 1 1; } to { scale: 1 0.88; } }
+.eagle-flight { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+/* The result stays readable: the eagle flies behind the card, never over it. */
+.reveal-card { z-index: 1; }
+
+.burn-top .burn-wallet { animation: scorch 2.6s ease-in forwards; }
+.burn-top .wallet-char { display: none; }
+.burn-top .wallet-char-top { animation: scorch-top 2.2s 0.3s ease-in forwards; }
+@keyframes scorch { 100% { filter: saturate(0.8) brightness(0.85); } }
+@keyframes scorch-top { to { opacity: 1; } }
+
+.nuke-canvas { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); pointer-events: none; }
+.nuke-wallet { position: absolute; bottom: 4px; left: 50%; width: 132px; margin-left: -66px; animation: vaporize 0.55s 0.35s ease-in forwards; }
+.nuke-wallet .burn-wallet { width: 100%; animation: none; }
+.nuke-wallet .wallet-char, .nuke-wallet .wallet-char-top { display: none; }
+.mushroom { position: absolute; bottom: 0; left: 50%; width: 220px; margin-left: -110px; overflow: visible; }
+.nuke-flash { position: fixed; inset: 0; background: #fff6dc; opacity: 0; pointer-events: none; z-index: 30; animation: soft-flash 0.9s 0.35s ease-out forwards; }
+@keyframes vaporize { 40% { filter: brightness(3); } 100% { opacity: 0; transform: scale(1.3); filter: brightness(4) blur(4px); } }
+@keyframes soft-flash { 0% { opacity: 0; } 25% { opacity: 0.32; } 100% { opacity: 0; } }
 
 /* ---------- phones: one column, games become a scrolling row of pills.
    Kept last so it overrides the base rules above. */
@@ -371,3 +389,12 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
+
+/* ---------- effects demo panel (?fx in the URL) */
+.fx-demo { position: fixed; left: 16px; bottom: 16px; z-index: 40; width: 250px; background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius); box-shadow: 0 16px 40px rgb(0 0 0 / 0.45); }
+.fx-demo-head { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border: 0; background: transparent; font-weight: 600; }
+.fx-demo.open .fx-demo-head { border-bottom: 1px solid var(--line); }
+.fx-demo-list { display: flex; flex-direction: column; gap: 6px; padding: 10px; }
+.fx-demo .btn.fx-demo-btn { height: auto; padding: 7px 10px; flex-direction: column; align-items: flex-start; gap: 0; text-align: left; }
+.fx-demo .note { margin: 4px 2px 0; }
+.demo-tag { color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 2px 10px; font-size: 12px; }

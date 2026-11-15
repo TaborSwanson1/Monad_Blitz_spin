@@ -7,7 +7,7 @@ import { prefersReducedMotion } from '../lib/themes'
 //
 // `intensity` (0 to 1) comes from revealIntensity(), so it scales with the real net win.
 
-function makeSprite(size: number): HTMLCanvasElement {
+export function makeSprite(size: number): HTMLCanvasElement {
   const c = document.createElement('canvas')
   c.width = c.height = size
   const g = c.getContext('2d')!

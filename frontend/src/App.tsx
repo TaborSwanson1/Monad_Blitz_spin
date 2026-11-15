@@ -12,8 +12,6 @@ import { RevealOverlay } from './components/RevealOverlay'
 import { LimitsDialog, RealityCheck } from './components/Dialogs'
 import { IconCube } from './components/icons'
 import { Sidebar } from './components/Sidebar'
-import { presetOf, useTheme } from './lib/themes'
-import { ThemeDialog } from './components/ThemeDialog'
 import { SiteHeader } from './components/lobby/SiteHeader'
 import { Lobby } from './components/lobby/Lobby'
 import { SettingsDialog } from './components/lobby/SettingsDialog'
@@ -22,6 +20,8 @@ import { hasContracts } from './wallet/session'
 import type { Tile } from './components/lobby/Lobby'
 import { SlotScreen } from './components/slot/SlotScreen'
 import { toChips } from './lib/format'
+import { THEMES, themeForGame, themeForRound } from './lib/themes'
+import { EffectsDemo, effectsDemoEnabled } from './components/EffectsDemo'
 
 export default function App() {
   const [client, clientError] = useMemo(() => {
@@ -42,8 +42,6 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
   const casino = useCasino(client, onResolved)
   const [editingLimits, setEditingLimits] = useState(false)
   const [gameId, setGameId] = useState(0)
-  const { settings: theme, update: updateTheme, applyPreset } = useTheme()
-  const [themeOpen, setThemeOpen] = useState(false)
   // Lobby first, like casino sites. Owner of the lobby, top bar, wallet and settings: Zander.
   const [view, setView] = useState<'lobby' | 'game' | 'slot'>('lobby')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -92,6 +90,12 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     synced.current = addr
     connectCasino()
   }, [wallet.state.status, wallet.state.address, casino.account, casino.busy, client.mode, connectCasino])
+  // Each game has one fixed theme. The page takes the look of the game you're on;
+  // the lobby and the slot demo use Calm.
+  const theme = view === 'game' ? themeForGame(gameId) : THEMES.calm
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme.id
+  }, [theme.id])
 
   const { cfg, head } = casino
   const clock = cfg && head !== null ? roundClock(head, cfg) : null
@@ -130,11 +134,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         <SlotScreen blockedReason={session.blockedReason} onStake={onSlotStake} onPaid={onSlotPaid} />
       ) : (
       <div className="shell">
-        <Sidebar mode={client.mode} gameId={gameId} onPick={setGameId} onEditLimits={() => setEditingLimits(true)}
-          presetId={presetOf(theme)?.id ?? null}
-          onPreset={applyPreset}
-          onCustomize={() => setThemeOpen(true)}
-        />
+        <Sidebar mode={client.mode} gameId={gameId} onPick={setGameId} onEditLimits={() => setEditingLimits(true)} />
 
         <main className="main-col">
           <SessionBar
@@ -211,7 +211,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
       {casino.reveal && (
         <RevealOverlay
           record={casino.reveal}
-          theme={theme}
+          theme={themeForRound(casino.reveal)}
           wallet={casino.account}
           onClose={casino.dismissReveal}
           onReplayDone={casino.finishReplay}
@@ -225,24 +225,9 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
           onContinue={session.dismissRealityCheck}
         />
       )}
-      {themeOpen && (
-        <ThemeDialog
-          settings={theme}
-          wallet={casino.account}
-          onChange={updateTheme}
-          onPreset={applyPreset}
-          onClose={() => setThemeOpen(false)}
-        />
-      )}
       {settingsOpen && (
         <SettingsDialog
           mode={client.mode}
-          presetId={presetOf(theme)?.id ?? null}
-          onPreset={applyPreset}
-          onCustomize={() => {
-            setSettingsOpen(false)
-            setThemeOpen(true)
-          }}
           onLimits={() => {
             setSettingsOpen(false)
             setEditingLimits(true)
@@ -251,6 +236,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
           onClose={() => setSettingsOpen(false)}
         />
       )}
+      {effectsDemoEnabled() && <EffectsDemo wallet={casino.account} />}
       {editingLimits && (
         <LimitsDialog limits={session.limits} onSave={session.setLimits} onClose={() => setEditingLimits(false)} />
       )}

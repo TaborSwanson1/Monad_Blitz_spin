@@ -3,12 +3,15 @@ import type { RoundRecord } from '../hooks/useCasino'
 import { CRASH_TARGETS_X100, fmtX } from '../lib/crash'
 import { GAMES, LANE_COLORS } from '../lib/games'
 import { fmtChips } from '../lib/format'
-import type { ThemeSettings } from '../lib/themes'
+import { BIG_STAKE, type ThemeDef } from '../lib/themes'
 import { BeautyResult } from './BeautyResult'
 import { Burst } from './Burst'
 import { BurningWallet, BURN_MS } from './BurningWallet'
 import { CrashClimb } from './CrashClimb'
+import { Eagle } from './Eagle'
+import { Fireworks } from './Fireworks'
 import { MonadTokens } from './MonadTokens'
+import { Nuke, NUKE_MS } from './Nuke'
 
 /**
  * Effect size follows the real net result for the round:
@@ -27,19 +30,28 @@ export function lossIntensity(r: RoundRecord): number {
   return Math.min(1, Number((-r.net * 1000n) / r.staked) / 1000)
 }
 
-const crashBetsOf = (r: RoundRecord) => r.bets.filter((b) => GAMES[b.gameId].kind === 'crash')
+const LOSS_TEXT = {
+  burn: 'Burned from your wallet',
+  'top-fire': 'Your wallet caught fire',
+  nuke: 'Your wallet got nuked',
+} as const
+
+const crashBetsOf =(r: RoundRecord) => r.bets.filter((b) => GAMES[b.gameId].kind === 'crash')
 
 interface Props {
   record: RoundRecord
-  theme: ThemeSettings
+  /** Fixed theme for this round: the game with the biggest stake decides. */
+  theme: ThemeDef
   /** The player's (sim-generated or connected) wallet, shown on the loss effect. */
   wallet: string | null
   onClose: () => void
   /** Called once a crash replay ends, so the rest of the page can show the result. */
   onReplayDone: () => void
+  /** Effects demo (?fx): a made-up round. Labeled so nobody mistakes it for a real result. */
+  demo?: boolean
 }
 
-export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone }: Props) {
+export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, demo = false }: Props) {
   const crashBets = crashBetsOf(record)
   const [climbDone, setClimbDone] = useState(crashBets.length === 0)
   const markDone = useCallback(() => {
@@ -51,27 +63,42 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone }: 
   const intensity = climbDone ? revealIntensity(record) : 0
   const loss = climbDone ? lossIntensity(record) : 0
   const up = intensity > 0
-  const burn = loss > 0 && theme.loss === 'burning-wallet'
+  // Big goes by the amount bet this round, not the amount won or lost.
+  const big = record.staked >= BIG_STAKE
+
+  // Which loss effect plays, if any. 'americana' splits at BIG_STAKE.
+  const lossFx: 'none' | 'burn' | 'top-fire' | 'nuke' =
+    loss === 0 || theme.loss === 'off'
+      ? 'none'
+      : theme.loss === 'burning-wallet'
+        ? 'burn'
+        : big
+          ? 'nuke'
+          : 'top-fire'
 
   useEffect(() => {
     if (!climbDone) return
-    const t = setTimeout(onClose, up ? 5200 : burn ? BURN_MS + 1600 : 3200)
+    const ms = up ? 5200 : lossFx === 'nuke' ? NUKE_MS + 1600 : lossFx !== 'none' ? BURN_MS + 1600 : 3200
+    const t = setTimeout(onClose, ms)
     return () => clearTimeout(t)
-  }, [record, up, burn, onClose, climbDone])
+  }, [record, up, lossFx, onClose, climbDone])
 
   const crashTargets = [...new Set(crashBets.map((b) => CRASH_TARGETS_X100[b.choice]))]
 
   return (
     <div
-      className={`reveal ${up ? 'reveal-up' : 'reveal-down'}`}
+      className={`reveal ${up ? 'reveal-up' : 'reveal-down'} ${lossFx !== 'none' ? 'has-bottom-fx' : ''}`}
       onClick={climbDone ? onClose : undefined}
       role="dialog"
       aria-live="polite"
     >
       {up && theme.win === 'monad-tokens' && <MonadTokens intensity={intensity} />}
       {up && theme.win === 'sparks' && <Burst intensity={intensity} />}
+      {up && theme.win === 'americana' && (big ? <Eagle /> : <Fireworks intensity={intensity} />)}
       <div className="reveal-card" style={{ '--intensity': intensity } as React.CSSProperties}>
-        <div className="reveal-round">Round {record.roundId.toString()} settled</div>
+        <div className="reveal-round">
+          {demo ? <span className="demo-tag">Demo, no chips moved</span> : <>Round {record.roundId.toString()} settled</>}
+        </div>
 
         {crashBets.length > 0 && <CrashClimb crashX100={crashBets[0].raw} targetsX100={crashTargets} onDone={markDone} />}
 
@@ -109,17 +136,18 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone }: 
                 )
               })}
             </div>
-            {burn ? (
-              <BurningWallet wallet={wallet} lost={-record.net} intensity={loss} />
-            ) : (
-              <div className={`reveal-net ${up ? 'pos' : record.net < 0n ? 'neg' : ''}`}>
-                {fmtChips(record.net, { sign: true })} CHIP
-              </div>
-            )}
+            <div className={`reveal-net ${up ? 'pos' : record.net < 0n ? 'neg' : ''}`}>
+              {fmtChips(record.net, { sign: true })} CHIP
+            </div>
+            {lossFx !== 'none' && <div className="reveal-sub">{LOSS_TEXT[lossFx]}</div>}
           </>
         )}
         <div className="reveal-seed">seed {record.seed.slice(0, 18)}…</div>
       </div>
+      {/* Wallet effects play big at the bottom of the screen, behind the card. */}
+      {lossFx === 'burn' && <BurningWallet wallet={wallet} intensity={loss} />}
+      {lossFx === 'top-fire' && <BurningWallet wallet={wallet} intensity={loss} variant="top" />}
+      {lossFx === 'nuke' && <Nuke wallet={wallet} />}
     </div>
   )
 }
