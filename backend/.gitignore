@@ -5,6 +5,11 @@ broadcast/
 lib/
 node_modules/
 
+# Local dev loop (npm run dev). Testnet deployments ARE committed.
+.anvil.log
+deployments/31337.json
+exports/local/
+
 # Secrets
 .env
 .env.*
