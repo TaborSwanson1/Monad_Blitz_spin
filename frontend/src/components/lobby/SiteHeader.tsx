@@ -52,6 +52,12 @@ export function SiteHeader(p: Props) {
       <span className={`badge ${p.mode === 'sim' ? 'badge-warn' : 'badge-pos'}`}>
         <span className="dot" /> {p.label === 'SIMULATOR' ? 'Simulator' : p.label}
       </span>
+      {/* Pages builds link the two versions: the real one on Monad testnet and the no-wallet simulator. */}
+      {import.meta.env.VITE_OTHER_MODE_URL && (
+        <a className="btn ghost small mode-switch" href={import.meta.env.VITE_OTHER_MODE_URL}>
+          {p.mode === 'chain' ? 'No wallet? Try the simulator' : 'Play for real on Monad testnet'}
+        </a>
+      )}
       <div className="head-readout hide-narrow">
         Block <span className="mono">{p.head === null ? '—' : `#${fmtBlock(p.head)}`}</span>
       </div>

@@ -49,6 +49,7 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
   - Anything missing or awkward in the SDK: put it in finkierstead's Inbox.
 
 ### For Tabor (frontend)
+- 2026-11-15, from finkierstead, **for Tabor (your script) and the team: GitHub Pages now serves the real app.** `scripts/deploy-pages.sh` builds two versions: the **on-chain app at the root** (MetaMask, the testnet contracts, Pyth results; addresses come from `backend/exports/monad-testnet/frontend.env`, never your local `.env`) and the **simulator at `/sim/`**. A top-bar link switches between them (`VITE_OTHER_MODE_URL`, small edit in Zander's `SiteHeader.tsx`). `PAGES_DRY_RUN=1 npm run deploy:pages` builds without publishing. Players pay their own gas and Pyth fee; there's no keeper wallet to drain. Change it back if you'd rather the root stay the simulator.
 - 2026-11-15, from finkierstead, **for Tabor, Lucas and Zander: the casino is live on Monad testnet** (addresses in Current state), **and chain mode now shows the wallet at work.** Small edits in your area:
   - `client/chain.ts`: each transaction goes to a new `client/txlog.ts` with a plain-words label. No change to the calls or ABIs.
   - New `components/WalletActivity.tsx`: the wallet's MON (gas) balance, an **Add CHIP to MetaMask** button (EIP-747 `wallet_watchAsset`), and a bottom-right feed of each signed transaction with a Monadscan link.

@@ -11,4 +11,6 @@ interface ImportMetaEnv {
   readonly VITE_LIVE_BLOCKS?: string
   /** Sim mode: websocket for the live block feed. Default wss://testnet-rpc.monad.xyz */
   readonly VITE_LIVE_BLOCKS_WS?: string
+  /** Pages builds: link to the other version (on-chain <-> simulator). Set by scripts/deploy-pages.sh. */
+  readonly VITE_OTHER_MODE_URL?: string
 }
