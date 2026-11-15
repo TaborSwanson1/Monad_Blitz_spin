@@ -1,0 +1,13 @@
+{
+  "name": "block-casino-sandbox",
+  "private": true,
+  "type": "module",
+  "description": "Mechanics sandbox. Reads frontend/src/lib and backend/sdk, never writes to either.",
+  "scripts": {
+    "sandbox": "node run.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "viem": "2.21.54"
+  }
+}

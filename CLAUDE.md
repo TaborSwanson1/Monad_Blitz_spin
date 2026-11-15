@@ -22,6 +22,7 @@ The `/sync` command does all three.
 | `frontend/` | **Tabor** (TaborSwanson1) and **Lucas** | `frontend/**` |
 | `backend/` (Foundry contracts, tests, scripts, keeper) | **finkierstead** | `backend/**` |
 | `CLAUDE.md`, `docs/`, `.claude/` | Both | Shared, append-only where possible |
+| `sandbox/` (mechanics sandbox: `SANDBOX.md`, `mechanics.ipynb`) | **finkierstead** builds the engine. Anyone may add experiments. | Experiments in `SANDBOX.md` and the notebook: anyone. Engine files: finkierstead. It only *reads* `frontend/src/lib/` and `backend/sdk/`. |
 
 **Don't edit the other person's area.** If you need something changed there, write it in the TEAM_CONTEXT **Inbox** addressed to them.
 
@@ -79,6 +80,8 @@ cd backend && forge test --match-path "test/fork/*" --fork-url https://testnet-r
 # translation loop: local chain + deploy + export for frontend + seam check + auto-settling keeper
 cd backend && npm run dev                 # then: cp backend/exports/local/frontend.env frontend/.env
 cd backend && npm run check-seam          # run before pushing any contract change
+# mechanics sandbox (simulates the frontend models on the backend toolkit; no chain)
+cd sandbox && npm install && npm run sandbox   # runs sandbox/SANDBOX.md; charts in sandbox/mechanics.ipynb
 # deploy to Monad testnet (you type the keystore password; the key never goes in .env)
 cd backend && npm run deploy:testnet      # exports to backend/exports/monad-testnet/ (commit it)
 # frontend

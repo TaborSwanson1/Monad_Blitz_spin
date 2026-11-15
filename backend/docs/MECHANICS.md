@@ -71,7 +71,7 @@ Conventions:
 
 **Changing the math.** Edit both copies, then run `npm run vectors && forge test`. `scripts/seed-vectors.mjs` writes `test/vectors/seed.json` from the JavaScript copy, and `test/SeedVectors.t.sol` fails if the Solidity copy disagrees on any entry. `crashX100` and `gameSeed` are also copied in `frontend/src/lib/`, so a change there needs an Inbox note for the frontend.
 
-**Try it before building it.** `sandbox/SANDBOX.md` is a sandbox for these functions. Write an experiment as a ```` ```js experiment ```` block, run `npm run sandbox`, and the win rates, return and a 2%-edge check are written in under it. The same run simulates the frontend's current games and checks their math against this toolkit.
+**Try it before building it.** The repo-root `sandbox/` folder runs these functions without a chain. In `sandbox/SANDBOX.md`, write an experiment as a ```` ```js experiment ```` block and run `cd sandbox && npm install && npm run sandbox`: the win rates, return and a 2%-edge check are written in under it. `sandbox/mechanics.ipynb` does the same with charts. Both also simulate the frontend's current games and check their math against this toolkit.
 
 **Which games can use one seed for many steps.** Deriving many numbers from one seed (`draw(seed, 0..n)`) is safe only when every result is fixed at lock and only *shown* step by step (a Crash replay, a multi-block race). If players act *between* steps, like trading in Block Walk, each step needs a seed nobody knows yet: a later round's seed, or its own VRF request. One revealed seed would give away every step that follows.
 

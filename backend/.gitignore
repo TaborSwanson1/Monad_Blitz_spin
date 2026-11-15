@@ -14,4 +14,3 @@ exports/local/
 .env
 .env.*
 !.env.example
-sandbox/.cache/

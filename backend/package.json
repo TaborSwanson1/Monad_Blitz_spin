@@ -10,12 +10,10 @@
     "export": "forge build --silent && node scripts/export.mjs",
     "check-seam": "forge build --silent && node scripts/check-seam.mjs",
     "deploy:testnet": "bash scripts/deploy-testnet.sh",
-    "vectors": "node scripts/seed-vectors.mjs",
-    "sandbox": "node sandbox/run.mjs"
+    "vectors": "node scripts/seed-vectors.mjs"
   },
   "devDependencies": {
     "@pythnetwork/entropy-sdk-solidity": "2.2.1",
-    "esbuild": "0.24.0",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "viem": "2.21.54"
   }

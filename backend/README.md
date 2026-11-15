@@ -26,7 +26,6 @@ Needs [Foundry](https://getfoundry.sh) and Node 18+.
 | `npm run dev` | Local chain (1 block/s), deploys with MockRandomness, exports for the frontend, checks the seam, then runs a **keeper** that settles every round with bets. Ctrl+C stops it all. `FUND=0xYourAddr npm run dev` also gives your wallet 1,000 local MON for gas. |
 | `npm run export` | Rebuilds and regenerates `exports/` from the latest deployments |
 | `npm run check-seam` | Fails if `frontend/src/client/abi.ts` or `frontend/src/lib/games.ts` no longer match the contracts. Run it before you push a contract change. |
-| `npm run sandbox` | Runs `sandbox/SANDBOX.md`: simulates the frontend's live game models, checks their math against the backend, and runs the mechanics experiments written in that file. Results are written back into it. |
 | `npm run vectors` | Regenerates `test/vectors/seed.json` from `sdk/seedlib.mjs`. `forge test` then checks the Solidity `SeedLib` against it. Run it after changing the seed math. |
 | `npm run deploy:testnet` | Deploys to Monad testnet with real Pyth Entropy, using your keystore account `monad-deployer`. Then exports. |
 
@@ -52,7 +51,7 @@ Needs [Foundry](https://getfoundry.sh) and Node 18+.
 | `contracts/BlockCasino.sol` | Round clock (blocks), bets, settlement, claims, refunds |
 | `contracts/lib/SeedLib.sol` | **Mechanics core:** VRF number → per-game seed → `uniform`, `chance`, `weighted`, `coin`, `crashX100` |
 | `sdk/seedlib.mjs` | JavaScript copy of `SeedLib`, kept bit-for-bit equal by `test/SeedVectors.t.sol`. For scripts, simulations and the frontend. |
-| `sandbox/` | The mechanics sandbox: `SANDBOX.md` (input and output) and its runner. Reads `frontend/src/lib/`, never writes there. |
+| `../sandbox/` | Not in backend: the mechanics sandbox at the repo root (`SANDBOX.md` and `mechanics.ipynb`). It reads `sdk/seedlib.mjs` and the frontend models, and writes to neither. |
 | `contracts/games/` | Game logic (`IGame`). New games go here. |
 | `contracts/randomness/` | Pyth Entropy adapter (testnet) and MockRandomness (local) |
 | `script/Deploy.s.sol` | Deploys everything, records `deployments/<chainId>.json` |
