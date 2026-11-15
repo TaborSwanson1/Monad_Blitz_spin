@@ -329,6 +329,14 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .balance-num.tick-up { color: var(--pos); }
 .balance-num.tick-down { color: var(--neg); }
 
+/* click sparks (src/effects/useClickSparks.ts): above everything, never catch clicks */
+.fx-sparks { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.fx-spark { position: absolute; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px 1px var(--c); animation: spark var(--dur) cubic-bezier(0.15, 0.8, 0.3, 1) forwards; }
+@keyframes spark {
+  0% { transform: translate(0, 0) scale(1.2); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+
 /* ---------- motion: small and purposeful only */
 @keyframes enter { from { margin-left: -142px; opacity: 0; } to { margin-left: 0; opacity: 1; } }
 @keyframes fade { from { opacity: 0; } }

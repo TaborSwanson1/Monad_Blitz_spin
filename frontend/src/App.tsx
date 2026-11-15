@@ -13,8 +13,10 @@ import { RevealOverlay } from './components/RevealOverlay'
 import { LimitsDialog, RealityCheck } from './components/Dialogs'
 import { IconCube } from './components/icons'
 import { Sidebar } from './components/Sidebar'
+import { useClickSparks } from './effects/useClickSparks'
 
 export default function App() {
+  useClickSparks()
   const [client, clientError] = useMemo(() => {
     try {
       return [createClient(), null] as const
