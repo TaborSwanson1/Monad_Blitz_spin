@@ -9,7 +9,8 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 - **Branch:** everyone works on `main`. The `scaffold` branch has been deleted.
 - **Frontend (Tabor):** React + Vite + viem app in `frontend/`. Sim mode works without a backend. Chain mode is written against the draft backend, which is now restored in `backend/`.
 - **Backend (finkierstead):** Tabor's draft is restored, plus a Pyth Entropy adapter on Pyth's official SDK, `SeedLib` (the randomness derivation), a safer deploy script, and tests. **Compiles. 27 unit tests pass, and 2 fork tests pass against live Monad testnet** (Foundry 1.9.0). Mechanics write-up for game designers: `backend/docs/MECHANICS.md`.
-- **Deployed contracts:** none yet.
+- **Translation loop is live:** `cd backend && npm run dev` gives the frontend a local chain with the real contracts, an auto-generated `frontend.env`, and a keeper that settles rounds. Tested end to end with a real bet, settle and claim. See `backend/README.md`.
+- **Deployed contracts:** none on testnet yet. When there are, the addresses land in `backend/exports/monad-testnet/` (committed).
 
 ## Verified Monad testnet facts (2026-11-15)
 
@@ -28,6 +29,11 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 Requests and questions between the two sides. Mark them `[done]` instead of deleting them.
 
 ### For Tabor (frontend)
+- 2026-11-15, from finkierstead, **for Tabor and Lucas: you can test the UI against real contracts now.** Nothing in `frontend/` was changed.
+  - **Local (best while the backend is changing):** in one terminal, `cd backend && npm install && FUND=0xYourMetaMaskAddress npm run dev`. Then `cp backend/exports/local/frontend.env frontend/.env` and `cd frontend && npm run dev`. In MetaMask, add the network: RPC `http://127.0.0.1:8545`, chain `31337`. Rounds are 20 blocks with 12 for betting, at 1 block/s. **A keeper settles every round automatically**, so in chain mode you don't need to click "Request result". It may say "AlreadyRequested" if you do. Needs Foundry and Node.
+  - **Testnet:** once I deploy, `backend/exports/monad-testnet/frontend.env` will be committed. `git pull` and copy it.
+  - **Optional:** `backend/exports/abis.ts` has typed ABIs generated from the contracts (your INTEGRATION.md polish item 1). Using it from `frontend/` needs Vite's `server.fs.allow: ['..']`. Your call.
+  - `npm run check-seam` (in `backend/`) checks your `abi.ts` and `games.ts` against the contracts. Right now all 15 calls and all 3 games match.
 - 2026-11-15, from finkierstead: **backend is back in `backend/`**, your draft plus changes. What affects you:
   - **No ABI or formula changes.** `placeBet`, `requestSettlement`, `claim`, `rounds`, `randomness().fee()`, the game order and `gameSeed` are all unchanged.
   - **Round timing is now 60 blocks per round with 40 for betting** (≈18 s / 12 s at 0.3 s blocks), up from 30/20. Chain mode reads these from the contract. Update `sim.ts` if you want sim mode to feel the same.
@@ -45,6 +51,8 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
 ## Decisions
 
 Settled choices. Changing one means adding a new entry, not editing the old one.
+
+- **2026-11-15: Backend → frontend translation lives in `backend/scripts/`** (finkierstead). Deploys record `backend/deployments/<chainId>.json`. `npm run export` turns that plus the Foundry output into `backend/exports/` (frontend.env, deployment.json, abis.ts). The scripts never write into `frontend/`. Local deploys use MockRandomness plus a keeper on anvil only. Every other chain uses real Pyth Entropy, and the deploy script enforces this by chain ID.
 
 - **2026-11-15: Pyth Entropy is the randomness source. Blocks are the clock only.** finkierstead chose this over a block-hash source (even a labeled demo-only one). It confirms the earlier VRF decision with real numbers: Entropy is live on Monad testnet, reveals 2 blocks after the request, and costs ≈0.124 MON per settled round.
 - **2026-11-15: Backend restored from Tabor's `b5587a5` draft** as the base, so the frontend's chain mode matches it. Changes: the Pyth adapter now inherits Pyth's official `IEntropyConsumer` (SDK 2.2.1); `SeedLib` holds the seed derivation (same formula); rounds are 60/40 blocks; deploys use an encrypted Foundry keystore (`--account monad-deployer`), never a `PRIVATE_KEY` in `.env`; the deploy refuses `MockRandomness` off anvil.
@@ -70,6 +78,8 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 ## Session log
 
 One line per session: who, date, what changed, which commits.
+
+- 2026-11-15, finkierstead + Claude: added the translation loop (`npm run dev`, `export`, `check-seam`, `deploy:testnet`), a local keeper, and `backend/README.md`. Verified with a real local round: bet, keeper settle, claim, balance correct. Seam check passes.
 
 - 2026-11-15, finkierstead + Claude: verified Monad testnet and Pyth Entropy. Restored the draft backend, set up npm deps and verified config, added SeedLib and the Pyth adapter on the official SDK, plus tests and MECHANICS.md (7 commits, from "chore: restore Tabor's draft backend" to "docs: fork-test command"). Installed Foundry 1.9.0. All tests pass, including live testnet checks (fee 0.1238 MON, provider `0x6CC1…6344`).
 - 2026-11-15, Tabor + Claude: added `frontend/GAMES.md` with the new game lineup and an Inbox request for the backend.

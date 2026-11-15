@@ -76,8 +76,11 @@ A reference backend draft exists in commit `b5587a5` (`git show b5587a5:backend/
 cd backend && npm install && forge build && forge test
 # read-only checks against real Pyth Entropy on Monad testnet (spends nothing)
 cd backend && forge test --match-path "test/fork/*" --fork-url https://testnet-rpc.monad.xyz -vv
+# translation loop: local chain + deploy + export for frontend + seam check + auto-settling keeper
+cd backend && npm run dev                 # then: cp backend/exports/local/frontend.env frontend/.env
+cd backend && npm run check-seam          # run before pushing any contract change
 # deploy to Monad testnet (you type the keystore password; the key never goes in .env)
-cd backend && forge script script/Deploy.s.sol --rpc-url monad_testnet --account monad-deployer --broadcast
+cd backend && npm run deploy:testnet      # exports to backend/exports/monad-testnet/ (commit it)
 # frontend
 cd frontend && npm install && npm run dev      # VITE_MODE=sim needs no backend
 ```
