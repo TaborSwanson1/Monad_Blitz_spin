@@ -3,14 +3,17 @@ import type { RoundRecord } from '../hooks/useCasino'
 import { CRASH_TARGETS_X100, fmtX } from '../lib/crash'
 import { GAMES, LANE_COLORS } from '../lib/games'
 import { fmtChips } from '../lib/format'
+import type { ThemeSettings } from '../lib/themes'
 import { BeautyResult } from './BeautyResult'
 import { Burst } from './Burst'
+import { BurningWallet, BURN_MS } from './BurningWallet'
 import { CrashClimb } from './CrashClimb'
+import { MonadTokens } from './MonadTokens'
 
 /**
  * Effect size follows the real net result for the round:
- * - net > 0: a short burst, bigger for bigger multiples
- * - net <= 0: plain result, no fanfare, even if one bet in the round won
+ * - net > 0: the theme's win effect, bigger for bigger multiples
+ * - net <= 0: no win fanfare, even if one bet in the round won
  */
 export function revealIntensity(r: RoundRecord): number {
   if (r.net <= 0n || r.staked === 0n) return 0
@@ -18,16 +21,25 @@ export function revealIntensity(r: RoundRecord): number {
   return Math.max(0.2, Math.min(1, Math.log2(ratio) / Math.log2(10)))
 }
 
+/** Share of the stake lost this round, 0 to 1. Zero unless the round is net negative. */
+export function lossIntensity(r: RoundRecord): number {
+  if (r.net >= 0n || r.staked === 0n) return 0
+  return Math.min(1, Number((-r.net * 1000n) / r.staked) / 1000)
+}
+
 const crashBetsOf = (r: RoundRecord) => r.bets.filter((b) => GAMES[b.gameId].kind === 'crash')
 
 interface Props {
   record: RoundRecord
+  theme: ThemeSettings
+  /** The player's (sim-generated or connected) wallet, shown on the loss effect. */
+  wallet: string | null
   onClose: () => void
   /** Called once a crash replay ends, so the rest of the page can show the result. */
   onReplayDone: () => void
 }
 
-export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
+export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone }: Props) {
   const crashBets = crashBetsOf(record)
   const [climbDone, setClimbDone] = useState(crashBets.length === 0)
   const markDone = useCallback(() => {
@@ -37,13 +49,15 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
 
   // Nothing hints at the result until the replay finishes.
   const intensity = climbDone ? revealIntensity(record) : 0
+  const loss = climbDone ? lossIntensity(record) : 0
   const up = intensity > 0
+  const burn = loss > 0 && theme.loss === 'burning-wallet'
 
   useEffect(() => {
     if (!climbDone) return
-    const t = setTimeout(onClose, up ? 5200 : 3200)
+    const t = setTimeout(onClose, up ? 5200 : burn ? BURN_MS + 1600 : 3200)
     return () => clearTimeout(t)
-  }, [record, up, onClose, climbDone])
+  }, [record, up, burn, onClose, climbDone])
 
   const crashTargets = [...new Set(crashBets.map((b) => CRASH_TARGETS_X100[b.choice]))]
 
@@ -54,7 +68,8 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
       role="dialog"
       aria-live="polite"
     >
-      {up && <Burst intensity={intensity} />}
+      {up && theme.win === 'monad-tokens' && <MonadTokens intensity={intensity} />}
+      {up && theme.win === 'sparks' && <Burst intensity={intensity} />}
       <div className="reveal-card" style={{ '--intensity': intensity } as React.CSSProperties}>
         <div className="reveal-round">Round {record.roundId.toString()} settled</div>
 
@@ -94,9 +109,13 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
                 )
               })}
             </div>
-            <div className={`reveal-net ${up ? 'pos' : record.net < 0n ? 'neg' : ''}`}>
-              {fmtChips(record.net, { sign: true })} CHIP
-            </div>
+            {burn ? (
+              <BurningWallet wallet={wallet} lost={-record.net} intensity={loss} />
+            ) : (
+              <div className={`reveal-net ${up ? 'pos' : record.net < 0n ? 'neg' : ''}`}>
+                {fmtChips(record.net, { sign: true })} CHIP
+              </div>
+            )}
           </>
         )}
         <div className="reveal-seed">seed {record.seed.slice(0, 18)}…</div>

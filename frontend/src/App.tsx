@@ -13,6 +13,8 @@ import { RevealOverlay } from './components/RevealOverlay'
 import { LimitsDialog, RealityCheck } from './components/Dialogs'
 import { IconCube } from './components/icons'
 import { Sidebar } from './components/Sidebar'
+import { presetOf, useTheme } from './lib/themes'
+import { ThemeDialog } from './components/ThemeDialog'
 
 export default function App() {
   const [client, clientError] = useMemo(() => {
@@ -33,6 +35,8 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
   const casino = useCasino(client, onResolved)
   const [editingLimits, setEditingLimits] = useState(false)
   const [gameId, setGameId] = useState(0)
+  const { settings: theme, update: updateTheme, applyPreset } = useTheme()
+  const [themeOpen, setThemeOpen] = useState(false)
 
   const { cfg, head } = casino
   const clock = cfg && head !== null ? roundClock(head, cfg) : null
@@ -61,7 +65,11 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         onFaucet={casino.faucet}
       />
       <div className="shell">
-        <Sidebar mode={client.mode} gameId={gameId} onPick={setGameId} onEditLimits={() => setEditingLimits(true)} />
+        <Sidebar mode={client.mode} gameId={gameId} onPick={setGameId} onEditLimits={() => setEditingLimits(true)}
+          presetId={presetOf(theme)?.id ?? null}
+          onPreset={applyPreset}
+          onCustomize={() => setThemeOpen(true)}
+        />
 
         <main className="main-col">
           <SessionBar
@@ -135,7 +143,13 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
       </div>
 
       {casino.reveal && (
-        <RevealOverlay record={casino.reveal} onClose={casino.dismissReveal} onReplayDone={casino.finishReplay} />
+        <RevealOverlay
+          record={casino.reveal}
+          theme={theme}
+          wallet={casino.account}
+          onClose={casino.dismissReveal}
+          onReplayDone={casino.finishReplay}
+        />
       )}
       {session.showRealityCheck && (
         <RealityCheck
@@ -143,6 +157,15 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
           net={session.net}
           rounds={session.rounds}
           onContinue={session.dismissRealityCheck}
+        />
+      )}
+      {themeOpen && (
+        <ThemeDialog
+          settings={theme}
+          wallet={casino.account}
+          onChange={updateTheme}
+          onPreset={applyPreset}
+          onClose={() => setThemeOpen(false)}
         />
       )}
       {editingLimits && (

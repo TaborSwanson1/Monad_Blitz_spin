@@ -100,6 +100,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, Tabor + Claude: customizable themes. Sidebar quick switch plus a Customize panel (Presets, Colors, Effects). Presets Calm, Midnight, Monad. Monad theme: token rain on a net win, burning sim wallet on a net loss. Effects follow the real net result, scale with it, can be turned off, and skip for reduced motion. Settings live in the browser (localStorage).
 - 2026-11-15, finkierstead + Claude: live Monad block feed in sim mode (`frontend/src/client/liveBlocks.ts`, `sim.ts`, `BlockStream.tsx`), a one-time frontend edit with an Inbox note for Tabor and Lucas. Verified the testnet websocket, ran it in Node and headless Chrome.
 - 2026-11-15, finkierstead + Claude: moved the sandbox to a top-level `sandbox/` (own package.json, engine split from rendering, JSON API) and added `mechanics.ipynb` with `sandbox.py`. Corrected the Crash "instant crash" wording in SeedLib and its test bounds (≈3% show 1.00x). New Decision for the root folder.
 - 2026-11-15, Tabor + Claude: filled the GitHub project board (all issues, statuses set; the board's Done automation closed the 9 finished ones, kept closed on purpose). Added issues #22 Crash, #23 Beauty Contest, #24 Block Walk, #25 UI redesign. Hosted the sim demo on GitHub Pages from a `gh-pages` branch, with `npm run deploy:pages` to update it.
