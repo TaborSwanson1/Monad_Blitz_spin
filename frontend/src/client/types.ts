@@ -8,6 +8,8 @@ export interface BlockInfo {
   gasUsed: bigint
   gasLimit: bigint
   timestamp: number
+  /** Where the block came from: live Monad testnet, the in-browser simulator, or a local chain. */
+  source?: 'monad' | 'sim' | 'local'
 }
 
 export interface PlacedBet {

@@ -84,6 +84,7 @@ export function createChainClient(): CasinoClient {
             gasUsed: b.gasUsed,
             gasLimit: b.gasLimit,
             timestamp: Number(b.timestamp),
+            source: monadTestnet.id === 10143 ? 'monad' : 'local',
           }),
       })
     },

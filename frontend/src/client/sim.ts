@@ -4,12 +4,20 @@ import { toChips } from '../lib/format'
 import { GAMES } from '../lib/games'
 import { BEAUTY_ENTRY } from '../lib/beauty'
 import type { BlockInfo, CasinoClient, PlacedBet, RoundState } from './types'
+import { liveBlocksEnabled, watchLiveBlocks } from './liveBlocks'
 
-// A fake chain that runs in the browser. Blocks every 300 ms, Monad testnet's measured pace.
+// A simulated casino that runs in the browser.
+//
+// Clock: by default it follows LIVE Monad testnet blocks (liveBlocks.ts), so rounds
+// open and lock with the real chain. If the feed is unavailable or stalls for
+// STALE_MS, fake blocks continue every 300 ms (Monad's measured pace) until it
+// comes back. VITE_LIVE_BLOCKS=off gives the old fully offline simulator.
+//
 // Round timing matches the contract's 60/40 blocks. The seed comes from
-// crypto.getRandomValues. Fine for a demo, not verifiable.
+// crypto.getRandomValues, NEVER from block data. Fine for a demo, not verifiable.
 
 const BLOCK_MS = 300
+const STALE_MS = 3_000
 const SETTLE_DELAY = 6n // blocks after lock before the "VRF" answers
 const GAS_LIMIT = 150_000_000n
 
@@ -17,19 +25,23 @@ const randomHex = (bytes: number): Hex => toHex(crypto.getRandomValues(new Uint8
 
 export function createSimClient(): CasinoClient {
   const cfg: RoundConfig = {
-    genesisBlock: 18_400_000n,
+    // Live: rounds are aligned to real Monad block numbers (round r starts at block 60r).
+    genesisBlock: liveBlocksEnabled ? 0n : 18_400_000n,
     roundLength: 60n,
     bettingWindow: 40n,
     minBet: toChips('1'),
     maxBet: toChips('500'),
   }
-  let head = cfg.genesisBlock + 3n
+  // Until the first live block arrives (or if it never does), start from a made-up height.
+  let head = 18_400_003n
   let balance = 0n
   const seeds = new Map<bigint, Hex>()
   const betCounts = new Map<bigint, number>()
   const beautyEntered = new Set<bigint>()
   const listeners = new Set<(b: BlockInfo) => void>()
   let timer: ReturnType<typeof setInterval> | undefined
+  let stopLive: (() => void) | undefined
+  let lastLiveAt = 0
 
   function makeBlock(n: bigint): BlockInfo {
     const load = Math.random() ** 1.8
@@ -41,13 +53,25 @@ export function createSimClient(): CasinoClient {
       gasUsed: (GAS_LIMIT * BigInt(Math.floor(load * 1000))) / 1000n,
       gasLimit: GAS_LIMIT,
       timestamp: Math.floor(Date.now() / 1000),
+      source: 'sim',
     }
   }
 
+  const emit = (b: BlockInfo) => listeners.forEach((l) => l(b))
+
+  /** Fake block. With the live feed on, only while it is stale. */
   function tick() {
+    if (liveBlocksEnabled && Date.now() - lastLiveAt < STALE_MS) return
     head += 1n
-    const b = makeBlock(head)
-    listeners.forEach((l) => l(b))
+    emit(makeBlock(head))
+  }
+
+  function onLive(b: BlockInfo) {
+    lastLiveAt = Date.now()
+    // Keep the clock monotonic: after a fallback, wait until the real chain passes the fake head.
+    if (b.number <= head) return
+    head = b.number
+    emit(b)
   }
 
   return {
@@ -59,12 +83,18 @@ export function createSimClient(): CasinoClient {
     },
     subscribeBlocks(cb) {
       listeners.add(cb)
+      if (liveBlocksEnabled && !stopLive) {
+        lastLiveAt = Date.now() // grace period before falling back to fake blocks
+        stopLive = watchLiveBlocks(onLive, (e) => console.warn('Live Monad blocks:', e.message))
+      }
       if (!timer) timer = setInterval(tick, BLOCK_MS)
       return () => {
         listeners.delete(cb)
-        if (listeners.size === 0 && timer) {
-          clearInterval(timer)
+        if (listeners.size === 0) {
+          if (timer) clearInterval(timer)
           timer = undefined
+          stopLive?.()
+          stopLive = undefined
         }
       }
     },
