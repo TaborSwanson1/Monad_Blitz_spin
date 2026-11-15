@@ -29,8 +29,10 @@ import { FxControls } from './fx/FxControls'
 import { GameSign } from './fx/GameSign'
 import { burst } from './fx/bus'
 import { sfx, unlockAudio } from './fx/sound'
+import { useClickSparks } from './effects/useClickSparks'
 
 export default function App() {
+  useClickSparks()
   const [client, clientError] = useMemo(() => {
     try {
       return [createClient(), null] as const
@@ -238,6 +240,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
 
       {casino.reveal && (
         <RevealOverlay
+          key={casino.reveal.roundId.toString()}
           record={casino.reveal}
           theme={themeForRound(casino.reveal)}
           wallet={casino.account}

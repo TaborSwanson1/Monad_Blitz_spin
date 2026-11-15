@@ -9,10 +9,11 @@ import { motionOff } from './prefs'
 //  - gold coins and Monad tokens fountain up from the bottom of the screen
 //  - neon confetti falls from the top
 //  - a marquee sign with chasing bulbs calls the win above the result
-//  - bulbs chase around the edge of the screen and the page pulses with color
+//  - bulbs chase around the edge of the screen
 // `intensity` (0 to 1) comes from the real payout multiple: about 0.3 for a 2x win,
 // 0.7 for 5x, 1 for 10x and up. It sets the coin rate and which sign you get.
-// The color pulse runs at 2 per second, under the 3-per-second flash safety limit.
+// The full-screen flash and gold wash on a win come from the shared layer in
+// src/effects, so this adds none of its own (two stacked would flash too fast).
 // With motion off it paints one still picture and the sign.
 
 function coinSprite(size = 64) {
@@ -175,7 +176,6 @@ export function VegasWin({ intensity }: { intensity: number }) {
 
   return (
     <>
-      {!still && <div className="win-wash" aria-hidden />}
       <canvas ref={ref} className="burst" aria-hidden />
       {!still && (
         <div className="edge-lights" aria-hidden>

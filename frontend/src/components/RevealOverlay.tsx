@@ -11,21 +11,31 @@ import { CrashClimb } from './CrashClimb'
 import { EAGLE_MS } from './Eagle'
 import { MonadTokens } from './MonadTokens'
 import { Nuke, NUKE_MS } from './Nuke'
+import { OutcomeStrip } from './OutcomeStrip'
+import { SlotDisplay } from './SlotDisplay'
+import { WinEffects, WinLoop } from '../effects/WinEffects'
+import { LoseEffects, ScreenFlash } from '../effects/LoseEffects'
+import { useLoseEffects, useWinEffects, winIntensity } from '../effects/useOutcomeEffects'
 import { AmericanaWin } from '../fx/AmericanaWin'
 import { VegasWin } from '../fx/VegasWin'
 import { SAME_ODDS, resultLine } from '../fx/lines'
 import { sfx } from '../fx/sound'
 
-/**
- * Effect size follows the real net result for the round:
- * - net > 0: the theme's win effect, bigger for bigger multiples
- * - net <= 0: no win fanfare, even if one bet in the round won
+/*
+ * Two layers of effects play together, and both follow the real net result for the round,
+ * never a single bet:
+ * - The game's theme (lib/themes.ts): on a net win, the Americana show (rockets, eagle, sign,
+ *   flags) or the Vegas show (coin fountain, marquee), with sound; on a net loss, a burning
+ *   wallet or the nuke. The loud themes also add a headline, and under a loss a line saying
+ *   every round is independent (fx/lines.ts).
+ * - The shared effects (src/effects): purple coins, confetti, gold glow and a green/white
+ *   flash on a net win, with the glow and a coin stream continuing until the player closes
+ *   the reveal; embers, shake and a red/black flash on a net loss.
+ * A break-even round gets neither. The result, your pick and the net show at once.
  */
-export function revealIntensity(r: RoundRecord): number {
-  if (r.net <= 0n || r.staked === 0n) return 0
-  const ratio = Number((r.paid * 1000n) / r.staked) / 1000
-  return Math.max(0.2, Math.min(1, Math.log2(ratio) / Math.log2(10)))
-}
+
+/** Win size, 0 to 1, from the real net result (zero unless the round is net positive). */
+export const revealIntensity = winIntensity
 
 /** Share of the stake lost this round, 0 to 1. Zero unless the round is net negative. */
 export function lossIntensity(r: RoundRecord): number {
@@ -63,7 +73,9 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
   }, [onReplayDone])
 
   // Nothing hints at the result until the replay finishes.
-  const intensity = climbDone ? revealIntensity(record) : 0
+  const win = useWinEffects(record, climbDone)
+  const lose = useLoseEffects(record, climbDone)
+  const intensity = win.intensity
   const loss = climbDone ? lossIntensity(record) : 0
   const up = intensity > 0
   // Big goes by the amount bet this round, not the amount won or lost.
@@ -83,14 +95,14 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
   const loud = theme.id === 'americana' || theme.id === 'vegas'
   const sign = up && (theme.win === 'americana' || theme.win === 'vegas')
 
+  // A winning round stays open until the player closes it. Losses close once their theme
+  // effect has played, other rounds after 3.2 s.
   useEffect(() => {
-    if (!climbDone) return
-    // A win stays up long enough for the eagle to fly out and back.
-    const winMs = theme.win === 'americana' ? EAGLE_MS + 900 : theme.win === 'vegas' ? 6400 : 5200
-    const ms = up ? winMs : lossFx === 'nuke' ? NUKE_MS + 1600 : lossFx !== 'none' ? BURN_MS + 1600 : 3200
+    if (!climbDone || up) return
+    const ms = lossFx === 'nuke' ? NUKE_MS + 1600 : lossFx !== 'none' ? BURN_MS + 1600 : 3200
     const t = setTimeout(onClose, ms)
     return () => clearTimeout(t)
-  }, [record, up, lossFx, onClose, climbDone, theme.win])
+  }, [record, up, lossFx, onClose, climbDone])
 
   // Sound, once per result. Like the pictures, it follows the real net result: the
   // cash register and fanfare only on a net win, the boom only on a net loss.
@@ -130,11 +142,17 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
       role="dialog"
       aria-live="polite"
     >
+      {win.particles && <ScreenFlash kind="win" />}
+      {/* The nuke has its own strobe. Two full-screen flashes at once would pass three a second. */}
+      {lose.particles && lossFx !== 'nuke' && <ScreenFlash kind="loss" />}
+      {win.loop && <WinLoop intensity={intensity} />}
+      {win.particles && <WinEffects {...win} />}
+      {lose.particles && <LoseEffects />}
       {up && theme.win === 'monad-tokens' && <MonadTokens intensity={intensity} />}
       {up && theme.win === 'sparks' && <Burst intensity={intensity} />}
       {up && theme.win === 'americana' && <AmericanaWin intensity={intensity} />}
       {up && theme.win === 'vegas' && <VegasWin intensity={intensity} />}
-      <div className="reveal-card" style={{ '--intensity': intensity } as React.CSSProperties}>
+      <div className={`reveal-card ${win.cardClass} ${lose.cardClass}`} style={win.cardStyle}>
         <div className="reveal-round">
           {demo ? <span className="demo-tag">Demo, no chips moved</span> : <>Round {record.roundId.toString()} settled</>}
         </div>
@@ -158,16 +176,21 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
                     </div>
                   )
                 }
-                const shown = g.kind === 'crash' ? fmtX(b.raw) : g.id === 2 ? g.labels[b.outcome] : b.raw
+                const shown =
+                  g.kind === 'crash'
+                    ? fmtX(b.raw)
+                    : g.id === 2
+                      ? g.labels[b.outcome]
+                      : String(b.raw).padStart(String(g.range - 1).length, '0')
                 return (
                   <div key={b.index} className="reveal-row">
                     <div className="reveal-game">{g.name}</div>
-                    <div
-                      className={`reveal-raw ${g.kind === 'crash' ? 'reveal-raw-sm' : ''}`}
-                      style={g.id === 2 ? { color: LANE_COLORS[b.outcome] } : undefined}
-                    >
-                      {shown}
-                    </div>
+                    <SlotDisplay
+                      value={shown}
+                      color={g.id === 2 ? LANE_COLORS[b.outcome] : undefined}
+                      small={g.kind === 'crash' || g.id === 2}
+                    />
+                    {g.kind === 'uniform' && <OutcomeStrip game={g} outcome={b.outcome} choice={b.choice} />}
                     <div className="reveal-pick">
                       {g.kind === 'crash' ? 'Your target' : 'You picked'} {g.labels[b.choice]} ·{' '}
                       {b.won ? `paid ${fmtChips(b.payout)}` : 'no payout'}
@@ -184,6 +207,11 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
           </>
         )}
         <div className="reveal-seed">seed {record.seed.slice(0, 18)}…</div>
+        {up && (
+          <button className="btn reveal-close" onClick={onClose}>
+            Close
+          </button>
+        )}
       </div>
       {/* Wallet effects play big at the bottom of the screen, behind the card. */}
       {lossFx === 'burn' && <BurningWallet wallet={wallet} intensity={loss} />}

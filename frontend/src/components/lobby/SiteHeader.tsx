@@ -3,6 +3,7 @@ import type { WalletApi } from '../../hooks/useWallet'
 import { fmtBlock, fmtChips } from '../../lib/format'
 import { BrandMark } from '../icons'
 import { WalletButton } from './WalletButton'
+import { useCountUp } from '../../effects/useCountUp'
 
 interface Props {
   mode: 'sim' | 'chain'
@@ -30,6 +31,8 @@ interface Props {
  */
 export function SiteHeader(p: Props) {
   const chainNeedsWallet = p.mode === 'chain' && !p.account
+  // Balance counts up or down to its new value (green up, red down) instead of jumping.
+  const tick = useCountUp(p.balance)
 
   return (
     <header className="topbar site-header">
@@ -56,7 +59,7 @@ export function SiteHeader(p: Props) {
           <>
             <div className="purse-balance">
               <span className="purse-chip" aria-hidden>◎</span>
-              <strong className="mono">{fmtChips(p.balance)}</strong>
+              <strong className={`mono balance-num ${tick.dir ? `tick-${tick.dir}` : ''}`}>{fmtChips(tick.shown)}</strong>
               <span className="muted small">CHIP</span>
               <span className={`purse-net small ${p.net > 0n ? 'pos' : p.net < 0n ? 'neg' : 'muted'}`} title="Session net result">
                 {fmtChips(p.net, { sign: true })}

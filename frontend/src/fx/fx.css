@@ -206,7 +206,7 @@
 .game-sign .mq-spots { inset: -120px 0 0; }
 .gs-kicker { font-family: var(--script); font-size: clamp(18px, 2vw, 28px); color: var(--gold); text-shadow: 0 2px 0 rgb(0 0 0 / 0.35); transform: rotate(-3deg); margin-bottom: -4px; }
 .gs-name { font-family: var(--sign); font-size: clamp(40px, 15cqw, 148px); line-height: 1; text-transform: uppercase; text-wrap: balance; }
-.mq-plaque .gs-name { font-size: clamp(44px, 19cqw, 156px); }
+.mq-plaque .gs-name { font-size: clamp(44px, 16cqw, 150px); }
 .gs-odds { margin-top: 6px; padding: 5px 16px; border-radius: 999px; background: rgb(0 0 0 / 0.4); border: 2px solid rgb(255 255 255 / 0.35); font-weight: 700; font-size: clamp(12px, 1.3vw, 16px); letter-spacing: 0.04em; }
 .mq-neon .gs-name { color: #fff8cf; text-shadow: 0 0 6px #fff, 0 0 20px #ff2d87, 0 0 46px #ff2d87, 0 0 90px #b517ff; animation: neon-buzz 4.1s linear infinite; }
 .mq-plaque .gs-name { font-weight: 700; letter-spacing: 0.02em; color: #fff; -webkit-text-stroke: 3px #c8102e; paint-order: stroke fill; text-shadow: 0 5px 0 #6b0a12, 0 0 26px rgb(255 255 255 / 0.45); }
@@ -222,34 +222,35 @@
    open for the flags and the eagle. A loss with a wallet effect keeps the number
    smaller so the fire or the mushroom cloud has the bottom half of the screen. */
 .reveal.has-sign { place-items: start center; padding-top: calc(var(--sign-h, 140px) + 40px); }
-:root:is([data-theme='vegas'], [data-theme='americana']) .reveal.has-bottom-fx .reveal-raw { font-size: clamp(72px, 10vw, 128px); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal.has-bottom-fx .slot:not(.slot-sm) .slot-reel { width: 74px; height: 96px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal.has-bottom-fx .slot:not(.slot-sm) .slot-glyph { font-size: 68px; }
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal.has-bottom-fx .reveal-line { font-size: clamp(20px, 2.6vw, 30px); }
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal.has-bottom-fx .reveal-net { font-size: clamp(34px, 5vw, 58px); }
-:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-card { padding: 22px 34px 24px; border-radius: 26px; border: 4px solid var(--ring); background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0) 40%), var(--card); box-shadow: 0 0 0 4px var(--primary), 0 24px 60px rgb(0 0 0 / 0.6); animation: card-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-card { padding: 16px 34px 18px; border-radius: 26px; border: 4px solid var(--ring); background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0) 40%), var(--card); box-shadow: 0 0 0 4px var(--primary), 0 24px 60px rgb(0 0 0 / 0.6); animation: card-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal-up .reveal-card { border-color: var(--gold); animation: card-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both, win-glow 0.9s 0.45s ease-in-out infinite alternate; }
 @keyframes card-pop { from { transform: scale(0.6); } }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-card.fx-shake { animation: card-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both, shake 0.45s ease-in-out 0.45s; }
 @keyframes win-glow { from { box-shadow: 0 0 0 4px var(--primary), 0 0 20px 2px rgb(255 210 63 / 0.5), 0 24px 60px rgb(0 0 0 / 0.6); } to { box-shadow: 0 0 0 4px var(--primary), 0 0 70px 14px rgb(255 210 63 / 0.85), 0 24px 60px rgb(0 0 0 / 0.6); } }
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal-round { font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px; }
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal-game { font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
-:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-raw { font-family: var(--display); font-size: clamp(96px, 15vw, 190px); line-height: 0.95; background: linear-gradient(180deg, #fff 0%, #fff 40%, #cfd8ff 60%, #fff 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 3px rgb(0 0 0 / 0.3); filter: drop-shadow(0 6px 0 rgb(0 0 0 / 0.45)) drop-shadow(0 0 24px var(--glow)); }
-:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-raw:not([style]) { color: transparent; }
-:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-up .reveal-raw:not([style]) { background-image: linear-gradient(180deg, #fffbe0 0%, var(--gold) 40%, #ff9d1a 62%, #fff3a8 100%); }
-:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-raw-sm { font-size: clamp(64px, 11vw, 120px); }
+/* The result itself, in the team's slot-reel display (SlotDisplay.tsx), scaled up. */
+:root:is([data-theme='vegas'], [data-theme='americana']) .slot { gap: 10px; padding: 12px 14px; border-radius: 20px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .slot:not(.slot-sm) .slot-reel { width: clamp(78px, 8.4vw, 118px); height: clamp(98px, 10.4vw, 146px); border-radius: 14px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .slot:not(.slot-sm) .slot-reel-narrow { width: clamp(42px, 5vw, 70px); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .slot:not(.slot-sm) .slot-glyph { font-size: clamp(70px, 7.6vw, 106px); }
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal-pick { font-size: 14px; font-weight: 600; }
-:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-net { font-family: var(--display); font-size: clamp(38px, 6.4vw, 76px); line-height: 1.1; margin-top: 6px; text-shadow: 0 4px 0 rgb(0 0 0 / 0.4); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-net { font-family: var(--display); font-size: clamp(36px, 5.2vw, 64px); line-height: 1.1; margin-top: 4px; text-shadow: 0 4px 0 rgb(0 0 0 / 0.4); }
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal-net.pos { text-shadow: 0 4px 0 rgb(0 0 0 / 0.4), 0 0 30px rgb(61 255 143 / 0.8); animation: net-bounce 0.6s cubic-bezier(.3, 1.6, .5, 1) 0.2s both; }
 @keyframes net-bounce { from { transform: scale(0.3); } }
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal-sub { font-family: var(--display); font-size: 18px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
-.reveal-line { margin: 6px 0 2px; font-size: clamp(24px, 3.6vw, 42px); line-height: 1.1; }
+.reveal-line { margin: 4px 0 0; font-size: clamp(22px, 3vw, 36px); line-height: 1.1; }
 :root[data-theme='vegas'] .reveal-line { font-family: var(--script); color: var(--gold); text-shadow: 0 0 16px rgb(255 210 63 / 0.6); transform: rotate(-2deg); }
 :root[data-theme='americana'] .reveal-line { font-family: 'Oswald', var(--sans); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; text-shadow: 0 3px 0 #6b0a12; }
 .reveal-odds { margin: 10px auto 0; max-width: 46ch; font-size: 13px; color: var(--muted); }
 :root:is([data-theme='vegas'], [data-theme='americana']) .crash-mult { font-family: var(--display); font-size: clamp(64px, 11vw, 120px); text-shadow: 0 0 24px var(--glow); }
 :root:is([data-theme='vegas'], [data-theme='americana']) .crash-line { stroke-width: 4; filter: drop-shadow(0 0 6px var(--primary)); }
 
-/* ---------- Vegas win: page pulse and bulbs chasing round the edge of the screen */
-.win-wash { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, transparent 34%, rgb(255 45 135 / 0.55) 100%); animation: wash 0.5s ease-in-out infinite alternate; }
-@keyframes wash { from { opacity: 0.25; filter: hue-rotate(0deg); } to { opacity: 0.85; filter: hue-rotate(70deg); } }
+/* ---------- Vegas win: bulbs chasing round the edge of the screen */
 .edge-lights { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
 .edge-lights::before, .edge-lights::after, .edge-lights i { content: ''; position: absolute; background-image: radial-gradient(circle, #fffbe0 0 4px, #ffd84a 5px, transparent 8px); animation: edge-chase 0.44s steps(2) infinite; }
 .edge-lights::before, .edge-lights::after { left: 0; right: 0; height: 18px; background-size: 36px 18px; }
@@ -306,3 +307,6 @@
   .flag { transform: none; animation: none; }
   .game-sign .mq-face { transform: none; }
 }
+
+/* The Close button on a winning result (it stays open until closed). */
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-close { margin-top: 8px; height: 38px; min-width: 150px; font-family: var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
