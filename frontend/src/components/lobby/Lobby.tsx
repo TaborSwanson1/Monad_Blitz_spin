@@ -70,17 +70,6 @@ export function Lobby({ mode, onPlay, extra = [], onLimits }: Props) {
   const [info, setInfo] = useState<string | null>(null)
 
   const tiles = useMemo<Tile[]>(() => [...gamesFor(mode).map((g) => tileFor(g, onPlay)), ...extra], [mode, onPlay, extra])
-  const upcoming: Tile[] = [
-    {
-      key: 'walk',
-      name: 'Block Walk',
-      art: 'walk',
-      category: 'players',
-      odds: 'Trade on where a random walk ends',
-      rtp: 'Market',
-      describe: 'A shared random walk, one step per round. Players trade YES and NO shares on where it ends.',
-    },
-  ]
 
   const toggleFav = (key: string) => {
     setFavs((prev) => {
@@ -105,7 +94,6 @@ export function Lobby({ mode, onPlay, extra = [], onLimits }: Props) {
 
   const FILTERS: { id: Filter; label: string; count: number }[] = [
     { id: 'all', label: 'All games', count: tiles.length },
-    { id: 'house', label: 'Originals', count: tiles.filter((t) => t.category === 'house').length },
     { id: 'players', label: 'Multiplayer', count: tiles.filter((t) => t.category === 'players').length },
     { id: 'favorites', label: 'Favorites', count: tiles.filter((t) => favs.has(t.key)).length },
   ]
@@ -142,7 +130,6 @@ export function Lobby({ mode, onPlay, extra = [], onLimits }: Props) {
             </button>
           )}
         </div>
-        <div className="tile-provider">Block Casino Originals</div>
         <div className="tile-odds">{t.odds}</div>
       </div>
     </article>
@@ -153,7 +140,7 @@ export function Lobby({ mode, onPlay, extra = [], onLimits }: Props) {
       <section className="hero">
         <div className="hero-copy">
           <span className="badge badge-primary">Provably fair</span>
-          <h1>Block Casino Originals</h1>
+          <h1>STIM and SPIN</h1>
           <p>
             Games that settle on Monad. Every result comes from a public random seed you can check yourself, never from
             block data. Play chips only, free from the faucet, with no real value.
@@ -196,13 +183,6 @@ export function Lobby({ mode, onPlay, extra = [], onLimits }: Props) {
         <div className="tile-grid">{shown.map(card)}</div>
       ) : (
         <p className="muted lobby-empty">{filter === 'favorites' && !q ? 'No favorites yet. Tap ★ on a game to add it.' : 'No games match.'}</p>
-      )}
-
-      {filter === 'all' && !q && (
-        <>
-          <h2 className="lobby-h2">In design</h2>
-          <div className="tile-grid">{upcoming.map(card)}</div>
-        </>
       )}
 
       <footer className="lobby-foot">

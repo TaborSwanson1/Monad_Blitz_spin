@@ -20,7 +20,7 @@ export function TopBar({ label, mode, head, account, balance, busy, onConnect, o
     <header className="topbar">
       <div className="brand">
         <BrandMark />
-        Block Casino
+        STIM and SPIN
       </div>
       <span className={`badge ${mode === 'sim' ? 'badge-warn' : 'badge-pos'}`}>
         <span className="dot" /> {label === 'SIMULATOR' ? 'Simulator' : label}

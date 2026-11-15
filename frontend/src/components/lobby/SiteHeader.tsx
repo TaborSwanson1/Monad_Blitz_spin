@@ -38,7 +38,7 @@ export function SiteHeader(p: Props) {
     <header className="topbar site-header">
       <button className="brand brand-btn" onClick={p.onHome} aria-label="Back to lobby">
         <BrandMark />
-        Block Casino
+        STIM and SPIN
       </button>
       {p.view === 'game' && (
         <button className="btn ghost small" onClick={p.onHome}>
