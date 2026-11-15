@@ -58,9 +58,9 @@ const ART: Record<ArtId, ReactElement> = {
       {[0, 1, 2].map((i) => (
         <rect key={i} x={20 + i * 42} y="62" width="36" height="76" rx="8" className="art-reel" />
       ))}
-      <text x="38" y="112" textAnchor="middle" className="art-sym">7</text>
-      <text x="80" y="112" textAnchor="middle" className="art-sym">◆</text>
-      <text x="122" y="112" textAnchor="middle" className="art-sym">★</text>
+      <text x="38" y="112" textAnchor="middle" className="art-sym">☘</text>
+      <text x="80" y="112" textAnchor="middle" className="art-sym">◎</text>
+      <text x="122" y="112" textAnchor="middle" className="art-sym">☘</text>
     </g>
   ),
   walk: (

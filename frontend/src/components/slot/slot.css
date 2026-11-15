@@ -1,4 +1,4 @@
-/* Slot demo "Diamond Cascade". Owner: Zander.
+/* Slot demo "Lucky Leprechaun". Owner: Zander.
    Every class here starts with sl- (or slot-page). styles.css has generic names such as
    .cell, and sharing one collapsed the reels once already.
    The game has its own palette, like any slot inside a casino site, so colours are fixed
@@ -11,7 +11,7 @@
   --sl-ice: #5fe3ff;
   --sl-pink: #ff4fa3;
   --sl-green: #7dffa6;
-  max-width: 1240px; margin: 0 auto; padding: 16px 20px 36px;
+  max-width: 1180px; width: 100%; margin: 0 auto; padding: 0;
   display: flex; flex-direction: column; gap: 14px;
 }
 .sl-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
@@ -27,54 +27,53 @@
 .sl-scene {
   position: relative; isolation: isolate; overflow: hidden;
   display: grid; justify-content: center; align-items: start;
-  grid-template-columns: 250px auto auto;
+  grid-template-columns: 250px auto 230px;
   grid-template-rows: auto 1fr auto;
-  grid-template-areas: 'logo center tube' 'prizes center tube' 'bar bar bar' 'under under under';
-  gap: 16px 28px; padding: 24px 24px 18px;
-  border-radius: 24px; border: 1px solid #27337a; color: #fff;
+  grid-template-areas: 'logo top side' 'prizes center side' 'bar bar bar' 'under under under';
+  gap: 12px 26px; padding: 22px 24px 18px;
+  border-radius: 24px; border: 3px solid var(--sl-gold); box-shadow: 0 0 0 3px rgb(0 0 0 / 0.4), 0 18px 50px rgb(0 0 0 / 0.5); color: #fff;
 }
-.sl-mode-honest .sl-scene { grid-template-columns: 250px auto; grid-template-areas: 'logo center' 'prizes center' 'bar bar' 'under under'; }
 .sl-backdrop {
   position: absolute; inset: 0; z-index: -1; transition: filter 0.6s ease;
   background:
-    radial-gradient(60% 55% at 62% 36%, rgb(95 227 255 / 0.22), transparent 70%),
-    radial-gradient(45% 50% at 8% 92%, rgb(255 79 163 / 0.2), transparent 70%),
-    radial-gradient(50% 60% at 96% 100%, rgb(246 196 67 / 0.14), transparent 70%),
-    conic-gradient(from 210deg at 50% -20%, #0a0f33, #1a2a7a 20%, #0c1240 38%, #23349a 55%, #0a0f33 75%, #152060 90%, #0a0f33);
+    radial-gradient(60% 55% at 62% 40%, rgb(125 255 166 / 0.2), transparent 70%),
+    radial-gradient(45% 50% at 8% 92%, rgb(246 196 67 / 0.2), transparent 70%),
+    radial-gradient(50% 60% at 96% 100%, rgb(255 79 163 / 0.14), transparent 70%),
+    conic-gradient(from 210deg at 50% -20%, #04200f, #0d5a2a 20%, #06260f 38%, #14773a 55%, #04200f 75%, #0b4a22 90%, #04200f);
 }
 .sl-backdrop::before {
   content: ''; position: absolute; inset: 0;
   background:
-    repeating-linear-gradient(60deg, rgb(255 255 255 / 0.04) 0 2px, transparent 2px 64px),
-    repeating-linear-gradient(-60deg, rgb(255 255 255 / 0.04) 0 2px, transparent 2px 64px);
+    radial-gradient(circle at 25% 30%, rgb(255 255 255 / 0.07) 0 2px, transparent 3px) 0 0 / 44px 44px,
+    radial-gradient(circle at 75% 70%, rgb(246 196 67 / 0.1) 0 2px, transparent 3px) 0 0 / 60px 60px;
   -webkit-mask-image: radial-gradient(80% 80% at 55% 40%, #000, transparent);
   mask-image: radial-gradient(80% 80% at 55% 40%, #000, transparent);
 }
 .sl-backdrop::after {
-  content: ''; position: absolute; right: -70px; top: -50px; width: 360px; height: 360px;
-  clip-path: polygon(28% 6%, 72% 6%, 100% 34%, 50% 96%, 0 34%);
-  background: linear-gradient(135deg, rgb(95 227 255 / 0.16), rgb(22 119 216 / 0.03));
+  content: ''; position: absolute; right: -60px; top: -60px; width: 360px; height: 360px;
+  background: repeating-conic-gradient(rgb(246 196 67 / 0.07) 0 8deg, transparent 8deg 16deg);
+  border-radius: 50%;
 }
 .sl-free .sl-backdrop { filter: hue-rotate(-55deg) saturate(1.35); }
 
 /* ---------- logo and prize ladder */
 .sl-logo {
   grid-area: logo; margin: 6px 0 0; line-height: 0.95; text-align: center;
-  font-size: 44px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 0.02em;
+  font-size: 27px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 0.02em;
   color: var(--sl-gold);
   background: linear-gradient(180deg, #fff6c4, #f6c443 55%, #c2800f); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 3px 0 #4a2f00) drop-shadow(0 0 22px rgb(95 227 255 / 0.45));
+  filter: drop-shadow(0 3px 0 #4a2f00) drop-shadow(0 0 22px rgb(125 255 166 / 0.5));
 }
 .sl-logo span {
   display: block; font-size: 0.5em; letter-spacing: 0.34em; margin-right: -0.34em; margin-bottom: 4px;
-  background: linear-gradient(180deg, #f1fdff, #5fe3ff 60%, #1b8fe0); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  background: linear-gradient(180deg, #e8fff0, #7dffa6 60%, #1fae55); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
 .sl-prizes { grid-area: prizes; display: flex; flex-direction: column; gap: 10px; }
 .sl-ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .sl-ladder li {
   display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px;
   height: 44px; padding: 0 12px 0 10px; border-radius: 10px;
-  background: linear-gradient(180deg, rgb(12 16 52 / 0.94), rgb(6 8 28 / 0.94));
+  background: linear-gradient(180deg, rgb(8 40 20 / 0.94), rgb(3 20 10 / 0.94));
   border: 1px solid rgb(246 196 67 / 0.45); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
 .sl-ladder-syms { display: flex; }
@@ -82,9 +81,9 @@
 .sl-ladder-syms { padding-right: 7px; }
 .sl-ladder-name { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(255 255 255 / 0.72); }
 .sl-ladder strong { font-family: var(--mono); font-size: 17px; font-weight: 700; color: #ffe27a; font-variant-numeric: tabular-nums; }
-.sl-ladder li.is-jackpot { height: 62px; border-color: var(--sl-ice); background: linear-gradient(180deg, rgb(22 64 128 / 0.95), rgb(8 20 62 / 0.95)); box-shadow: 0 0 18px rgb(95 227 255 / 0.25), inset 0 1px 0 rgb(255 255 255 / 0.15); }
-.sl-ladder li.is-jackpot .sl-ladder-name { color: var(--sl-ice); }
-.sl-ladder li.is-jackpot strong { font-size: 24px; color: #fff; text-shadow: 0 0 14px rgb(95 227 255 / 0.8); }
+.sl-ladder li.is-jackpot { height: 62px; border-color: var(--sl-gold); background: linear-gradient(180deg, rgb(70 52 6 / 0.95), rgb(22 16 2 / 0.95)); box-shadow: 0 0 18px rgb(246 196 67 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.15); }
+.sl-ladder li.is-jackpot .sl-ladder-name { color: var(--sl-gold); }
+.sl-ladder li.is-jackpot strong { font-size: 24px; color: #fff; text-shadow: 0 0 14px rgb(246 196 67 / 0.8); }
 .sl-note { margin: 0; font-size: 11px; line-height: 1.5; color: rgb(255 255 255 / 0.62); }
 
 /* ---------- centre: badges, strap, reels, message */
@@ -93,7 +92,7 @@
 .sl-badge {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   min-width: 98px; padding: 6px 10px; border-radius: 12px 12px 4px 4px;
-  background: rgb(6 8 28 / 0.78); border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(3 24 12 / 0.8); border: 1px solid rgb(255 255 255 / 0.18);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
 }
 .sl-badge span { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: rgb(255 255 255 / 0.68); }
@@ -105,7 +104,7 @@
 .sl-strap {
   display: flex; align-items: center; gap: 6px; padding: 6px 22px;
   clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
-  background: linear-gradient(180deg, #1a2160, #080b26);
+  background: linear-gradient(180deg, #14683a, #04200f);
   font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #ffe27a; white-space: nowrap;
 }
 .sl-sym.sl-inline { width: 16px; height: 16px; filter: none; }
@@ -128,9 +127,9 @@
 
 .sl-window {
   position: relative; display: grid; grid-template-columns: repeat(3, var(--sl-col)); gap: 4px;
-  height: calc(var(--sl-cell) * 3); padding: 0 4px; overflow: hidden; border-radius: 10px; background: #03040d;
+  height: calc(var(--sl-cell) * 3); padding: 0 4px; overflow: hidden; border-radius: 10px; background: #020d06;
 }
-.sl-reel { height: 100%; overflow: hidden; background: linear-gradient(90deg, #0b1034, #18205c 22%, #18205c 78%, #0b1034); }
+.sl-reel { height: 100%; overflow: hidden; background: linear-gradient(90deg, #06220f, #0f4a26 22%, #0f4a26 78%, #06220f); }
 .sl-strip { display: flex; flex-direction: column; margin-top: calc(var(--sl-cell) * -1); }
 .sl-strip.is-spin { will-change: transform; animation: sl-spin var(--dur) both, sl-blur var(--dur) linear both; }
 /* Travels `--rows` cells down, runs a little past the stop, then settles back. */
@@ -178,7 +177,7 @@
 @keyframes sl-rays { to { transform: rotate(360deg); } }
 @keyframes sl-bump { from { transform: scale(0.6); } }
 
-.sl-info-panel { position: absolute; inset: 0; z-index: 4; overflow: auto; padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px; background: rgb(4 6 22 / 0.97); font-size: 12.5px; line-height: 1.5; color: rgb(255 255 255 / 0.86); text-align: left; }
+.sl-info-panel { position: absolute; inset: 0; z-index: 4; overflow: auto; padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px; background: rgb(2 18 9 / 0.97); font-size: 12.5px; line-height: 1.5; color: rgb(255 255 255 / 0.86); text-align: left; }
 .sl-info-head { display: flex; align-items: center; justify-content: space-between; }
 .sl-info-head strong { font-size: 15px; color: #fff; }
 .sl-info-pays { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 10px; }
@@ -196,31 +195,136 @@
 .sl-msg.tone-free { color: var(--sl-ice); border-color: rgb(95 227 255 / 0.5); }
 .sl-msg.tone-tease { color: #ff8cc4; border-color: var(--sl-pink); box-shadow: 0 0 16px rgb(255 79 163 / 0.45); }
 
-/* ---------- near-miss demo: the coin tube */
-.sl-tube { grid-area: tube; align-self: stretch; width: 92px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 6px; }
-.sl-tube-label { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #ffe27a; text-align: center; }
-.sl-tube-glass {
-  position: relative; flex: 1; min-height: 170px; width: 70px; overflow: hidden;
-  border-radius: 16px 16px 10px 10px; border: 2px solid rgb(255 255 255 / 0.42); border-top-color: var(--sl-ice);
-  background: linear-gradient(90deg, rgb(255 255 255 / 0.17), rgb(255 255 255 / 0.03) 35%, rgb(255 255 255 / 0.03) 70%, rgb(255 255 255 / 0.12)), rgb(4 6 22 / 0.62);
-  box-shadow: inset 0 0 18px rgb(0 0 0 / 0.6);
+/* ---------- top: jackpot heap, side: leprechaun */
+.sl-top { grid-area: top; display: flex; justify-content: center; min-width: 0; }
+.sl-side { grid-area: side; align-self: stretch; display: flex; align-items: flex-end; justify-content: center; min-width: 0; }
+.sl-pile { position: relative; width: min(100%, 520px); }
+.sl-pile-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sl-pile-coin { transform-box: view-box; opacity: 0; transition: opacity 0.7s ease; }
+.sl-pile-coin.is-on { opacity: 1; }
+.sl-pile-twinkle { transform-box: fill-box; transform-origin: center; animation: sl-twinkle 2.6s ease-in-out infinite; }
+.sl-pile-twinkle-1 { animation-delay: 0.5s; } .sl-pile-twinkle-2 { animation-delay: 1.1s; } .sl-pile-twinkle-3 { animation-delay: 1.7s; } .sl-pile-twinkle-4 { animation-delay: 2.1s; }
+.sl-pile.is-excited .sl-pile-twinkle { animation-duration: 0.7s; }
+@keyframes sl-twinkle { 0%, 100% { transform: scale(0); opacity: 0; } 50% { transform: scale(1); opacity: 0.9; } }
+.sl-pile-plaque {
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); min-width: 190px; padding: 3px 22px 5px; text-align: center;
+  border-radius: 12px; border: 2px solid var(--sl-gold); background: linear-gradient(180deg, #0f5a2c, #04200f);
+  box-shadow: 0 4px 0 #3a2500, 0 8px 18px rgb(0 0 0 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.3);
 }
-.sl-tube-mark { position: absolute; left: 0; right: 0; top: 5%; height: 3px; background: repeating-linear-gradient(90deg, var(--sl-ice) 0 6px, transparent 6px 10px); }
-.sl-tube-fill { display: none; }
-.sl-coin {
-  position: absolute; left: 50%; width: 46px; height: 12px; border-radius: 50%;
-  background: linear-gradient(180deg, #fff0a6, #d9a11f 60%, #a8760f); box-shadow: 0 2px 0 #7c560b, inset 0 1px 0 rgb(255 255 255 / 0.7);
-  animation: sl-coin 0.42s ease-in both;
+.sl-pile-plaque span { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--sl-green); }
+.sl-pile-plaque strong { font-family: var(--mono); font-size: 26px; font-weight: 800; color: #ffe27a; text-shadow: 0 0 12px rgb(246 196 67 / 0.7); font-variant-numeric: tabular-nums; }
+
+/* the leprechaun */
+.sl-lep-wrap { position: relative; width: 100%; max-width: 230px; padding-top: 44px; }
+.sl-lep { display: block; width: 100%; height: auto; overflow: visible; }
+.sl-lep-say {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2; max-width: 100%; padding: 6px 12px; border-radius: 14px;
+  background: #fffdf2; color: #123a1f; font-size: 12.5px; font-weight: 800; line-height: 1.2; text-align: center; white-space: nowrap;
+  box-shadow: 0 4px 0 rgb(0 0 0 / 0.3); animation: sl-say 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
-@keyframes sl-coin { from { transform: translateY(-240px); opacity: 0; } }
-.sl-tube-status { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(255 255 255 / 0.72); text-align: center; }
-.sl-tube-status.hot { color: #ff8cc4; animation: sl-flash 0.5s steps(2) infinite; }
+.sl-lep-say::after { content: ''; position: absolute; left: 50%; bottom: -7px; margin-left: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: #fffdf2; }
+@keyframes sl-say { from { transform: translateX(-50%) scale(0.6); opacity: 0; } }
+.sl-lep * { transform-box: view-box; }
+.sl-lep-aura, .lep-rainbow { transition: opacity 0.4s; }
+.lep-rainbow { opacity: 0.55; }
+.lep-aura { opacity: 0.5; }
+.lep-sparks, .lep-fountain, .lep-mouth-open, .lep-mouth-o { opacity: 0; }
+.lep-spark { transform-box: fill-box; transform-origin: center; transform: scale(0); }
+.lep-body { animation: lep-bob 2.4s ease-in-out infinite; transform-origin: 110px 296px; }
+.lep-head { animation: lep-tilt 3.6s ease-in-out infinite; transform-origin: 110px 170px; }
+.lep-arm-l { transform-origin: 78px 184px; transform: rotate(-6deg); animation: lep-sway-l 2.4s ease-in-out infinite; }
+.lep-arm-r { transform-origin: 142px 184px; transform: rotate(6deg); animation: lep-sway-r 2.4s ease-in-out infinite; }
+.lep-eyes { transform-origin: 110px 124px; animation: lep-blink 4.4s infinite; }
+.lep-coin { transform-origin: 142px 228px; animation: lep-flip 2.4s ease-in-out infinite; }
+@keyframes lep-bob { 50% { transform: translateY(-4px); } }
+@keyframes lep-tilt { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+@keyframes lep-sway-l { 50% { transform: rotate(-12deg); } }
+@keyframes lep-sway-r { 50% { transform: rotate(12deg); } }
+@keyframes lep-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.08); } }
+@keyframes lep-flip { 0%, 100% { transform: translateY(0) scaleX(1); } 40% { transform: translateY(-22px) scaleX(-1); } 70% { transform: translateY(-6px) scaleX(1); } }
+
+/* spin: rubbing his hands, looking at the reels */
+.sl-lep[data-mood='spin'] .lep-body { animation: lep-bob 0.5s ease-in-out infinite; }
+.sl-lep[data-mood='spin'] .lep-arm-l { animation: lep-rub-l 0.32s ease-in-out infinite; }
+.sl-lep[data-mood='spin'] .lep-arm-r { animation: lep-rub-r 0.32s ease-in-out infinite; }
+.sl-lep[data-mood='spin'] .lep-pupils { transform: translateX(-3px); }
+.sl-lep[data-mood='spin'] .lep-coin { display: none; }
+@keyframes lep-rub-l { 0%, 100% { transform: rotate(-50deg); } 50% { transform: rotate(-62deg); } }
+@keyframes lep-rub-r { 0%, 100% { transform: rotate(50deg); } 50% { transform: rotate(62deg); } }
+
+/* win and big win: arms up, jumping, coins from the pot */
+.sl-lep:is([data-mood='win'], [data-mood='big'], [data-mood='free']) .lep-mouth-smile { opacity: 0; }
+.sl-lep:is([data-mood='win'], [data-mood='big']) .lep-mouth-open { opacity: 1; }
+.sl-lep:is([data-mood='win'], [data-mood='big']) .lep-arm-l { animation: lep-cheer-l 0.45s ease-in-out infinite; }
+.sl-lep:is([data-mood='win'], [data-mood='big']) .lep-arm-r { animation: lep-cheer-r 0.45s ease-in-out infinite; }
+.sl-lep:is([data-mood='win'], [data-mood='big']) .lep-coin { display: none; }
+.sl-lep[data-mood='win'] .lep-body { animation: lep-jump 0.55s ease-out infinite; }
+.sl-lep[data-mood='big'] .lep-body { animation: lep-jump-big 0.7s ease-out infinite, lep-dance 1.4s ease-in-out infinite; }
+.sl-lep[data-mood='big'] .lep-hat { animation: lep-hat 0.7s ease-out infinite; transform-origin: 110px 98px; }
+.sl-lep:is([data-mood='win'], [data-mood='big']) .lep-fountain { opacity: 1; }
+.sl-lep:is([data-mood='win'], [data-mood='big']) .lep-fcoin { animation: lep-fcoin 0.9s ease-out infinite; }
+.lep-fcoin-1 { animation-delay: 0.15s !important; } .lep-fcoin-2 { animation-delay: 0.3s !important; } .lep-fcoin-3 { animation-delay: 0.45s !important; } .lep-fcoin-4 { animation-delay: 0.6s !important; }
+.sl-lep:is([data-mood='win'], [data-mood='big'], [data-mood='free']) .lep-sparks { opacity: 1; }
+.sl-lep:is([data-mood='win'], [data-mood='big'], [data-mood='free']) .lep-spark { animation: lep-twinkle 0.9s ease-in-out infinite; }
+.lep-spark-1 { animation-delay: 0.2s !important; } .lep-spark-2 { animation-delay: 0.4s !important; } .lep-spark-3 { animation-delay: 0.6s !important; } .lep-spark-4 { animation-delay: 0.1s !important; }
+.sl-lep:is([data-mood='win'], [data-mood='big']) .lep-rainbow { opacity: 0.95; }
+.sl-lep:is([data-mood='win'], [data-mood='big']) .lep-aura { opacity: 1; }
+@keyframes lep-cheer-l { 0%, 100% { transform: rotate(150deg); } 50% { transform: rotate(168deg); } }
+@keyframes lep-cheer-r { 0%, 100% { transform: rotate(-150deg); } 50% { transform: rotate(-168deg); } }
+@keyframes lep-jump { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-16px); } }
+@keyframes lep-jump-big { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-30px); } }
+@keyframes lep-dance { 0%, 100% { rotate: -4deg; } 50% { rotate: 4deg; } }
+@keyframes lep-hat { 0%, 100% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-16px) rotate(-8deg); } }
+@keyframes lep-fcoin { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx, 0px), -120px) scale(0.7); opacity: 0; } }
+.lep-fcoin-0 { --dx: -34px; } .lep-fcoin-1 { --dx: -14px; } .lep-fcoin-2 { --dx: 6px; } .lep-fcoin-3 { --dx: 22px; } .lep-fcoin-4 { --dx: 38px; }
+@keyframes lep-twinkle { 0%, 100% { transform: scale(0); } 50% { transform: scale(1); } }
+
+/* near miss: wide eyes, hands out, a worried o */
+.sl-lep[data-mood='tease'] .lep-mouth-smile { opacity: 0; }
+.sl-lep[data-mood='tease'] .lep-mouth-o { opacity: 1; }
+.sl-lep[data-mood='tease'] .lep-arm-l { animation: none; transform: rotate(-52deg); }
+.sl-lep[data-mood='tease'] .lep-arm-r { animation: none; transform: rotate(52deg); }
+.sl-lep[data-mood='tease'] .lep-head { animation: lep-shake 0.5s ease-in-out infinite; }
+.sl-lep[data-mood='tease'] .lep-brows { transform: translateY(-5px); }
+.sl-lep[data-mood='tease'] .lep-coin { display: none; }
+@keyframes lep-shake { 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
+
+/* free spins: arms out, grinning */
+.sl-lep[data-mood='free'] .lep-mouth-smile { opacity: 0; }
+.sl-lep[data-mood='free'] .lep-mouth-open { opacity: 1; }
+.sl-lep[data-mood='free'] .lep-arm-l { animation: none; transform: rotate(-110deg); }
+.sl-lep[data-mood='free'] .lep-arm-r { animation: none; transform: rotate(110deg); }
+.sl-lep[data-mood='free'] .lep-body { animation: lep-jump 0.8s ease-out infinite; }
+.sl-lep[data-mood='free'] .lep-coin { display: none; }
+
+/* ---------- buy feature / demo jackpot buttons and the buy panel */
+.sl-bar-extras { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.sl-pill {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 112px; padding: 6px 14px; border-radius: 14px;
+  border: 2px solid var(--sl-gold); color: #fff; line-height: 1.15;
+  background: linear-gradient(180deg, #2fc45f, #0d5a27); box-shadow: 0 3px 0 #052a12, inset 0 1px 0 rgb(255 255 255 / 0.4);
+  transition: transform 0.1s, filter 0.15s;
+}
+.sl-pill b { font-size: 12px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.sl-pill span { font-family: var(--mono); font-size: 11px; color: #ffe27a; }
+.sl-pill:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.15); }
+.sl-pill:disabled { filter: grayscale(0.7) brightness(0.7); }
+.sl-demo { border-color: #7dffa6; background: linear-gradient(180deg, #7a4bd8, #3a1c85); }
+.sl-demo span { color: #d9c8ff; }
+.sl-buy-panel { justify-content: center; }
+.sl-buy-facts { margin: 0; display: grid; gap: 6px; }
+.sl-buy-facts div { display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: baseline; }
+.sl-buy-facts dt { font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(255 255 255 / 0.6); }
+.sl-buy-facts dd { margin: 0; font-weight: 700; color: #ffe27a; }
+.sl-buy-facts small { font-weight: 500; color: rgb(255 255 255 / 0.7); }
+.sl-buy-note { margin: 0; font-size: 12px; color: rgb(255 255 255 / 0.7); }
+.sl-buy-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
 /* ---------- control bar */
 .sl-bar {
   grid-area: bar; display: flex; align-items: center; justify-content: space-between; gap: 12px;
   margin-top: 8px; padding: 10px 18px; border-radius: 16px;
-  background: linear-gradient(180deg, rgb(4 6 22 / 0.88), rgb(2 3 12 / 0.94)); border: 1px solid rgb(255 255 255 / 0.1);
+  background: linear-gradient(180deg, rgb(3 24 12 / 0.9), rgb(1 12 6 / 0.95)); border: 1px solid rgb(255 255 255 / 0.12);
 }
 .sl-bar-fields { flex: 1; display: flex; align-items: center; justify-content: space-around; gap: 8px 22px; flex-wrap: wrap; }
 .sl-field { display: flex; flex-direction: column; min-width: 96px; }
@@ -274,16 +378,16 @@
 }
 
 /* ---------- narrow screens: one column, reels first */
+@media (max-width: 1100px) {
+  .sl-scene { grid-template-columns: 220px minmax(0, auto); grid-template-areas: 'logo top' 'prizes center' 'side side' 'bar bar' 'under under'; }
+  .sl-side { justify-content: center; }
+  .sl-lep-wrap { max-width: 170px; }
+}
 @media (max-width: 900px) {
-  .slot-page { padding: 12px 10px 28px; }
-  .sl-scene, .sl-mode-honest .sl-scene { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: 'logo' 'center' 'tube' 'bar' 'under' 'prizes'; padding: 16px 10px 14px; gap: 14px; }
-  .sl-logo { font-size: 34px; }
+  .sl-scene { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: 'logo' 'top' 'center' 'side' 'bar' 'under' 'prizes'; padding: 16px 10px 14px; gap: 14px; }
+  .sl-logo { font-size: 30px; }
   .sl-ladder { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
   .sl-ladder li.is-jackpot { grid-column: 1 / -1; }
-  .sl-tube { width: 100%; flex-direction: row; padding: 0; }
-  .sl-tube-glass { min-height: 0; height: 22px; border-radius: 999px; border-top-color: rgb(255 255 255 / 0.42); }
-  .sl-tube-mark, .sl-coin { display: none; }
-  .sl-tube-fill { display: block; height: 100%; background: linear-gradient(90deg, #ffd34d, var(--sl-pink)); transition: width 0.4s ease; }
   .sl-badge { min-width: 0; flex: 1; }
   .sl-badges { width: 100%; }
   .sl-strap { white-space: normal; text-align: center; }
@@ -291,9 +395,23 @@
   .sl-bar-fields { gap: 8px 14px; }
   .sl-field { min-width: 70px; }
   .sl-spin { width: 76px; height: 76px; margin: -12px 0; }
+  .sl-buy-facts div { grid-template-columns: 1fr; gap: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sl-strip.is-spin, .sl-cell, .sl-coin, .sl-badge, .sl-overlay, .sl-overlay::before, .sl-overlay strong, .sl-tube-status, .sl-spin, .sl-spin svg, .sl-shake { animation: none !important; }
+  .sl-strip.is-spin, .sl-cell, .sl-badge, .sl-overlay, .sl-overlay::before, .sl-overlay strong, .sl-spin, .sl-spin svg, .sl-shake, .sl-lep *, .sl-lep-say, .sl-pile-twinkle { animation: none !important; }
   .sl-fx { display: none; }
 }
+
+/* Motion switch off (the corner switch, set on <html data-motion='off'>): same stillness as reduced motion. */
+:root[data-motion='off'] :is(.sl-strip.is-spin, .sl-cell, .sl-badge, .sl-overlay, .sl-overlay::before, .sl-overlay strong, .sl-spin, .sl-spin svg, .sl-shake, .sl-lep *, .sl-lep-say, .sl-pile-twinkle) { animation: none !important; }
+:root[data-motion='off'] .sl-fx { display: none; }
+:root[data-motion='off'] .sl-lep .lep-spark { transform: scale(0); }
+
+/* The slot sits in the same shell as the other games but has no right-hand bet pane. */
+.shell.sl-shell { grid-template-columns: 232px minmax(0, 1fr); }
+@media (max-width: 1060px) { .shell.sl-shell { grid-template-columns: 200px minmax(0, 1fr); } }
+@media (max-width: 760px) { .shell.sl-shell { grid-template-columns: minmax(0, 1fr); } }
+
+/* The name is longer than the other games', so the sign's lettering is a little smaller. */
+.sl-sign .gs-name { font-size: clamp(36px, 7.2cqw, 100px) !important; line-height: 1 !important; }

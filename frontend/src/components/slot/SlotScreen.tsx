@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
+  BUY_EXPECTED_X,
+  BUY_PRICE_X,
+  BUY_RTP,
   EXACT_RTP,
   FREE_MULT,
   FREE_SPINS,
@@ -8,31 +11,48 @@ import {
   SCATTERS,
   SYM,
   WILD_PAY,
+  demoJackpot,
   nearMissGrid,
   randomSeed,
+  randomTriggerSeed,
   resolveSlot,
+  type SlotResult,
   type Spin,
 } from '../../lib/slot'
 import { prefersReducedMotion } from '../../lib/themes'
+import { burst } from '../../fx/bus'
+import { useFxPrefs } from '../../fx/prefs'
+import { sfx } from '../../fx/sound'
 import { Sym, SymbolDefs } from './SlotSymbols'
+import { Leprechaun, type Mood } from './Leprechaun'
+import { JackpotPile } from './JackpotPile'
 import { createSlotFx, type SlotFx } from './slotFx'
-import { isMuted, setMuted, sound } from './slotSound'
+import { setMuted, sound } from './slotSound'
 import './slot.css'
 
-// Slot demo "Diamond Cascade", sim only. Results come from lib/slot.ts (same math as the
+// Slot demo "Lucky Leprechaun", sim only. Results come from lib/slot.ts (same math as the
 // sandbox, exact return 0.97993). This file only decides how a result is SHOWN.
 //
-// Layout follows common slot conventions: logo and prize ladder beside framed reels,
-// feature badges above them, and a control bar with a round spin button. All art is ours
-// (SlotSymbols.tsx and CSS).
+// Layout follows common slot conventions: logo and prize ladder beside framed reels, the jackpot
+// as a heap of coins across the top, a leprechaun beside the reels, feature badges above them,
+// and a control bar with a round spin button, "Buy feature" and "Demo jackpot". All art is ours
+// (SlotSymbols.tsx, Leprechaun.tsx, JackpotPile.tsx and CSS). The page around it (sidebar, sign,
+// session numbers, backdrop, sound and motion switches) is the same as the other games' (App.tsx).
 //
 // Two presentations of the SAME spins, switchable at the top:
 //   Honest          what landed, nothing else.
 //   Near-miss demo  CLAUDE.md's one exception (team decision 2026-11-15): on losing spins it
 //                   teases the jackpot and free spins, more often as the demo balance drops;
-//                   it holds the last reel when two diamonds are on the line; and a coin pile
-//                   grows with losses and cascades as if the jackpot were getting closer.
-//                   It never changes what a spin pays.
+//                   it holds the last reel when two rainbows are on the line; and the jackpot
+//                   heap creeps up with losses and cascades as if the jackpot were getting closer.
+//                   The leprechaun reacts to the tease. None of it changes what a spin pays.
+//
+// Two extra buttons:
+//   Buy feature     pays BUY_PRICE_X (14) times the bet for a spin that starts with free spins. Its exact
+//                   return is shown before you confirm (BUY_RTP, 98.45%). Effects follow the NET
+//                   result: nothing celebrates until the winnings pass the price.
+//   Demo jackpot    plays a made-up jackpot spin for show. Costs nothing, pays nothing, and the balance
+//                   and the session numbers stay as they are.
 //
 // Win effects (slotFx.ts, slotSound.ts): coins, bills, flames, sparks, count-ups and sound.
 // They follow the real result, as CLAUDE.md asks: each line's effects are sized by what it
@@ -41,7 +61,7 @@ import './slot.css'
 // reel get their own (pink and blue) heat and sound. Motion effects are off for people who
 // ask for reduced motion.
 //
-// Left out on purpose (CLAUDE.md): autoplay, turbo spins, bonus buys and made-up jackpot tickers.
+// Left out on purpose (CLAUDE.md): autoplay, turbo spins and made-up "someone won" tickers.
 // Owner: Zander.
 
 type Mode = 'honest' | 'nearmiss'
@@ -66,27 +86,29 @@ interface Overlay {
 
 const START = 1000
 const STAKES = [1, 5, 10, 25, 50]
-const PILE_MAX = 96 // the pile never reads "full": nothing is actually getting closer
-const COIN_SLOTS = 34
+const PILE_MAX = 96 // the heap never reads "full": nothing is actually getting closer
 const VIS = 1
 const STOP_MS = [900, 1250, 1600]
 const HOLD_MS = 3600
 const IDLE_MSG = 'Three in a row on the middle line wins'
-const PLURAL = ['blanks', 'cherries', 'bells', 'bars', 'sevens', 'wilds', 'diamonds', 'stars']
+const PLURAL = ['blanks', 'clovers', 'horseshoes', 'pots of gold', 'hats', 'leprechauns', 'rainbows', 'gold coins']
 const LADDER = [
-  { sym: SYM.diamond, name: 'Jackpot', pay: JACKPOT, jackpot: true },
+  { sym: SYM.rainbow, name: 'Jackpot', pay: JACKPOT, jackpot: true },
   { sym: SYM.wild, name: 'Wilds', pay: WILD_PAY, jackpot: false },
-  { sym: SYM.seven, name: 'Sevens', pay: PAY[SYM.seven], jackpot: false },
-  { sym: SYM.bar, name: 'Bars', pay: PAY[SYM.bar], jackpot: false },
-  { sym: SYM.bell, name: 'Bells', pay: PAY[SYM.bell], jackpot: false },
-  { sym: SYM.cherry, name: 'Cherries', pay: PAY[SYM.cherry], jackpot: false },
+  { sym: SYM.hat, name: 'Hats', pay: PAY[SYM.hat], jackpot: false },
+  { sym: SYM.pot, name: 'Pots', pay: PAY[SYM.pot], jackpot: false },
+  { sym: SYM.horseshoe, name: 'Shoes', pay: PAY[SYM.horseshoe], jackpot: false },
+  { sym: SYM.clover, name: 'Clovers', pay: PAY[SYM.clover], jackpot: false },
 ]
 // What the reels show before the first spin. No three in a row.
 const ATTRACT = [
-  [SYM.bell, SYM.wild, SYM.cherry],
-  [SYM.seven, SYM.diamond, SYM.bar],
-  [SYM.cherry, SYM.star, SYM.bell],
+  [SYM.horseshoe, SYM.wild, SYM.clover],
+  [SYM.hat, SYM.rainbow, SYM.pot],
+  [SYM.clover, SYM.coin, SYM.horseshoe],
 ]
+/** What the leprechaun says while idle. */
+const IDLE_SAY = 'Try your luck!'
+type Kind = 'spin' | 'buy' | 'demo'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 0 })
@@ -122,10 +144,15 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
   const [pile, setPile] = useState(18)
   const [infoOpen, setInfoOpen] = useState(false)
   const [shake, setShake] = useState(false)
-  const [muted, setMutedState] = useState(isMuted)
+  const [lep, setLep] = useState<{ mood: Mood; say: string }>({ mood: 'idle', say: IDLE_SAY })
+  const [buyOpen, setBuyOpen] = useState(false)
+  // Re-render when the Sound or Motion switch changes, so the effects follow it.
+  const { sound: soundOn } = useFxPrefs()
+  const muted = !soundOn
 
   const reelsRef = useRef(reels)
   const frameEl = useRef<HTMLDivElement>(null)
+  const spinBtn = useRef<HTMLButtonElement>(null)
   const fxCanvas = useRef<HTMLCanvasElement>(null)
   const fxRef = useRef<SlotFx | null>(null)
   const alive = useRef(true)
@@ -165,6 +192,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     await sleep(ms)
     return alive.current
   }
+  const speak = (mood: Mood, say: string) => setLep({ mood, say })
   const bump = () => {
     if (reduced) return
     setShake(true)
@@ -174,6 +202,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
   /** Effects for one winning line, sized by what it really paid (`pay`, in multiples of the bet). */
   function celebrateLine(pay: number, k: number, jackpot: boolean, ice: boolean) {
     const t = tierOf(pay, jackpot)
+    speak(t >= 2 ? 'big' : 'win', jackpot ? 'The rainbow jackpot!' : t >= 2 ? 'Gold! Pure gold!' : k > 0 ? 'And another!' : 'A win!')
     sound.win(Math.min(3, t + (k > 0 ? 1 : 0)))
     sound.coins(3 + t * 2)
     const f = fxRef.current
@@ -223,7 +252,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
   }
 
   /** Plays one spin's lines: light up each win, clear it, drop the next symbols in. Returns the running total won. */
-  async function playLines(s: Spin, bet: number, wonBefore: number, pileUp: boolean, ice: boolean): Promise<number> {
+  async function playLines(s: Spin, bet: number, wonBefore: number, pileUp: boolean, ice: boolean, quietUntil = 0): Promise<number> {
     let won = wonBefore
     for (let k = 0; k < s.lines.length; k++) {
       const line = s.lines[k]
@@ -233,10 +262,11 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
       setStep({ k, mult: line.mult })
       setFx('lit')
       setWin(won)
-      celebrateLine(line.pay, k, line.jackpot, ice)
+      // A bought feature only celebrates once its winnings are past the price: no fanfare for a net loss.
+      if (won > quietUntil) celebrateLine(line.pay, k, line.jackpot, ice)
       setMsg({
         text: line.jackpot
-          ? `Jackpot! Three diamonds pay ${fmt(line.pay * bet)}`
+          ? `Jackpot! Three rainbows pay ${fmt(line.pay * bet)}`
           : `Three ${PLURAL[sym]}${line.mult > 1 ? ` × ${line.mult}` : ''} pay ${fmt(line.pay * bet)}`,
         tone: 'win',
       })
@@ -260,52 +290,67 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     return won
   }
 
-  async function spin() {
-    if (busy || blockedReason || balance < stake) return
+  async function spin(which: Kind = 'spin') {
+    const cost = which === 'spin' ? stake : which === 'buy' ? stake * BUY_PRICE_X : 0
+    if (busy || blockedReason || balance < cost) return
     const bet = stake
-    const demo = mode === 'nearmiss'
-    const ratioAfter = (balance - bet) / START
+    const nm = mode === 'nearmiss'
+    const ratioAfter = (balance - cost) / START
     setBusy(true)
     setInfoOpen(false)
+    setBuyOpen(false)
     setOverlay(null)
     setTeased([])
     setStep(null)
     setFree(null)
     setFx(null)
     setWin(0)
-    setBalance((b) => b - bet)
-    setStaked((s) => s + bet)
-    onStake(bet)
-    setMsg({ text: 'Good luck!', tone: 'idle' })
+    if (cost > 0) {
+      setBalance((b) => b - cost)
+      setStaked((s) => s + cost)
+      onStake(cost)
+    }
+    setMsg({ text: which === 'demo' ? 'Demo jackpot: not counted' : which === 'buy' ? 'Feature bought. Good luck!' : 'Good luck!', tone: 'idle' })
+    speak('spin', which === 'buy' ? 'Here come the free spins!' : 'Come on, luck!')
     sound.unlock()
     sound.spin()
+    // Same confetti as a bet on the other games, thrown from the spin button.
+    const box = spinBtn.current?.getBoundingClientRect()
+    if (which !== 'demo' && box) {
+      burst({ palette: 'vegas', x: box.left + box.width / 2, y: box.top + box.height / 2, power: Math.min(1, cost / 100) })
+      sfx.bet()
+    }
 
-    const r = resolveSlot(randomSeed())
-    owed.current = r.total * bet
-    const tease = demo ? nearMissGrid(r, ratioAfter) : null
+    const r: SlotResult = which === 'demo' ? demoJackpot() : resolveSlot(which === 'buy' ? randomTriggerSeed() : randomSeed())
+    owed.current = which === 'demo' ? 0 : r.total * bet
+    const tease = nm && which === 'spin' ? nearMissGrid(r, ratioAfter) : null
     const opening = tease ? tease.grid : gridOf(r.base, 0)
-    const holdFor = (g: number[][]) => demo && !reduced && g[1][0] === SYM.diamond && g[1][1] === SYM.diamond
+    // The last reel is held when two rainbows sit on the line (near-miss demo only). On the demo
+    // jackpot there is no hold: the third rainbow really lands.
+    const holdFor = (g: number[][]) => nm && which === 'spin' && !reduced && g[1][0] === SYM.rainbow && g[1][1] === SYM.rainbow
 
     if (!(await reveal(opening, holdFor(opening)))) return
     if (tease) {
-      const want = tease.kind === 'jackpot' ? SYM.diamond : SYM.star
+      const want = tease.kind === 'jackpot' ? SYM.rainbow : SYM.coin
       setTeased(tease.grid.flatMap((row, y) => row.flatMap((s, x) => (s === want ? [`${y}-${x}`] : []))))
       setMsg({
-        text: tease.kind === 'jackpot' ? 'So close! The third diamond stopped one row away' : `Almost! One more star for ${FREE_SPINS} free spins`,
+        text: tease.kind === 'jackpot' ? 'So close! The third rainbow stopped one row away' : `Almost! One more gold coin for ${FREE_SPINS} free spins`,
         tone: 'tease',
       })
+      speak('tease', tease.kind === 'jackpot' ? 'Oh! So close!' : 'Just one coin short!')
       addPile(6)
       sound.tease()
       fxRef.current?.heat(0.45, 1500, 'pink')
     }
 
-    let won = await playLines(r.base, bet, 0, demo, false)
+    let won = await playLines(r.base, bet, 0, nm, false, cost)
     if (!alive.current) return
 
     if (r.free.length > 0) {
       setTeased([])
-      setOverlay({ tone: 'free', title: `${FREE_SPINS} free spins`, sub: `${r.stars} stars landed. Cascades pay double.` })
+      setOverlay({ tone: 'free', title: `${FREE_SPINS} free spins`, sub: `${r.stars} gold coins landed. Cascades pay double.` })
       setMsg({ text: `${FREE_SPINS} free spins won`, tone: 'free' })
+      speak('free', 'Free spins!')
       sound.freeSpins()
       fxRef.current?.sparks(60)
       fxRef.current?.heat(0.6, 1500, 'ice')
@@ -316,7 +361,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
         setMsg({ text: `Free spin ${i + 1} of ${r.free.length}`, tone: 'free' })
         const g = gridOf(r.free[i], 0)
         if (!(await reveal(g, holdFor(g)))) return
-        won = await playLines(r.free[i], bet, won, demo, true)
+        won = await playLines(r.free[i], bet, won, nm, true, cost)
         if (!(await wait(350))) return
       }
       setFree(null)
@@ -325,24 +370,46 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     const payout = r.total * bet // integer: every pay is a whole multiple of the stake
     if (payout !== won) console.warn('slot: shown wins differ from the result', { payout, won })
     owed.current = 0
-    setBalance((b) => b + payout)
-    setPaid((p) => p + payout)
-    onPaid(payout)
+    if (which !== 'demo') {
+      setBalance((b) => b + payout)
+      setPaid((p) => p + payout)
+      onPaid(payout)
+    }
     setWin(payout)
 
+    // The big show follows the real NET result: for a bought feature that is the payout minus the
+    // price, so a feature that pays less than it cost gets no fanfare. A demo jackpot costs nothing.
+    const netX = (payout - cost) / bet
     if (payout > 0) {
-      setMsg({ text: `You won ${fmt(payout)} · ${fmt(r.total)}× your bet`, tone: 'win' })
-      if (demo) setPile((p) => (r.jackpot ? 12 : Math.max(10, p - 4)))
-      // The big show follows the real result: 20× is a big win, 100× a mega win, then the jackpot.
-      const t = tierOf(r.total, r.jackpot)
+      if (which === 'buy' && payout <= cost) {
+        setMsg({ text: `Feature paid ${fmt(payout)}, less than its ${fmt(cost)} chip price`, tone: 'idle' })
+      } else {
+        setMsg({
+          text:
+            which === 'demo'
+              ? `Demo jackpot: ${fmt(payout)} (not added to your chips)`
+              : which === 'buy'
+                ? `Feature paid ${fmt(payout)} · ${fmt(payout - cost)} more than its price`
+                : `You won ${fmt(payout)} · ${fmt(r.total)}× your bet`,
+          tone: 'win',
+        })
+      }
+      if (nm && which === 'spin') setPile((p) => (r.jackpot ? 12 : Math.max(10, p - 4)))
+      const t = which === 'buy' && netX <= 0 ? 0 : tierOf(which === 'buy' ? netX : r.total, r.jackpot)
       if (t >= 2) {
         const ms = reduced ? 2200 : [0, 0, 2600, 3800, 5200][t]
         setOverlay({
           tone: t === 4 ? 'jackpot' : t === 3 ? 'mega' : 'big',
           title: t === 4 ? 'Jackpot' : t === 3 ? 'Mega win' : 'Big win',
           amount: payout,
-          sub: `${fmt(r.total)}× your ${fmt(bet)} chip bet`,
+          sub:
+            which === 'demo'
+              ? 'Demo only: no chips were added'
+              : which === 'buy'
+                ? `${fmt(payout)} for a ${fmt(cost)} chip feature`
+                : `${fmt(r.total)}× your ${fmt(bet)} chip bet`,
         })
+        speak('big', t === 4 ? 'The rainbow jackpot!' : 'Gold! Pure gold!')
         sound.fanfare(t >= 3)
         bump()
         const f = fxRef.current
@@ -357,16 +424,23 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
         setOverlay(null)
       }
     } else {
-      if (!tease) setMsg({ text: 'No win this spin', tone: 'idle' })
-      if (demo) addPile(ratioAfter < 0.5 ? 9 : 5)
+      if (!tease) setMsg({ text: which === 'buy' ? `Feature paid nothing (price ${fmt(cost)} chips)` : 'No win this spin', tone: 'idle' })
+      if (nm) addPile(ratioAfter < 0.5 ? 9 : 5)
     }
+    speak(
+      'idle',
+      payout > cost ? 'Lovely! Again?' : nm && which === 'spin' ? 'So close! Spin again!' : which === 'buy' ? 'The feature is done.' : 'No luck this time.',
+    )
     setBusy(false)
   }
 
   const net = paid - staked
   const canSpin = !busy && !blockedReason && balance >= stake
   const stakeIdx = STAKES.indexOf(stake)
-  const coins = Math.round((pile / 100) * COIN_SLOTS)
+  const buyCost = stake * BUY_PRICE_X
+  const canBuy = !busy && !blockedReason && balance >= buyCost
+  // How big the jackpot heap is. A slow creep in the near-miss demo, a fixed size in the honest view.
+  const heap = mode === 'nearmiss' ? 0.55 + 0.4 * (pile / 100) : 0.85
 
   const cellClass = (i: number, x: number) => {
     const row = i - VIS // 0 top, 1 the payline, 2 bottom
@@ -379,7 +453,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
   }
 
   return (
-    <main className={`slot-page sl-mode-${mode} ${free ? 'sl-free' : ''} ${holding ? 'sl-hold' : ''}`}>
+    <div className={`slot-page sl-mode-${mode} ${free ? 'sl-free' : ''} ${holding ? 'sl-hold' : ''}`}>
       <SymbolDefs />
 
       <div className="sl-modebar">
@@ -400,10 +474,18 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
       <section className={`sl-scene ${shake ? 'sl-shake' : ''}`}>
         <div className="sl-backdrop" aria-hidden />
 
-        <h1 className="sl-logo">
-          <span>Diamond</span>
-          Cascade
-        </h1>
+        <h2 className="sl-logo">
+          <span>Lucky</span>
+          Leprechaun
+        </h2>
+
+        <div className="sl-top">
+          <JackpotPile amount={JACKPOT * stake} level={heap} excited={holding} />
+        </div>
+
+        <aside className="sl-side" aria-label="The leprechaun">
+          <Leprechaun mood={lep.mood} say={lep.say} />
+        </aside>
 
         <div className="sl-prizes">
           <ul className="sl-ladder" aria-label={`Payouts for a ${stake} chip bet`}>
@@ -420,7 +502,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
             ))}
           </ul>
           <p className="sl-note">
-            Three in a row on the middle line, shown for a {stake} chip bet. WILD stands in for cherries, bells, bars and sevens.
+            Three in a row on the middle line, shown for a {stake} chip bet. The leprechaun is WILD and stands in for clovers, shoes, pots and hats.
           </p>
         </div>
 
@@ -445,7 +527,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
               <>Free spins: every cascade pays double</>
             ) : (
               <>
-                {SCATTERS}+ <Sym id={SYM.star} className="sl-inline" /> anywhere award {FREE_SPINS} free spins
+                {SCATTERS}+ <Sym id={SYM.coin} className="sl-inline" /> anywhere award {FREE_SPINS} free spins
               </>
             )}
           </div>
@@ -482,6 +564,53 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
                 </div>
               )}
 
+              {buyOpen && (
+                <div className="sl-info-panel sl-buy-panel" role="dialog" aria-label="Buy feature">
+                  <div className="sl-info-head">
+                    <strong>Buy the free spins feature</strong>
+                    <button className="sl-round sl-small" onClick={() => setBuyOpen(false)} aria-label="Cancel">
+                      ×
+                    </button>
+                  </div>
+                  <dl className="sl-buy-facts">
+                    <div>
+                      <dt>Price</dt>
+                      <dd>
+                        {fmt(buyCost)} chips <small>({BUY_PRICE_X}× your {fmt(stake)} chip bet)</small>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>You get</dt>
+                      <dd>A spin that starts with {FREE_SPINS} free spins (double cascades)</dd>
+                    </div>
+                    <div>
+                      <dt>Pays on average</dt>
+                      <dd>
+                        {fmt(Math.round(BUY_EXPECTED_X * stake))} chips <small>({BUY_EXPECTED_X.toFixed(2)}× your bet)</small>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Return</dt>
+                      <dd>
+                        {(BUY_RTP * 100).toFixed(2)}% <small>a {((1 - BUY_RTP) * 100).toFixed(2)}% house edge, so over many buys you lose on average</small>
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="sl-buy-note">
+                    Any single feature can pay far less or far more than its price. Demo chips have no value. Celebrations only play once the winnings pass the
+                    price.
+                  </p>
+                  <div className="sl-buy-actions">
+                    <button className="btn" onClick={() => setBuyOpen(false)}>
+                      Cancel
+                    </button>
+                    <button className="btn primary" onClick={() => spin('buy')} disabled={!canBuy}>
+                      Buy for {fmt(buyCost)}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {infoOpen && (
                 <div className="sl-info-panel" role="dialog" aria-label="Paytable and rules">
                   <div className="sl-info-head">
@@ -502,13 +631,18 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
                   </div>
                   <ul>
                     <li>One payline: the middle row. Pays are multiples of your bet.</li>
-                    <li>WILD stands in for cherries, bells, bars and sevens. Three wilds pay {WILD_PAY}×.</li>
+                    <li>The leprechaun is WILD and stands in for clovers, horseshoes, pots of gold and hats. Three wilds pay {WILD_PAY}×.</li>
                     <li>Cascades: a win clears the line, the symbols above drop in, and the next win pays 2×, then 3×, and so on.</li>
                     <li>
-                      {SCATTERS} or more stars anywhere on the first stop give {FREE_SPINS} free spins. Their cascades pay {FREE_MULT}×, {FREE_MULT * 2}×,{' '}
+                      {SCATTERS} or more gold coins anywhere on the first stop give {FREE_SPINS} free spins. Their cascades pay {FREE_MULT}×, {FREE_MULT * 2}×,{' '}
                       {FREE_MULT * 3}×…
                     </li>
-                    <li>Three diamonds pay the {fmt(JACKPOT)}× jackpot, with no multiplier.</li>
+                    <li>Three rainbows pay the {fmt(JACKPOT)}× jackpot, with no multiplier.</li>
+                    <li>
+                      Buy feature: {BUY_PRICE_X}× your bet starts a spin that triggers the free spins. It pays {BUY_EXPECTED_X.toFixed(2)}× your bet on average, a{' '}
+                      {(BUY_RTP * 100).toFixed(2)}% return.
+                    </li>
+                    <li>Demo jackpot: a made-up jackpot spin for show. It costs nothing, pays nothing and isn't counted.</li>
                     <li>
                       About 1 spin in 7 wins. Free spins come about 1 spin in 120, the jackpot about 1 in 28,000. Long-run return{' '}
                       {(EXACT_RTP * 100).toFixed(2)}%.
@@ -524,20 +658,6 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
           </div>
         </div>
 
-        {mode === 'nearmiss' && (
-          <aside className="sl-tube" aria-label="Jackpot pile, part of the near-miss demo">
-            <span className="sl-tube-label">Jackpot pile</span>
-            <div className="sl-tube-glass" aria-hidden>
-              <span className="sl-tube-mark" />
-              <span className="sl-tube-fill" style={{ width: `${pile}%` }} />
-              {Array.from({ length: coins }, (_, i) => (
-                <span key={i} className="sl-coin" style={{ bottom: `${(i / COIN_SLOTS) * 100}%`, marginLeft: `${((i * 37) % 9) - 27}px` }} />
-              ))}
-            </div>
-            <span className={`sl-tube-status ${pile >= 80 ? 'hot' : ''}`}>{pile >= 80 ? 'Almost there!' : pile >= 50 ? 'Heating up' : 'Building'}</span>
-          </aside>
-        )}
-
         <div className="sl-bar">
           <div className="sl-bar-fields">
             <button className="sl-round sl-info" onClick={() => setInfoOpen((o) => !o)} disabled={busy} aria-pressed={infoOpen} aria-label="Paytable and rules">
@@ -545,10 +665,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
             </button>
             <button
               className="sl-round sl-mute"
-              onClick={() => {
-                setMuted(!muted)
-                setMutedState(!muted)
-              }}
+              onClick={() => setMuted(!muted)}
               aria-pressed={!muted}
               aria-label={muted ? 'Turn sound on' : 'Turn sound off'}
               title={muted ? 'Sound is off' : 'Sound is on'}
@@ -562,6 +679,16 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
                 )}
               </svg>
             </button>
+            <div className="sl-bar-extras">
+              <button className="sl-pill sl-buy" onClick={() => setBuyOpen((o) => !o)} disabled={busy || !!blockedReason} aria-pressed={buyOpen}>
+                <b>Buy feature</b>
+                <span>{fmt(buyCost)} chips</span>
+              </button>
+              <button className="sl-pill sl-demo" onClick={() => spin('demo')} disabled={busy} title="A made-up jackpot spin for show. Free and not counted.">
+                <b>Demo jackpot</b>
+                <span>free · not counted</span>
+              </button>
+            </div>
             <div className="sl-field">
               <span>Demo chips</span>
               <strong>
@@ -592,7 +719,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
               </strong>
             </div>
           </div>
-          <button className={`sl-spin ${busy ? 'is-busy' : ''}`} onClick={spin} disabled={!canSpin} aria-label={`Spin for ${stake} demo chips`}>
+          <button ref={spinBtn} className={`sl-spin ${busy ? 'is-busy' : ''}`} onClick={() => spin('spin')} disabled={!canSpin} aria-label={`Spin for ${stake} demo chips`}>
             <svg viewBox="0 0 48 48" aria-hidden focusable="false">
               <path d="M38 24a14 14 0 0 1-24.6 9.2" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
               <path d="M10 24a14 14 0 0 1 24.6-9.2" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
@@ -622,11 +749,11 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
 
       <p className="sl-odds">
         About 1 spin in 7 wins. Free spins come about 1 spin in 120, the jackpot about 1 in 28,000. Long-run return{' '}
-        <strong>{(EXACT_RTP * 100).toFixed(2)}%</strong>, a {((1 - EXACT_RTP) * 100).toFixed(2)}% house edge. Every spin is independent, and demo
-        chips have no value. Net on this machine:{' '}
+        <strong>{(EXACT_RTP * 100).toFixed(2)}%</strong>, a {((1 - EXACT_RTP) * 100).toFixed(2)}% house edge (bought features: {(BUY_RTP * 100).toFixed(2)}%).
+        Every spin is independent, and demo chips have no value. Net on this machine:{' '}
         <strong className={net > 0 ? 'pos' : net < 0 ? 'neg' : ''}>{net > 0 ? `+${fmt(net)}` : net < 0 ? `−${fmt(-net)}` : '±0'}</strong>.
       </p>
-    </main>
+    </div>
   )
 }
 
