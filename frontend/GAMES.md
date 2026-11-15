@@ -62,7 +62,7 @@ The starter game. Already built against game `0`.
 
 ## 2. Crash
 
-A multiplier climbs, and players try to cash out before it crashes.
+> **Update 2026-11-15: live cash-out in sim mode.** The multiplier now climbs live after betting locks and players cash out by hand, with an optional auto target as a backup. The crash point is no longer taken from the seed: it's drawn as the climb goes (`src/lib/liveCrash.ts`), so nobody, not even the page, knows it ahead. Each step survives with chance m1/m2, which keeps P(reaching m) = 98/m and the same 2% edge at every cash-out point (checked on 200,000 simulated runs). Trade-off: the crash point can't be rechecked from the seed. The sections below describe the earlier auto-cash-out version and why it was chosen for on-chain play. See `frontend/INTEGRATION.md` for what live cash-out needs on-chain.
 
 ### Rules
 

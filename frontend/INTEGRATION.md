@@ -62,6 +62,19 @@ Full rules and reasoning are in [GAMES.md](GAMES.md#2-crash).
   Needs something like `wins(seed, choice)` plus `payoutBps(choice)`, or a Crash path in `claim`.
 - When the contract has it: drop `simOnly`, add the ABI pieces, and add Crash to the
   outcome cross-check test below.
+- **Update 2026-11-15, live cash-out (sim only for now).** The sim draws the crash point
+  live, step by step (`src/lib/liveCrash.ts`), and cash-outs lock the current multiplier.
+  On-chain, a live crash point must stay unknown while players decide, so the seeded
+  formula above can't be used as is. Options, with their cost:
+  1. Per-step randomness (a VRF result per block or few blocks): trustless and live, but
+     each request costs about 0.124 MON on Pyth.
+  2. Blind window: the multiplier climbs on a clock, `cashOut(roundId, betIndex)` records
+     the multiplier at the block it lands in, and the crash point is drawn from one VRF
+     seed after the window closes. Trustless and cheap, but there's no live crash moment.
+  3. A house seed chain (commit to hashes ahead, reveal after): live and verifiable later,
+     but the operator knows outcomes early.
+  Whichever is picked, a cash-out lands a block after the click, so the UI must show the
+  multiplier at the landing block, not the click.
 
 ## Proposed: Beauty Contest (game 4, sim mode only)
 

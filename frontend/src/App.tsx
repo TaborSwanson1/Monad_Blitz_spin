@@ -6,6 +6,7 @@ import { roundClock } from './lib/rounds'
 import { SessionBar } from './components/SessionBar'
 import { BlockStream } from './components/BlockStream'
 import { RoundHud } from './components/RoundHud'
+import { CrashLive } from './components/CrashLive'
 import { BetPanel } from './components/BetPanel'
 import { History } from './components/History'
 import { RevealOverlay } from './components/RevealOverlay'
@@ -176,6 +177,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
               {session.blockedReason} Betting is paused. You can change limits, but consider taking a break.
             </div>
           )}
+          {casino.liveCrash && <CrashLive live={casino.liveCrash} onCashOut={casino.cashOut} />}
           {clock && cfg ? (
             <RoundHud
               clock={clock}

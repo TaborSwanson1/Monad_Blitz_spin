@@ -37,7 +37,7 @@ function puffSprite(inner: string, outer: string, size = 64) {
   return c
 }
 
-function NukeCanvas({ scale }: { scale: number }) {
+function NukeCanvas({ scale, ox, oy }: { scale: number; ox: number; oy: number }) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -45,9 +45,19 @@ function NukeCanvas({ scale }: { scale: number }) {
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx) return
     const dpr = window.devicePixelRatio || 1
-    canvas.width = W * scale * dpr
-    canvas.height = H * scale * dpr
-    ctx.scale(dpr * scale, dpr * scale)
+    // Full-screen canvas, so the cloud, dust and shockwave never hit an edge. The base
+    // W x H scene is drawn at (ox, oy) on screen, scaled by `scale`.
+    const vw = window.innerWidth
+    canvas.width = vw * dpr
+    canvas.height = window.innerHeight * dpr
+    const toBase = () => ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * ox, dpr * oy)
+    // How far the shockwave and dust need to travel to reach both screen edges, in base units.
+    const reach = (Math.max(ox + CX * scale, vw - ox - CX * scale) + 80) / scale
+    // The cloud rises only as far as the open space below the result card, so the cap
+    // stays visible instead of disappearing behind the card.
+    const card = document.querySelector('.reveal-card')?.getBoundingClientRect()
+    const capTopBase = card ? (card.bottom + 8 - oy) / scale + 62 : 0 // highest the cap center may go
+    const riseMax = Math.max(40, Math.min(120, GROUND - 14 - capTopBase))
 
     const smokeDark = puffSprite('rgba(78,64,58,0.9)', 'rgba(60,50,45,0)')
     const smokeLight = puffSprite('rgba(140,120,105,0.85)', 'rgba(110,95,85,0)')
@@ -62,7 +72,7 @@ function NukeCanvas({ scale }: { scale: number }) {
       tube: 14 + Math.random() * 14,
       size: 34 + Math.random() * 24,
     }))
-    const skirt = Array.from({ length: 26 }, () => ({ dir: Math.random() < 0.5 ? -1 : 1, speed: 0.06 + Math.random() * 0.08, size: 14 + Math.random() * 14, lift: Math.random() * 8 }))
+    const skirt = Array.from({ length: 44 }, () => ({ dir: Math.random() < 0.5 ? -1 : 1, far: 0.35 + Math.random() * 0.65, size: 14 + Math.random() * 16, lift: Math.random() * 10 }))
     type S = { x: number; y: number; vy: number; size: number; heat: number }
     const stem: S[] = []
 
@@ -70,30 +80,34 @@ function NukeCanvas({ scale }: { scale: number }) {
     let raf = 0
     const frame = (now: number) => {
       const d = now - t0 - DETONATE
-      ctx.clearRect(0, 0, W, H)
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      toBase()
       if (d >= 0) {
         const rise = easeOut(d / 1900)
-        const fy = GROUND - 14 - rise * 120 // fireball center
+        const fy = GROUND - 14 - rise * riseMax // fireball center
         const fr = 10 + 46 * easeOut(d / 650) // fireball radius
         const cool = clamp((d - 900) / 3800) // 0 hot, 1 cooled
         const capGrow = easeOut((d - 350) / 1500)
 
-        // Shockwave along the ground.
-        if (d < 1100) {
-          const rx = 12 + d * 0.22
-          ctx.strokeStyle = `rgba(255,236,196,${0.9 * (1 - d / 1100)})`
-          ctx.lineWidth = 3
+        // Shockwave: two rings racing out along the ground to both edges of the screen.
+        for (const [lag, alpha, width] of [[0, 0.95, 3.5], [180, 0.5, 2]] as const) {
+          const t = d - lag
+          if (t < 0 || t > 1500) continue
+          const rx = 12 + reach * easeOut(t / 1300)
+          ctx.strokeStyle = `rgba(255,236,196,${alpha * (1 - t / 1500)})`
+          ctx.lineWidth = width
           ctx.beginPath()
-          ctx.ellipse(CX, GROUND, rx, rx * 0.16, 0, 0, Math.PI * 2)
+          ctx.ellipse(CX, GROUND, rx, Math.min(rx * 0.16, 30), 0, 0, Math.PI * 2)
           ctx.stroke()
         }
 
-        // Dust skirt rolling outward.
+        // Dust skirt rolling out to the edges of the screen.
         for (const p of skirt) {
-          const k = clamp(d / 2400)
-          const x = CX + p.dir * Math.min(170, 10 + d * p.speed) // stops before the canvas edge
-          const s = p.size * (0.6 + k)
-          ctx.globalAlpha = 0.55 * (1 - k * 0.6)
+          const k = clamp(d / 2600)
+          const x = CX + p.dir * (10 + reach * p.far * easeOut(d / 2200))
+          const s = p.size * (0.6 + k * 1.4)
+          ctx.globalAlpha = 0.55 * (1 - k * 0.7)
           ctx.drawImage(smokeLight, x - s / 2, GROUND - 6 - p.lift - s / 2, s, s)
         }
 
@@ -151,9 +165,9 @@ function NukeCanvas({ scale }: { scale: number }) {
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
-  }, [scale])
+  }, [scale, ox, oy])
 
-  return <canvas ref={ref} className="nuke-canvas" style={{ width: W * scale, height: H * scale }} aria-hidden />
+  return <canvas ref={ref} className="nuke-canvas" aria-hidden />
 }
 
 function StillMushroom() {
@@ -176,20 +190,27 @@ function StillMushroom() {
 
 export function Nuke({ wallet }: { wallet: string | null }) {
   const reduced = prefersReducedMotion()
-  const s = typeof window === 'undefined' ? 1 : Math.max(1, Math.min(2.1, (window.innerWidth - 32) / W, (window.innerHeight * 0.72) / H))
+  const vw = typeof window === 'undefined' ? 1200 : window.innerWidth
+  const vh = typeof window === 'undefined' ? 800 : window.innerHeight
+  const s = Math.max(1, Math.min(2.1, (vw - 32) / W, (vh * 0.72) / H))
+  // The scene box sits centered at the bottom, 12px up, like the burning wallet.
+  const ox = (vw - W * s) / 2
+  const oy = vh - 12 - H * s
   return (
-    <div className={`fx-bottom nuke ${reduced ? 'nuke-static' : ''}`} style={{ width: W * s, height: H * s }} aria-hidden>
-      {!reduced && <div className="nuke-flash" />}
-      {reduced ? (
-        <StillMushroom />
-      ) : (
-        <>
+    <>
+      {/* Flash and canvas live outside the centered box: its transform would trap
+          position: fixed children inside it and show a hard-edged rectangle. */}
+      {!reduced && <div className="nuke-flash" aria-hidden />}
+      <div className={`fx-bottom nuke ${reduced ? 'nuke-static' : ''}`} style={{ width: W * s, height: H * s }} aria-hidden>
+        {reduced ? (
+          <StillMushroom />
+        ) : (
           <div className="nuke-wallet" style={{ width: 132 * s, marginLeft: -66 * s }}>
             <WalletSvg wallet={wallet} />
           </div>
-          <NukeCanvas scale={s} />
-        </>
-      )}
-    </div>
+        )}
+      </div>
+      {!reduced && <NukeCanvas scale={s} ox={ox} oy={oy} />}
+    </>
   )
 }

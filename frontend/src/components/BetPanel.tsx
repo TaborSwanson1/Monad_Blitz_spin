@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { BEAUTY_ENTRY, BEAUTY_FEE_BPS, BEAUTY_MAX_BOTS, BEAUTY_MIN_BOTS } from '../lib/beauty'
-import { CRASH_DEFAULT_CHOICE, CRASH_TARGETS_X100 } from '../lib/crash'
+import { CRASH_DEFAULT_CHOICE, CRASH_MANUAL, CRASH_TARGETS_X100 } from '../lib/crash'
 import { GAMES, HOUSE_EDGE_BPS, LANE_COLORS, chanceFor, multiplierFor, payoutBpsFor } from '../lib/games'
 import { fmtChips, toChips } from '../lib/format'
 import type { PlacedBet } from '../client'
@@ -73,6 +73,21 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
             <dd>{BEAUTY_FEE_BPS / 100}% of pot</dd>
           </div>
         </dl>
+      ) : isCrash && choice === CRASH_MANUAL ? (
+        <dl className="odds">
+          <div>
+            <dt>Cash out at 2×</dt>
+            <dd>49% win</dd>
+          </div>
+          <div>
+            <dt>Payout</dt>
+            <dd>Stake × your cash-out</dd>
+          </div>
+          <div>
+            <dt>House edge</dt>
+            <dd>{HOUSE_EDGE_BPS / 100}% at any point</dd>
+          </div>
+        </dl>
       ) : (
         <dl className="odds">
           <div>
@@ -111,29 +126,28 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
         </div>
       ) : isCrash ? (
         <div className="crash-picker">
-          <label className="amount">
-            <span>Cash-out target</span>
-            <input
-              type="range"
-              min={0}
-              max={CRASH_TARGETS_X100.length - 1}
-              step={1}
-              value={choice ?? CRASH_DEFAULT_CHOICE}
-              onChange={(e) => setChoice(Number(e.target.value))}
-              aria-valuetext={g.labels[choice ?? CRASH_DEFAULT_CHOICE]}
-            />
-          </label>
+          <div className="amount">
+            <span>Auto cash-out (optional backup)</span>
+          </div>
           <div className="choices choices-crash">
-            {g.labels.map((label, i) => (
-              <button key={label} className={`choice ${choice === i ? 'on' : ''}`} onClick={() => setChoice(i)}>
-                {label}
+            <button
+              className={`choice ${choice === CRASH_MANUAL ? 'on' : ''}`}
+              onClick={() => setChoice(CRASH_MANUAL)}
+            >
+              Off
+              <span className="choice-sub">cash out by hand</span>
+            </button>
+            {CRASH_TARGETS_X100.map((_, i) => (
+              <button key={g.labels[i]} className={`choice ${choice === i ? 'on' : ''}`} onClick={() => setChoice(i)}>
+                {g.labels[i]}
                 <span className="choice-sub">{pct(chanceFor(g, i))}</span>
               </button>
             ))}
           </div>
           <p className="note">
-            Your target locks with your bet. The climb you see after the round is a replay of a result that's already
-            settled. Higher targets pay more and hit less often. The edge is 2% at every target.
+            After betting locks, the multiplier climbs live. Hit Cash Out any time before it crashes. The crash point is
+            drawn as it climbs, so nobody can know it ahead. An auto target cashes you out there if you haven't already.
+            Every cash-out point has the same 2% edge.
           </p>
         </div>
       ) : (
@@ -181,11 +195,21 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
         ) : inRange ? (
           <>
             Stake <strong>{fmtChips(amt)}</strong>.{' '}
-            {isCrash && choice !== null && (
-              <>If the crash point reaches <strong>{g.labels[choice]}</strong>, </>
+            {isCrash && choice === CRASH_MANUAL ? (
+              <>
+                Cash out at any multiplier to get your stake times it. Cash out at 2× and you get{' '}
+                <strong>{fmtChips(amt * 2n)}</strong> back. If it crashes first, you lose {fmtChips(amt)}.
+              </>
+            ) : (
+              <>
+                {isCrash && choice !== null && (
+                  <>If you haven't cashed out by <strong>{g.labels[choice]}</strong>, auto cash-out pays </>
+                )}
+                {isCrash ? '' : 'If you win you get '}
+                <strong>{fmtChips(winPays)}</strong> back (net {fmtChips(winPays - amt, { sign: true })}). If you
+                lose, you lose {fmtChips(amt)}.
+              </>
             )}
-            {isCrash ? 'you' : 'If you win you'} get <strong>{fmtChips(winPays)}</strong> back (net{' '}
-            {fmtChips(winPays - amt, { sign: true })}). If you lose, you lose {fmtChips(amt)}.
           </>
         ) : (
           <>

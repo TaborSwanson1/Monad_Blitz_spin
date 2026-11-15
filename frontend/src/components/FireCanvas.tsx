@@ -31,6 +31,12 @@ interface Props {
   billFrom?: { x: number; y: number }
   /** Draw everything this many times larger. Coordinates stay in base px. */
   scale?: number
+  /**
+   * Draw on a full-screen canvas instead of a box, so flames, smoke and bills never hit
+   * an edge and get cut off in a straight line. `ox`/`oy` = where the base coordinate
+   * box's top-left sits on screen, in px.
+   */
+  screen?: { ox: number; oy: number }
   className?: string
 }
 
@@ -74,7 +80,7 @@ function billSprite() {
 type P = { x: number; y: number; vx: number; vy: number; age: number; max: number; size: number; kind: 0 | 1 | 2; seed: number }
 type Bill = { x: number; y: number; vx: number; vy: number; rot: number; vr: number; char: number; born: number; s: number }
 
-export function FireCanvas({ width, height, emitters, intensity, duration, bills = 0, billFrom, scale = 1, className }: Props) {
+export function FireCanvas({ width, height, emitters, intensity, duration, bills = 0, billFrom, scale = 1, screen, className }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -82,9 +88,17 @@ export function FireCanvas({ width, height, emitters, intensity, duration, bills
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx || prefersReducedMotion()) return
     const dpr = window.devicePixelRatio || 1
-    canvas.width = width * scale * dpr
-    canvas.height = height * scale * dpr
-    ctx.scale(dpr * scale, dpr * scale)
+    const cw = screen ? window.innerWidth : width * scale
+    const ch = screen ? window.innerHeight : height * scale
+    canvas.width = cw * dpr
+    canvas.height = ch * dpr
+    const toBase = () => ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * (screen?.ox ?? 0), dpr * (screen?.oy ?? 0))
+    const wipe = () => {
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      toBase()
+    }
+    toBase()
 
     // Flame color by age: white-hot, yellow, orange, red, gone.
     const flames = [
@@ -130,7 +144,7 @@ export function FireCanvas({ width, height, emitters, intensity, duration, bills
     let raf = 0
     const frame = (now: number) => {
       const t = now - t0
-      ctx.clearRect(0, 0, width, height)
+      wipe()
       // Spawn rate ramps up over 300 ms and dies down over the last 700 ms.
       const ramp = Math.min(1, t / 300) * Math.max(0, Math.min(1, (duration - t) / 700))
       for (const e of emitters) {
@@ -199,11 +213,18 @@ export function FireCanvas({ width, height, emitters, intensity, duration, bills
       ctx.globalCompositeOperation = 'source-over'
       ctx.globalAlpha = 1
       if (t < duration + 1500) raf = requestAnimationFrame(frame)
-      else ctx.clearRect(0, 0, width, height)
+      else wipe()
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
-  }, [width, height, emitters, intensity, duration, bills, billFrom, scale])
+  }, [width, height, emitters, intensity, duration, bills, billFrom, scale, screen?.ox, screen?.oy])
 
-  return <canvas ref={ref} className={className} style={{ width: width * scale, height: height * scale }} aria-hidden />
+  return (
+    <canvas
+      ref={ref}
+      className={className}
+      style={screen ? { width: '100vw', height: '100vh' } : { width: width * scale, height: height * scale }}
+      aria-hidden
+    />
+  )
 }
