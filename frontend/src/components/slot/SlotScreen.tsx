@@ -15,6 +15,8 @@ import {
 } from '../../lib/slot'
 import { prefersReducedMotion } from '../../lib/themes'
 import { Sym, SymbolDefs } from './SlotSymbols'
+import { createSlotFx, type SlotFx } from './slotFx'
+import { isMuted, setMuted, sound } from './slotSound'
 import './slot.css'
 
 // Slot demo "Diamond Cascade", sim only. Results come from lib/slot.ts (same math as the
@@ -32,6 +34,13 @@ import './slot.css'
 //                   grows with losses and cascades as if the jackpot were getting closer.
 //                   It never changes what a spin pays.
 //
+// Win effects (slotFx.ts, slotSound.ts): coins, bills, flames, sparks, count-ups and sound.
+// They follow the real result, as CLAUDE.md asks: each line's effects are sized by what it
+// paid, and the Big win, Mega win and Jackpot shows need 20x, 100x and the jackpot. A losing
+// spin gets none of them. The one exception is the near-miss demo, whose teases and held
+// reel get their own (pink and blue) heat and sound. Motion effects are off for people who
+// ask for reduced motion.
+//
 // Left out on purpose (CLAUDE.md): autoplay, turbo spins, bonus buys and made-up jackpot tickers.
 // Owner: Zander.
 
@@ -48,9 +57,10 @@ interface Reel {
 }
 
 interface Overlay {
-  tone: 'big' | 'jackpot' | 'free'
+  tone: 'big' | 'mega' | 'jackpot' | 'free'
   title: string
-  amount?: string
+  /** Chips, counted up on screen. */
+  amount?: number
   sub?: string
 }
 
@@ -82,6 +92,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 0 })
 const rnd = () => Math.floor(Math.random() * PLURAL.length)
 const gridOf = (s: Spin, k: number) => [s.above[k], s.lines[k].symbols, s.below]
+/** How big a win is, from what it paid in multiples of the bet: 0 small, 1 good, 2 big (20x), 3 mega (100x), 4 jackpot. */
+const tierOf = (x: number, jackpot: boolean) => (jackpot ? 4 : x >= 100 ? 3 : x >= 20 ? 2 : x >= 8 ? 1 : 0)
 const restReels = (): Reel[] => [0, 1, 2].map((x) => ({ key: x, dur: 0, cells: [rnd(), ATTRACT[0][x], ATTRACT[1][x], ATTRACT[2][x]] }))
 
 interface Props {
@@ -109,8 +121,13 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
   const [overlay, setOverlay] = useState<Overlay | null>(null)
   const [pile, setPile] = useState(18)
   const [infoOpen, setInfoOpen] = useState(false)
+  const [shake, setShake] = useState(false)
+  const [muted, setMutedState] = useState(isMuted)
 
   const reelsRef = useRef(reels)
+  const frameEl = useRef<HTMLDivElement>(null)
+  const fxCanvas = useRef<HTMLCanvasElement>(null)
+  const fxRef = useRef<SlotFx | null>(null)
   const alive = useRef(true)
   /** Payout of the spin on screen, until it's credited. Credited on unmount so the session net stays right. */
   const owed = useRef(0)
@@ -127,9 +144,43 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     }
   }, [])
 
+  // The effects canvas. Not created at all under reduced motion.
+  useEffect(() => {
+    if (reduced || !fxCanvas.current) return
+    const engine = createSlotFx(fxCanvas.current, () => frameEl.current)
+    fxRef.current = engine
+    return () => {
+      engine?.destroy()
+      fxRef.current = null
+    }
+  }, [reduced])
+
+  /** Waits for an animation. Short under reduced motion, where the animation doesn't run. */
   const wait = async (ms: number) => {
     await sleep(reduced ? Math.min(ms, 150) : ms)
     return alive.current
+  }
+  /** Waits so something can be read. Never shortened. */
+  const read = async (ms: number) => {
+    await sleep(ms)
+    return alive.current
+  }
+  const bump = () => {
+    if (reduced) return
+    setShake(true)
+    setTimeout(() => alive.current && setShake(false), 600)
+  }
+
+  /** Effects for one winning line, sized by what it really paid (`pay`, in multiples of the bet). */
+  function celebrateLine(pay: number, k: number, jackpot: boolean, ice: boolean) {
+    const t = tierOf(pay, jackpot)
+    sound.win(Math.min(3, t + (k > 0 ? 1 : 0)))
+    sound.coins(3 + t * 2)
+    const f = fxRef.current
+    if (!f) return
+    f.coinBurst(Math.min(70, 8 + Math.round(pay * 1.5)), 0.8 + t * 0.12)
+    f.heat(Math.min(1, 0.3 + 0.18 * k + pay / 80), 1300, ice ? 'ice' : 'fire')
+    if (t >= 1) f.sparks(30 + t * 20)
   }
   const apply = (next: Reel[]) => {
     reelsRef.current = next
@@ -154,10 +205,13 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
         ],
       })),
     )
+    if (!reduced) durs.forEach((d) => setTimeout(() => alive.current && sound.stop(), d))
     if (hold) {
       // Near-miss demo: two diamonds are on the line, so the last reel keeps turning.
       if (!(await wait(STOP_MS[1] + 60))) return false
       setHolding(true)
+      sound.hold(HOLD_MS - STOP_MS[1])
+      fxRef.current?.heat(0.7, HOLD_MS - STOP_MS[1], 'ice')
       setTeased(['1-0', '1-1'])
       setMsg({ text: 'Two diamonds… jackpot chance!', tone: 'tease' })
       if (!(await wait(HOLD_MS - STOP_MS[1]))) return false
@@ -169,7 +223,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
   }
 
   /** Plays one spin's lines: light up each win, clear it, drop the next symbols in. Returns the running total won. */
-  async function playLines(s: Spin, bet: number, wonBefore: number, pileUp: boolean): Promise<number> {
+  async function playLines(s: Spin, bet: number, wonBefore: number, pileUp: boolean, ice: boolean): Promise<number> {
     let won = wonBefore
     for (let k = 0; k < s.lines.length; k++) {
       const line = s.lines[k]
@@ -179,6 +233,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
       setStep({ k, mult: line.mult })
       setFx('lit')
       setWin(won)
+      celebrateLine(line.pay, k, line.jackpot, ice)
       setMsg({
         text: line.jackpot
           ? `Jackpot! Three diamonds pay ${fmt(line.pay * bet)}`
@@ -222,6 +277,8 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     setStaked((s) => s + bet)
     onStake(bet)
     setMsg({ text: 'Good luck!', tone: 'idle' })
+    sound.unlock()
+    sound.spin()
 
     const r = resolveSlot(randomSeed())
     owed.current = r.total * bet
@@ -238,23 +295,28 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
         tone: 'tease',
       })
       addPile(6)
+      sound.tease()
+      fxRef.current?.heat(0.45, 1500, 'pink')
     }
 
-    let won = await playLines(r.base, bet, 0, demo)
+    let won = await playLines(r.base, bet, 0, demo, false)
     if (!alive.current) return
 
     if (r.free.length > 0) {
       setTeased([])
       setOverlay({ tone: 'free', title: `${FREE_SPINS} free spins`, sub: `${r.stars} stars landed. Cascades pay double.` })
       setMsg({ text: `${FREE_SPINS} free spins won`, tone: 'free' })
-      if (!(await wait(1700))) return
+      sound.freeSpins()
+      fxRef.current?.sparks(60)
+      fxRef.current?.heat(0.6, 1500, 'ice')
+      if (!(await read(1700))) return
       setOverlay(null)
       for (let i = 0; i < r.free.length; i++) {
         setFree({ n: i + 1, of: r.free.length })
         setMsg({ text: `Free spin ${i + 1} of ${r.free.length}`, tone: 'free' })
         const g = gridOf(r.free[i], 0)
         if (!(await reveal(g, holdFor(g)))) return
-        won = await playLines(r.free[i], bet, won, demo)
+        won = await playLines(r.free[i], bet, won, demo, true)
         if (!(await wait(350))) return
       }
       setFree(null)
@@ -271,15 +333,27 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     if (payout > 0) {
       setMsg({ text: `You won ${fmt(payout)} · ${fmt(r.total)}× your bet`, tone: 'win' })
       if (demo) setPile((p) => (r.jackpot ? 12 : Math.max(10, p - 4)))
-      // Fanfare follows the real result: only for the jackpot or 20× and up.
-      if (r.jackpot || r.total >= 20) {
+      // The big show follows the real result: 20× is a big win, 100× a mega win, then the jackpot.
+      const t = tierOf(r.total, r.jackpot)
+      if (t >= 2) {
+        const ms = reduced ? 2200 : [0, 0, 2600, 3800, 5200][t]
         setOverlay({
-          tone: r.jackpot ? 'jackpot' : 'big',
-          title: r.jackpot ? 'Jackpot' : 'Big win',
-          amount: `+${fmt(payout)}`,
+          tone: t === 4 ? 'jackpot' : t === 3 ? 'mega' : 'big',
+          title: t === 4 ? 'Jackpot' : t === 3 ? 'Mega win' : 'Big win',
+          amount: payout,
           sub: `${fmt(r.total)}× your ${fmt(bet)} chip bet`,
         })
-        if (!(await wait(2400))) return
+        sound.fanfare(t >= 3)
+        bump()
+        const f = fxRef.current
+        if (f) {
+          f.coinRain([0, 0, 70, 150, 240][t], ms - 500)
+          f.bills([0, 0, 14, 36, 60][t], ms - 500)
+          f.ground(ms - 700, 'fire')
+          f.heat(1, ms - 700, t === 4 ? 'ice' : 'fire')
+          if (t >= 3) f.fireworks(t === 4 ? 12 : 6, ms - 800)
+        }
+        if (!(await read(ms))) return
         setOverlay(null)
       }
     } else {
@@ -323,7 +397,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
         </span>
       </div>
 
-      <section className="sl-scene">
+      <section className={`sl-scene ${shake ? 'sl-shake' : ''}`}>
         <div className="sl-backdrop" aria-hidden />
 
         <h1 className="sl-logo">
@@ -376,7 +450,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
             )}
           </div>
 
-          <div className="sl-frame">
+          <div className={`sl-frame ${fx === 'lit' ? 'is-win' : ''}`} ref={frameEl}>
             <div className={`sl-window ${fx === 'lit' ? 'has-win' : ''}`}>
               {reels.map((reel, x) => (
                 <div className="sl-reel" key={x}>
@@ -399,7 +473,11 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
               {overlay && (
                 <div className={`sl-overlay tone-${overlay.tone}`} role="status">
                   <span className="sl-overlay-title">{overlay.title}</span>
-                  {overlay.amount && <strong>{overlay.amount}</strong>}
+                  {overlay.amount !== undefined && (
+                    <strong>
+                      <Rolling value={overlay.amount} ms={reduced ? 0 : 1400} fromZero prefix="+" />
+                    </strong>
+                  )}
                   {overlay.sub && <span className="sl-overlay-sub">{overlay.sub}</span>}
                 </div>
               )}
@@ -465,9 +543,30 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
             <button className="sl-round sl-info" onClick={() => setInfoOpen((o) => !o)} disabled={busy} aria-pressed={infoOpen} aria-label="Paytable and rules">
               i
             </button>
+            <button
+              className="sl-round sl-mute"
+              onClick={() => {
+                setMuted(!muted)
+                setMutedState(!muted)
+              }}
+              aria-pressed={!muted}
+              aria-label={muted ? 'Turn sound on' : 'Turn sound off'}
+              title={muted ? 'Sound is off' : 'Sound is on'}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden focusable="false">
+                <path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" fill="currentColor" />
+                {muted ? (
+                  <path d="m15.5 9.5 5 5m0-5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                ) : (
+                  <path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                )}
+              </svg>
+            </button>
             <div className="sl-field">
               <span>Demo chips</span>
-              <strong>{fmt(balance)}</strong>
+              <strong>
+                <Rolling value={balance} ms={reduced ? 0 : 600} />
+              </strong>
             </div>
             <div className="sl-field sl-bet">
               <button className="sl-round" onClick={() => setStake(STAKES[stakeIdx - 1])} disabled={busy || stakeIdx <= 0} aria-label="Lower bet">
@@ -488,7 +587,9 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
             </div>
             <div className="sl-field sl-win">
               <span>Win</span>
-              <strong key={win}>{fmt(win)}</strong>
+              <strong>
+                <Rolling value={win} ms={reduced ? 0 : 450} />
+              </strong>
             </div>
           </div>
           <button className={`sl-spin ${busy ? 'is-busy' : ''}`} onClick={spin} disabled={!canSpin} aria-label={`Spin for ${stake} demo chips`}>
@@ -515,6 +616,8 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
             )}
           </div>
         )}
+
+        <canvas ref={fxCanvas} className="sl-fx" aria-hidden />
       </section>
 
       <p className="sl-odds">
@@ -524,5 +627,39 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
         <strong className={net > 0 ? 'pos' : net < 0 ? 'neg' : ''}>{net > 0 ? `+${fmt(net)}` : net < 0 ? `−${fmt(-net)}` : '±0'}</strong>.
       </p>
     </main>
+  )
+}
+
+/** A number that counts to its new value instead of jumping. `ms` 0 turns the counting off. */
+function Rolling({ value, ms, fromZero = false, prefix = '' }: { value: number; ms: number; fromZero?: boolean; prefix?: string }) {
+  const [shown, setShown] = useState(fromZero ? 0 : value)
+  const at = useRef(fromZero ? 0 : value)
+
+  useEffect(() => {
+    const from = at.current
+    if (from === value) return
+    if (ms <= 0) {
+      at.current = value
+      setShown(value)
+      return
+    }
+    const t0 = performance.now()
+    let raf = 0
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms)
+      const v = k >= 1 ? value : Math.round(from + (value - from) * (1 - (1 - k) ** 3))
+      at.current = v
+      setShown(v)
+      if (k < 1) raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [value, ms])
+
+  return (
+    <>
+      {prefix}
+      {fmt(shown)}
+    </>
   )
 }
