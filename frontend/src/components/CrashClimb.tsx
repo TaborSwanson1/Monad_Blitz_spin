@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fmtX } from '../lib/crash'
 import { prefersReducedMotion } from '../lib/themes'
+import { CrashScene, zoneOf } from './CrashScene'
 
 // The climb is a replay. The crash point is already settled by the time this runs.
 //
@@ -62,7 +63,8 @@ export function CrashClimb({ crashX100, targetsX100, onDone }: Props) {
   const span = Math.max(MIN_SPAN_MS, elapsed)
   const topMult = Math.max(2, mult, ...targetsX100.map((t) => t / 100)) * 1.15
   const y = (m: number) => H - (Math.log(m) / Math.log(topMult)) * (H - 8)
-  const x = (t: number) => (t / span) * W
+  // Leave room at the right edge for the rocket.
+  const x = (t: number) => 4 + (t / span) * (W - 22)
 
   const points: string[] = []
   const samples = 48
@@ -71,12 +73,21 @@ export function CrashClimb({ crashX100, targetsX100, onDone }: Props) {
     points.push(`${x(t).toFixed(1)},${y(multAt(t)).toFixed(1)}`)
   }
 
+  // The rocket rides the head of the line, pointed along the curve.
+  const hx = x(elapsed)
+  const hy = y(mult)
+  const back = Math.max(0, elapsed - 120)
+  const angle = elapsed > 0 ? (Math.atan2(hy - y(multAt(back)), hx - x(back)) * 180) / Math.PI : -60
+
   return (
     <div className={`crash-climb ${finished ? 'is-crashed' : ''}`}>
       <div className="crash-mult" aria-live="off">
         {fmtX(Math.floor(mult * 100))}
       </div>
       <div className="crash-status">{finished ? `CRASHED AT ${fmtX(crashX100)}` : 'REPLAYING SETTLED RESULT'}</div>
+      <div className="crash-stage">
+      <CrashScene mult={mult} crashed={finished} />
+      <div className="crash-zone">{zoneOf(mult)}</div>
       <svg className="crash-chart" viewBox={`0 0 ${W} ${H}`} aria-hidden>
         {targetsX100.map((t) => {
           const reached = mult * 100 >= t
@@ -91,7 +102,22 @@ export function CrashClimb({ crashX100, targetsX100, onDone }: Props) {
           )
         })}
         {elapsed > 0 && <polyline className="crash-line" points={points.join(' ')} />}
+        {finished ? (
+          <g className="crash-boom" transform={`translate(${hx} ${hy})`}>
+            <circle r="16" />
+            <circle r="10" />
+            <circle r="5" />
+          </g>
+        ) : (
+          <g className="crash-rocket" transform={`translate(${hx} ${hy}) rotate(${angle})`}>
+            <path className="crash-flame" d="M-9 -3 L-20 0 L-9 3 Z" />
+            <path d="M-9 -4 L5 -4 Q 12 -4 14 0 Q 12 4 5 4 L-9 4 Z" fill="#eef1f8" />
+            <path d="M-9 -4 L-13 -8 L-5 -4 Z M-9 4 L-13 8 L-5 4 Z" fill="#836ef9" />
+            <circle cx="3" cy="0" r="2" fill="#4f8cff" />
+          </g>
+        )}
       </svg>
+      </div>
     </div>
   )
 }
