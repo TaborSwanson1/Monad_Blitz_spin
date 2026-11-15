@@ -72,8 +72,10 @@ A reference backend draft exists in commit `b5587a5` (`git show b5587a5:backend/
 ## Commands
 
 ```bash
-# backend (once it exists)
-cd backend && forge build && forge test
+# backend: deps via npm (forge-std + Pyth SDK), then Foundry
+cd backend && npm install && forge build && forge test
+# deploy to Monad testnet (you type the keystore password; the key never goes in .env)
+cd backend && forge script script/Deploy.s.sol --rpc-url monad_testnet --account monad-deployer --broadcast
 # frontend
 cd frontend && npm install && npm run dev      # VITE_MODE=sim needs no backend
 ```
