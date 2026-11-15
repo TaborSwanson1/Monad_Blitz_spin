@@ -39,8 +39,10 @@ export function useWinEffects(record: RoundRecord, ready: boolean) {
     durationMs,
     coinCount: Math.round(30 + 50 * intensity),
     confettiCount: Math.round(160 + 340 * intensity),
+    /** The glow, gold wash and coin stream keep going until the reveal closes. */
+    loop: intensity > 0 && !reducedMotion(),
     cardClass: intensity > 0 ? 'fx-glow' : '',
-    cardStyle: { '--intensity': intensity, '--glow-pulses': intensity >= 0.6 ? 3 : 2 } as CSSProperties,
+    cardStyle: { '--intensity': intensity } as CSSProperties,
   }
 }
 

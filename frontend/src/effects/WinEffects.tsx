@@ -10,16 +10,65 @@ interface Props {
 }
 
 /**
- * Full-screen win effects: a gold wash, confetti over the whole viewport, and coins that
- * burst from the card to the screen edges and rain from the top. All of it sits behind
- * the result card, so the result stays readable.
+ * The opening burst of a win: confetti over the whole viewport, and coins that burst from
+ * the card to the screen edges and rain from the top. Runs once. All of it sits behind the
+ * result card, so the result stays readable.
  */
 export function WinEffects({ intensity, coinCount, confettiCount, durationMs }: Props) {
   return (
     <>
-      <div className="fx-layer fx-gold-wash" style={{ '--intensity': intensity } as CSSProperties} aria-hidden />
       <Confetti count={confettiCount} intensity={intensity} durationMs={durationMs} />
       <CoinShower count={coinCount} durationMs={durationMs} />
+    </>
+  )
+}
+
+/**
+ * What keeps going while a winning reveal is open: a pulsing gold wash and a steady stream
+ * of coins from the card. The stream rate scales with the win. Unmounting stops it and
+ * removes every coin.
+ */
+export function WinLoop({ intensity }: { intensity: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const layer = ref.current
+    if (!layer) return
+    const perTick = Math.round(2 + 5 * intensity) // every 250 ms: about 14 to 28 coins a second
+    const spawn = () => {
+      if (document.hidden || layer.childElementCount > 160) return
+      for (let i = 0; i < perTick; i++) {
+        const c = document.createElement('span')
+        c.className = 'fx-coin fx-coin-burst'
+        const a = rand(-Math.PI * 1.05, Math.PI * 0.05)
+        const d = rand(0.4, 1)
+        const x1 = Math.cos(a) * d * 30
+        const y1 = Math.sin(a) * d * 38 - 6
+        const dur = rand(1800, 2600)
+        c.style.cssText =
+          `--x1:${x1}vw;--y1:${y1}vh;--x2:${Math.cos(a) * d * 56}vw;--y2:${y1 + rand(70, 100)}vh;` +
+          `--rot:${rand(-720, 720)}deg;--s:${rand(0.8, 1.5)};--delay:${rand(0, 200)}ms;--dur:${dur}ms`
+        c.addEventListener('animationend', () => c.remove(), { once: true })
+        setTimeout(() => c.remove(), dur + 600) // fallback if animationend never fires
+        layer.appendChild(c)
+      }
+    }
+    const start = setTimeout(() => {
+      spawn()
+      timer = setInterval(spawn, 250)
+    }, 700) // let the opening burst lead
+    let timer: ReturnType<typeof setInterval> | undefined
+    return () => {
+      clearTimeout(start)
+      clearInterval(timer)
+      layer.replaceChildren()
+    }
+  }, [intensity])
+
+  return (
+    <>
+      <div className="fx-layer fx-gold-wash" style={{ '--intensity': intensity } as CSSProperties} aria-hidden />
+      <div ref={ref} className="fx-layer" aria-hidden />
     </>
   )
 }

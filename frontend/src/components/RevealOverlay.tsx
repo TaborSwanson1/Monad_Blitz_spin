@@ -6,13 +6,14 @@ import { fmtChips } from '../lib/format'
 import { BeautyResult } from './BeautyResult'
 import { CrashClimb } from './CrashClimb'
 import { OutcomeStrip } from './OutcomeStrip'
-import { WinEffects } from '../effects/WinEffects'
+import { WinEffects, WinLoop } from '../effects/WinEffects'
 import { LoseEffects } from '../effects/LoseEffects'
 import { useLoseEffects, useWinEffects } from '../effects/useOutcomeEffects'
 
 /*
  * Effects follow the real net result for the round, never a single bet:
- * - net > 0: coins, confetti and a gold glow, bigger for bigger multiples
+ * - net > 0: coins, confetti and a gold glow, bigger for bigger multiples. The glow and a
+ *   coin stream keep going until the player closes the reveal.
  * - net < 0: a short ember rise, shake and red vignette
  * - net = 0: plain result
  * The result, your pick and the net are shown at once. The effects sit behind the card.
@@ -56,6 +57,7 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
       role="dialog"
       aria-live="polite"
     >
+      {win.loop && <WinLoop intensity={win.intensity} />}
       {win.particles && <WinEffects {...win} />}
       {lose.particles && <LoseEffects />}
       <div className={`reveal-card ${win.cardClass} ${lose.cardClass}`} style={win.cardStyle}>
