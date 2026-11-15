@@ -5,6 +5,8 @@ Two people work on this repo, each with their own Claude. This file and the two 
 @docs/TEAM_CONTEXT.md
 @frontend/INTEGRATION.md
 
+The human-facing rules for this setup are in `docs/TEAM_RULES.md`. Follow them, and point your human to them when they ask how the team workflow works.
+
 ## Start every session like this
 
 1. `git pull` on the working branch (currently `scaffold`).
@@ -19,7 +21,7 @@ The `/sync` command does all three.
 |---|---|---|
 | `frontend/` | **Tabor** (TaborSwanson1) | `frontend/**` |
 | `backend/` (Foundry contracts, tests, scripts, keeper) | **finkierstead** | `backend/**` |
-| `CLAUDE.md`, `docs/TEAM_CONTEXT.md`, `.claude/`, `README.md` | Both | Shared, append-only where possible |
+| `CLAUDE.md`, `docs/`, `.claude/` | Both | Shared, append-only where possible |
 
 **Don't edit the other person's area.** If you need something changed there, write it in the TEAM_CONTEXT **Inbox** addressed to them.
 
@@ -30,7 +32,9 @@ The `/sync` command does all three.
 - **Backend chat:** never change a function signature, event, game order, status enum or the outcome/payout math without (a) updating `frontend/INTEGRATION.md`'s table and (b) leaving an Inbox note for Tabor. The frontend copies this logic in `frontend/src/lib/` and `frontend/src/client/abi.ts`.
 - **Frontend chat:** if the UI needs a new contract feature (for example `claimMany` or a keeper), ask in the Inbox. Don't change `backend/`.
 
-## Non-negotiables (from README.md)
+## Non-negotiables
+
+These come from the original root README. Tabor removed it on 2026-11-15, so this section is now the source of truth for them. The original is still in git history: `git show 34d078d:README.md`.
 
 - **Testnet and play money only.** Chips are a free-faucet ERC-20 with no value. Never add deposits, withdrawals to real currency, chip purchases or mainnet config.
 - **Randomness comes from a VRF, never from block data.** Blocks are the clock and the show. Tx count, gas, base fee, hash and timestamp can all be manipulated.
