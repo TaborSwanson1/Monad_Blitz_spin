@@ -4,6 +4,14 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a)
 const EMBER_COLORS = ['#ff7a1a', '#ff4d1f', '#f31260', '#ffb020', '#ff9a3c']
 
 /**
+ * Full-screen background flash: green/white for a win, red/black for a loss.
+ * Kept under 3 flashes a second (the WCAG seizure threshold) and finite.
+ */
+export function ScreenFlash({ kind }: { kind: 'win' | 'loss' }) {
+  return <div className={`fx-layer fx-flash fx-flash-${kind}`} aria-hidden />
+}
+
+/**
  * Full-screen loss effects: a red vignette, a fire glow along the bottom edge, and embers
  * rising across the whole width of the screen. All behind the result card.
  */

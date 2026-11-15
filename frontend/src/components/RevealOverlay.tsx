@@ -7,7 +7,8 @@ import { BeautyResult } from './BeautyResult'
 import { CrashClimb } from './CrashClimb'
 import { OutcomeStrip } from './OutcomeStrip'
 import { WinEffects, WinLoop } from '../effects/WinEffects'
-import { LoseEffects } from '../effects/LoseEffects'
+import { LoseEffects, ScreenFlash } from '../effects/LoseEffects'
+import { SlotDisplay } from './SlotDisplay'
 import { useLoseEffects, useWinEffects } from '../effects/useOutcomeEffects'
 
 /*
@@ -57,6 +58,8 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
       role="dialog"
       aria-live="polite"
     >
+      {win.particles && <ScreenFlash kind="win" />}
+      {lose.particles && <ScreenFlash kind="loss" />}
       {win.loop && <WinLoop intensity={win.intensity} />}
       {win.particles && <WinEffects {...win} />}
       {lose.particles && <LoseEffects />}
@@ -81,16 +84,20 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
                     </div>
                   )
                 }
-                const shown = g.kind === 'crash' ? fmtX(b.raw) : g.id === 2 ? g.labels[b.outcome] : b.raw
+                const shown =
+                  g.kind === 'crash'
+                    ? fmtX(b.raw)
+                    : g.id === 2
+                      ? g.labels[b.outcome]
+                      : String(b.raw).padStart(String(g.range - 1).length, '0')
                 return (
                   <div key={b.index} className="reveal-row">
                     <div className="reveal-game">{g.name}</div>
-                    <div
-                      className={`reveal-raw ${g.kind === 'crash' ? 'reveal-raw-sm' : ''}`}
-                      style={g.id === 2 ? { color: LANE_COLORS[b.outcome] } : undefined}
-                    >
-                      {shown}
-                    </div>
+                    <SlotDisplay
+                      value={shown}
+                      color={g.id === 2 ? LANE_COLORS[b.outcome] : undefined}
+                      small={g.kind === 'crash' || g.id === 2}
+                    />
                     {g.kind === 'uniform' && <OutcomeStrip game={g} outcome={b.outcome} choice={b.choice} />}
                     <div className="reveal-pick">
                       {g.kind === 'crash' ? 'Your target' : 'You picked'} {g.labels[b.choice]} ·{' '}
