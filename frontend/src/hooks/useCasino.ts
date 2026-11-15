@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address, Hex } from 'viem'
 import type { BlockInfo, CasinoClient, PlacedBet } from '../client'
-import { GAMES } from '../lib/games'
-import { payoutFor, resolveGame } from '../lib/outcomes'
+import { resolveBet } from '../lib/outcomes'
 import { lockBlock, type RoundConfig } from '../lib/rounds'
 import { errMsg } from '../lib/format'
 
@@ -52,12 +51,10 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
   const resolveRound = useCallback(
     async (roundId: bigint, seed: Hex) => {
       const bets = pendingRef.current.filter((b) => b.roundId === roundId)
-      const resolved: ResolvedBet[] = bets.map((b) => {
-        const g = GAMES[b.gameId]
-        const { raw, outcome } = resolveGame(seed, g)
-        const won = outcome === b.choice
-        return { ...b, raw, outcome, won, payout: payoutFor(b.amount, won, g) }
-      })
+      const resolved: ResolvedBet[] = bets.map((b) => ({
+        ...b,
+        ...resolveBet(seed, b.gameId, b.choice, b.amount),
+      }))
       // Losing bets have nothing to claim, so they cost no gas.
       for (const b of resolved) if (b.won) await client.claim(b, b.payout)
 

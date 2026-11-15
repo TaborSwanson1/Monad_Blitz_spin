@@ -38,12 +38,30 @@ ABIs are written by hand in [src/client/abi.ts](src/client/abi.ts).
 2. **Game list and order.** `src/lib/games.ts` has to match the order of games
    passed to the `BlockCasino` constructor in `backend/script/Deploy.s.sol`:
    0 High / Low (range 100, 2 outcomes), 1 Exact Digit (10, 10), 2 Block Race (4, 4).
+   Game 3 (Crash) is `simOnly` and hidden in chain mode, so it doesn't affect this
+   until the contract adds it. See "Proposed: Crash" below.
 3. **Outcome math.** `src/lib/outcomes.ts` copies `BlockCasino.gameSeed` and
    `UniformGame.rawResult` / `outcome`. The UI computes results from the seed
    itself instead of calling `gameResult`, which saves reads. If the contract
    math changes, this has to change too or the UI will show wrong results.
 4. **Round status enum.** `chain.ts` maps `0..3` to none, requested, settled, expired.
 5. **Payout math.** `amount × payoutBps / 10_000`, rounded down, same as the contract.
+
+## Proposed: Crash (game 3, sim mode only)
+
+Not on the contract yet. Nothing here changes the seam until the backend agrees.
+Full rules and reasoning are in [GAMES.md](GAMES.md#2-crash).
+
+- **Seed:** `gameSeed(roundSeed, 3)`, same as the other games.
+- **Choice:** index into the target ladder `[110, 125, 150, 200, 300, 500, 1000, 2000, 5000]`
+  (hundredths). `choice` is a `uint8`, so it can't hold the target itself.
+- **Math** (`src/lib/crash.ts`): `r = uint256(gameSeed) % 2^52`,
+  `crashX100 = max(100, 98 * 2^52 / (2^52 - r))`, win if `crashX100 >= target`,
+  payout `amount * target / 100` rounded down. 2% edge at every target.
+- **Doesn't fit `IGame`:** many targets can win in one round, each with its own payout.
+  Needs something like `wins(seed, choice)` plus `payoutBps(choice)`, or a Crash path in `claim`.
+- When the contract has it: drop `simOnly`, add the ABI pieces, and add Crash to the
+  outcome cross-check test below.
 
 ## Polish once contracts are deployed
 

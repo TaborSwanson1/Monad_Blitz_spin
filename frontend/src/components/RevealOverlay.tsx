@@ -1,8 +1,10 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { RoundRecord } from '../hooks/useCasino'
+import { CRASH_TARGETS_X100, fmtX } from '../lib/crash'
 import { GAMES, LANE_COLORS } from '../lib/games'
 import { fmtChips } from '../lib/format'
 import { Burst } from './Burst'
+import { CrashClimb, climbDurationMs } from './CrashClimb'
 
 /**
  * Effect size follows the real net result for the round:
@@ -15,42 +17,72 @@ export function revealIntensity(r: RoundRecord): number {
   return Math.max(0.2, Math.min(1, Math.log2(ratio) / Math.log2(10)))
 }
 
+const crashBetsOf = (r: RoundRecord) => r.bets.filter((b) => GAMES[b.gameId].kind === 'crash')
+
+/** How long the reveal waits before showing the net result (the crash replay, if any). */
+export function revealDelayMs(r: RoundRecord): number {
+  const crash = crashBetsOf(r)
+  return crash.length ? climbDurationMs(crash[0].raw) : 0
+}
+
 export function RevealOverlay({ record, onClose }: { record: RoundRecord; onClose: () => void }) {
-  const intensity = revealIntensity(record)
+  const crashBets = crashBetsOf(record)
+  const [climbDone, setClimbDone] = useState(crashBets.length === 0)
+  const markDone = useCallback(() => setClimbDone(true), [])
+
+  // Nothing hints at the result until the replay finishes.
+  const intensity = climbDone ? revealIntensity(record) : 0
   const up = intensity > 0
 
   useEffect(() => {
+    if (!climbDone) return
     const t = setTimeout(onClose, up ? 5200 : 3200)
     return () => clearTimeout(t)
-  }, [record, up, onClose])
+  }, [record, up, onClose, climbDone])
+
+  const crashTargets = [...new Set(crashBets.map((b) => CRASH_TARGETS_X100[b.choice]))]
 
   return (
-    <div className={`reveal ${up ? 'reveal-up' : 'reveal-down'}`} onClick={onClose} role="dialog" aria-live="polite">
+    <div
+      className={`reveal ${up ? 'reveal-up' : 'reveal-down'}`}
+      onClick={climbDone ? onClose : undefined}
+      role="dialog"
+      aria-live="polite"
+    >
       {up && <Burst intensity={intensity} />}
       <div className="reveal-card" style={{ '--intensity': intensity } as React.CSSProperties}>
         <div className="reveal-round">ROUND {record.roundId.toString()} SETTLED</div>
-        <div className="reveal-results">
-          {record.bets.map((b) => {
-            const g = GAMES[b.gameId]
-            return (
-              <div key={b.index} className="reveal-row">
-                <div className="reveal-game">{g.name}</div>
-                <div
-                  className="reveal-raw"
-                  style={g.id === 2 ? { color: LANE_COLORS[b.outcome] } : undefined}
-                >
-                  {g.id === 2 ? g.labels[b.outcome] : b.raw}
-                </div>
-                <div className="reveal-pick">
-                  You picked {g.labels[b.choice]} · {b.won ? `paid ${fmtChips(b.payout)}` : 'no payout'}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-        <div className={`reveal-net ${up ? 'pos' : record.net < 0n ? 'neg' : ''}`}>
-          {fmtChips(record.net, { sign: true })} CHIP
-        </div>
+
+        {crashBets.length > 0 && <CrashClimb crashX100={crashBets[0].raw} targetsX100={crashTargets} onDone={markDone} />}
+
+        {climbDone && (
+          <>
+            <div className="reveal-results">
+              {record.bets.map((b) => {
+                const g = GAMES[b.gameId]
+                const shown = g.kind === 'crash' ? fmtX(b.raw) : g.id === 2 ? g.labels[b.outcome] : b.raw
+                return (
+                  <div key={b.index} className="reveal-row">
+                    <div className="reveal-game">{g.name}</div>
+                    <div
+                      className={`reveal-raw ${g.kind === 'crash' ? 'reveal-raw-sm' : ''}`}
+                      style={g.id === 2 ? { color: LANE_COLORS[b.outcome] } : undefined}
+                    >
+                      {shown}
+                    </div>
+                    <div className="reveal-pick">
+                      {g.kind === 'crash' ? 'Your target' : 'You picked'} {g.labels[b.choice]} ·{' '}
+                      {b.won ? `paid ${fmtChips(b.payout)}` : 'no payout'}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className={`reveal-net ${up ? 'pos' : record.net < 0n ? 'neg' : ''}`}>
+              {fmtChips(record.net, { sign: true })} CHIP
+            </div>
+          </>
+        )}
         <div className="reveal-seed">seed {record.seed.slice(0, 18)}…</div>
       </div>
     </div>

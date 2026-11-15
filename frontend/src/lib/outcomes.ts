@@ -1,5 +1,6 @@
 import { encodeAbiParameters, keccak256, type Hex } from 'viem'
-import type { GameDef } from './games'
+import { CRASH_TARGETS_X100, crashPointX100, fmtX } from './crash'
+import { GAMES, payoutBpsFor, type GameDef } from './games'
 
 /** Same as BlockCasino.gameSeed: keccak256(abi.encode(roundSeed, gameId)). */
 export function gameSeed(roundSeed: Hex, gameId: number): Hex {
@@ -12,6 +13,34 @@ export function resolveGame(roundSeed: Hex, g: GameDef): { raw: number; outcome:
   return { raw: Number(raw), outcome: Number(raw / BigInt(g.range / g.outcomes)) }
 }
 
-export function payoutFor(amount: bigint, won: boolean, g: GameDef): bigint {
-  return won ? (amount * BigInt(g.payoutBps)) / 10_000n : 0n
+export interface BetResult {
+  /** Uniform: the number shown (0-99 etc). Crash: the crash point in hundredths. */
+  raw: number
+  /** Uniform: the winning outcome index. Crash: the highest target reached, or -1. */
+  outcome: number
+  won: boolean
+  payout: bigint
+}
+
+/** Works for every game kind. Payouts round down, same as the contract. */
+export function resolveBet(roundSeed: Hex, gameId: number, choice: number, amount: bigint): BetResult {
+  const g = GAMES[gameId]
+  if (g.kind === 'crash') {
+    const raw = crashPointX100(gameSeed(roundSeed, g.id))
+    let outcome = -1
+    CRASH_TARGETS_X100.forEach((t, i) => {
+      if (raw >= t) outcome = i
+    })
+    const won = raw >= CRASH_TARGETS_X100[choice]
+    return { raw, outcome, won, payout: won ? (amount * BigInt(payoutBpsFor(g, choice))) / 10_000n : 0n }
+  }
+  const { raw, outcome } = resolveGame(roundSeed, g)
+  const won = outcome === choice
+  return { raw, outcome, won, payout: won ? (amount * BigInt(g.payoutBps)) / 10_000n : 0n }
+}
+
+/** Short result text for history rows, like "HI·LO HIGH 50–99" or "CRASH 2.37×". */
+export function resultLabel(gameId: number, raw: number, outcome: number): string {
+  const g = GAMES[gameId]
+  return g.kind === 'crash' ? `${g.short} ${fmtX(raw)}` : `${g.short} ${g.labels[outcome]}`
 }

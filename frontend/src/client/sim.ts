@@ -1,12 +1,14 @@
 import { toHex, type Address, type Hex } from 'viem'
 import { lockBlock, roundIdAt, type RoundConfig } from '../lib/rounds'
 import { toChips } from '../lib/format'
+import { GAMES } from '../lib/games'
 import type { BlockInfo, CasinoClient, PlacedBet, RoundState } from './types'
 
-// A fake chain that runs in the browser. Blocks every 400 ms, about Monad's pace.
-// The seed comes from crypto.getRandomValues. Fine for a demo, not verifiable.
+// A fake chain that runs in the browser. Blocks every 300 ms, Monad testnet's measured pace.
+// Round timing matches the contract's 60/40 blocks. The seed comes from
+// crypto.getRandomValues. Fine for a demo, not verifiable.
 
-const BLOCK_MS = 400
+const BLOCK_MS = 300
 const SETTLE_DELAY = 6n // blocks after lock before the "VRF" answers
 const GAS_LIMIT = 150_000_000n
 
@@ -15,8 +17,8 @@ const randomHex = (bytes: number): Hex => toHex(crypto.getRandomValues(new Uint8
 export function createSimClient(): CasinoClient {
   const cfg: RoundConfig = {
     genesisBlock: 18_400_000n,
-    roundLength: 30n,
-    bettingWindow: 20n,
+    roundLength: 60n,
+    bettingWindow: 40n,
     minBet: toChips('1'),
     maxBet: toChips('500'),
   }
@@ -77,6 +79,9 @@ export function createSimClient(): CasinoClient {
     async placeBet(gameId, choice, amount): Promise<PlacedBet> {
       const roundId = roundIdAt(head, cfg)
       if (head >= lockBlock(roundId, cfg)) throw new Error('Betting is closed for this round')
+      // Same checks as BlockCasino.placeBet: UnknownGame and BadChoice.
+      if (!GAMES[gameId]) throw new Error('Unknown game')
+      if (choice < 0 || choice >= GAMES[gameId].outcomes) throw new Error('Bad choice for this game')
       if (amount < cfg.minBet || amount > cfg.maxBet) throw new Error('Bet must be between 1 and 500 CHIP')
       if (amount > balance) throw new Error('Not enough chips. Use the faucet.')
       balance -= amount

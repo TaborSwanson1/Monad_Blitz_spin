@@ -9,7 +9,7 @@ All games use play chips only. The project rules in [CLAUDE.md](../CLAUDE.md#non
 | Game | Type | Who you play against | Contract support | Build order |
 |---|---|---|---|---|
 | High / Low | Fixed odds | The house | Yes, game `0` | 1st (built) |
-| Crash | Fixed odds | The house | Needs a new game type | 2nd |
+| Crash | Fixed odds | The house | Needs a new game type. Built in sim mode. | 2nd |
 | Beauty Contest | Skill | Other players | Needs commit and reveal | 3rd |
 | Block Walk | Market (batch auction) | Other players | Needs an order book | 4th |
 
@@ -87,13 +87,23 @@ A 1.96x target is exactly a High / Low bet. Crash just lets each player pick the
 
 ### Fit with the contract
 
-Crash is close to the existing round model:
+Built in sim mode as game `3` (2026-11-15). Hidden in chain mode until the contract supports it. The frontend math is in `src/lib/crash.ts`:
 
-- It can use the same round seed: `gameSeed = keccak256(roundSeed, crashGameId)`.
-- The target could ride in the existing `choice` field of `placeBet(gameId, choice, amount)`, in hundredths (200 = 2.00x). Then the signature doesn't change.
-- It needs a new game type, since `UniformGame` assumes equal buckets and one payout. The payout here is `amount × target`, and it wins when `crashPoint >= target`.
-- The backend picks the exact integer math for U and the crash point. The frontend copies it into `src/lib/outcomes.ts`, like the other games.
-- Max target and max payout need a cap so a single bet can't mint a huge amount.
+```
+r          = uint256(gameSeed) % 2^52
+crashX100  = 98 * 2^52 / (2^52 - r)        // hundredths, 237 = 2.37x
+if crashX100 < 100: crashX100 = 100         // instant crash, about 2% of rounds
+win        = crashX100 >= targetX100
+payout     = amount * targetX100 / 100      // rounded down
+```
+
+A 400,000-round simulation of this code gave win rates within noise of 98 ÷ target and an expected return of about 0.98 at every target.
+
+What the contract needs:
+
+- **Same round seed.** `gameSeed = keccak256(roundSeed, 3)`. No extra VRF calls.
+- **Targets come from a fixed ladder.** `choice` is a `uint8`, so it can't hold a target in hundredths (it tops out at 2.55x). Instead `choice` is an index into: 1.10, 1.25, 1.50, 2.00, 3.00, 5.00, 10, 20, 50x. That also caps the max payout at 50x.
+- **`IGame` doesn't fit as is.** It assumes exactly one winning outcome per round and one `payoutBps`. In Crash, every target at or below the crash point wins, and each pays a different amount. The contract needs something like `wins(seed, choice)` and `payoutBps(choice)`, or a Crash-specific path in `claim`. That's the backend's call.
 
 ### Why auto cash-out instead of a live button
 
@@ -101,6 +111,8 @@ Crash is close to the existing round model:
 2. **Lag.** A live cash-out is a transaction. If it lands a block late, the player loses even though they clicked in time.
 
 With auto cash-out, targets lock before the seed is requested. The climb is an animation, and settlement uses the crash point and each player's target. It also removes the compulsive clicking that makes crash one of the most addictive formats.
+
+The replay follows the same curve every round (about 2x at 1.4 s, 10x at 3.9 s, 100x at 6 s), and the chart's axes never depend on the crash point. If the speed or scale came from the crash point, a player could read the result off the chart before it finished. The net result, the win effects, and the screen shake all wait until the replay ends.
 
 ### Frontend
 

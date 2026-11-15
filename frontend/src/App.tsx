@@ -9,7 +9,7 @@ import { BlockStream } from './components/BlockStream'
 import { RoundHud } from './components/RoundHud'
 import { BetPanel } from './components/BetPanel'
 import { History } from './components/History'
-import { RevealOverlay, revealIntensity } from './components/RevealOverlay'
+import { RevealOverlay, revealDelayMs, revealIntensity } from './components/RevealOverlay'
 import { LimitsDialog, RealityCheck } from './components/Dialogs'
 
 export default function App() {
@@ -36,14 +36,21 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
   const clock = cfg && head !== null ? roundClock(head, cfg) : null
   const stakeInCurrent = !!clock && casino.pending.some((b) => b.roundId === clock.roundId)
 
-  // Shake on a net-positive reveal, scaled to the real result.
+  // Shake on a net-positive reveal, scaled to the real result. Waits for a crash
+  // replay to finish so the shake doesn't give the result away early.
   useEffect(() => {
     if (!casino.reveal) return
     const i = revealIntensity(casino.reveal)
     if (i === 0) return
-    setShake(i)
-    const t = setTimeout(() => setShake(0), 700)
-    return () => clearTimeout(t)
+    let stop: ReturnType<typeof setTimeout> | undefined
+    const start = setTimeout(() => {
+      setShake(i)
+      stop = setTimeout(() => setShake(0), 700)
+    }, revealDelayMs(casino.reveal))
+    return () => {
+      clearTimeout(start)
+      if (stop) clearTimeout(stop)
+    }
   }, [casino.reveal])
 
   const disabledReason = !casino.account
@@ -119,6 +126,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         <aside className="side">
           {cfg && (
             <BetPanel
+              mode={client.mode}
               canBet={!disabledReason}
               disabledReason={disabledReason}
               busy={casino.busy}
