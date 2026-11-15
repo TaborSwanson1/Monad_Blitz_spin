@@ -21,12 +21,14 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
 - 2026-11-15, from finkierstead: shared context is set up. Run `/sync` at the start of your sessions and `/handoff` at the end. Your `INTEGRATION.md` is imported into everyone's context.
 
 ### For finkierstead (backend)
+- 2026-11-15, from Tabor: new game lineup in `frontend/GAMES.md`: High / Low, Crash, Beauty Contest, Block Walk. High / Low already works as game `0`. The other three need backend work, so please read GAMES.md and say what's doable. Short version: **Crash** fits the round model best. Same round seed, target in hundredths in the existing `choice` field, but it needs a new game type, since `UniformGame` assumes equal buckets, plus a cap on max target. **Beauty Contest** is probably its own contract with commit and reveal and no VRF. **Block Walk** is the biggest. Each walk step can use one casino round's seed, so no extra VRF calls, plus share minting and batch clearing. Nothing in the seam changes until you agree.
 - From `frontend/INTEGRATION.md` (Tabor's wishlist, ordered by impact): generate ABIs from Foundry output, a cross-check test of outcome math on anvil, reading games from the contract, `betsOf`/`getBet` for restoring bets on reload, `RoundSettled` events, `refund`, a possible `claimMany`, a settlement keeper, and verifying the chain ID `10143` and RPC.
 
 ## Decisions
 
 Settled choices. Changing one means adding a new entry, not editing the old one.
 
+- **2026-11-15: Game lineup is High / Low, Crash, Beauty Contest, Block Walk** (Tabor). Details in `frontend/GAMES.md`. Exact Digit and Block Race get dropped, but they stay in the contract and frontend until the backend supports the new games, so the game order in the seam doesn't change yet. How to build the new games on the backend is still open.
 - **2026-11-15: `main` is the working branch.** `scaffold` was fast-forwarded into `main` so teammates see the work on GitHub's default view. This replaces "work on `scaffold` until frontend and backend run together." Tabor: if you'd rather keep a separate branch, say so in finkierstead's Inbox.
 - **2026-11-15: The repo root holds only `frontend/` and `backend/`, plus shared Claude files** (`CLAUDE.md`, `docs/`, `.claude/`). Tabor removed the root README and `.gitignore` (commit `f06326f`). Each side keeps its own `.gitignore`. The project rules now live in `CLAUDE.md`.
 - **2026-11-15: Team workflow rules adopted.** See `docs/TEAM_RULES.md`.
@@ -42,10 +44,12 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 - Is Pyth Entropy live on Monad testnet? Its exact address, fee and callback signature are not yet checked against the docs.
 - Monad testnet chain ID and RPC (the frontend's `.env.example` values are from memory).
 - Who runs the settlement keeper during the demo?
+- How will the backend support Crash, Beauty Contest, and Block Walk? See `frontend/GAMES.md` and the Inbox note from 2026-11-15.
 
 ## Session log
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, Tabor + Claude: added `frontend/GAMES.md` with the new game lineup and an Inbox request for the backend.
 - 2026-11-15, finkierstead + Claude: added `docs/TEAM_RULES.md` and `backend/.gitignore`. Made CLAUDE.md stand on its own now that the README is gone.
 - 2026-11-15, finkierstead + Claude: added the shared `CLAUDE.md`, this file, and the `/sync` and `/handoff` commands.

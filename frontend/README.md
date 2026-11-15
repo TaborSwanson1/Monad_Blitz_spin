@@ -8,6 +8,8 @@ cp .env.example .env
 npm run dev
 ```
 
+Game rules and the planned lineup are in [GAMES.md](GAMES.md).
+
 ## Modes
 
 - `VITE_MODE=sim` (default): fake blocks every 400 ms, in-browser chips. Labeled
