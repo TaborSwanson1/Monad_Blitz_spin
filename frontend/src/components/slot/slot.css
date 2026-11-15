@@ -101,7 +101,7 @@
 .sl-badge.is-jackpot strong { color: var(--sl-ice); }
 .sl-badge.on { transform: translateY(-3px); border-color: var(--sl-gold); background: rgb(44 30 4 / 0.92); box-shadow: 0 0 18px rgb(246 196 67 / 0.55); }
 .sl-badge.is-free.on { border-color: var(--sl-ice); background: rgb(6 36 60 / 0.92); box-shadow: 0 0 18px rgb(95 227 255 / 0.6); }
-.sl-badge.is-jackpot.on { border-color: var(--sl-ice); background: rgb(6 36 60 / 0.92); box-shadow: 0 0 24px rgb(95 227 255 / 0.8); animation: sl-flash 0.36s steps(2) infinite; }
+.sl-badge.is-jackpot.on { border-color: var(--sl-ice); background: rgb(6 36 60 / 0.92); box-shadow: 0 0 24px rgb(95 227 255 / 0.8); animation: sl-flash 0.5s steps(2) infinite; }
 .sl-strap {
   display: flex; align-items: center; gap: 6px; padding: 6px 22px;
   clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
@@ -122,6 +122,7 @@
 }
 .sl-frame::before { left: -3px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .sl-frame::after { right: -3px; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+.sl-frame.is-win { box-shadow: 0 0 54px rgb(246 196 67 / 0.85), 0 14px 34px rgb(0 0 0 / 0.55), inset 0 2px 0 rgb(255 255 255 / 0.55); }
 .sl-hold .sl-frame { box-shadow: 0 0 46px rgb(95 227 255 / 0.85), 0 14px 34px rgb(0 0 0 / 0.55), inset 0 2px 0 rgb(255 255 255 / 0.55); }
 .sl-free .sl-frame { background: linear-gradient(180deg, #e6fbff, #3fc4ee 40%, #0b5c8f); }
 
@@ -163,6 +164,7 @@
   background: radial-gradient(circle, rgb(8 10 35 / 0.78), rgb(3 4 13 / 0.95)); animation: sl-fade 0.25s ease-out;
 }
 .sl-overlay::before { content: ''; position: absolute; width: 170%; aspect-ratio: 1; background: repeating-conic-gradient(rgb(246 196 67 / 0.17) 0 12deg, transparent 12deg 24deg); animation: sl-rays 10s linear infinite; }
+.sl-overlay.tone-mega strong, .sl-overlay.tone-jackpot strong { font-size: clamp(40px, 9vh, 80px); }
 .sl-overlay.tone-jackpot::before, .sl-overlay.tone-free::before { background: repeating-conic-gradient(rgb(95 227 255 / 0.2) 0 12deg, transparent 12deg 24deg); }
 .sl-overlay > * { position: relative; }
 .sl-overlay-title {
@@ -226,7 +228,7 @@
 .sl-field strong { font-family: var(--mono); font-size: 20px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
 .sl-bet { flex-direction: row; align-items: center; gap: 10px; }
 .sl-bet > div { display: flex; flex-direction: column; align-items: center; min-width: 52px; }
-.sl-win strong { display: inline-block; color: var(--sl-green); animation: sl-bump 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.sl-win strong { color: var(--sl-green); }
 .sl-round {
   flex: none; width: 38px; height: 38px; padding: 0; border-radius: 50%; display: grid; place-items: center;
   border: 2px solid rgb(255 255 255 / 0.78); background: rgb(255 255 255 / 0.06); color: #fff; font-size: 22px; font-weight: 700; line-height: 1;
@@ -234,6 +236,9 @@
 .sl-round:not(:disabled):hover { background: rgb(255 255 255 / 0.2); }
 .sl-round[aria-pressed='true'] { background: #fff; color: #0a0f33; }
 .sl-round.sl-info { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 19px; }
+.sl-round.sl-mute svg { width: 20px; height: 20px; }
+.sl-round.sl-mute[aria-pressed='true'] { background: rgb(255 255 255 / 0.06); color: #fff; }
+.sl-round.sl-mute[aria-pressed='false'] { border-color: rgb(255 255 255 / 0.4); color: rgb(255 255 255 / 0.55); }
 .sl-round.sl-small { width: 28px; height: 28px; font-size: 18px; }
 .sl-spin {
   flex: none; width: 92px; height: 92px; margin: -26px 0; padding: 0; border-radius: 50%; display: grid; place-items: center;
@@ -243,6 +248,9 @@
   transition: transform 0.08s, box-shadow 0.08s, filter 0.2s;
 }
 .sl-spin svg { width: 46px; height: 46px; }
+/* a slow glow while the button is ready */
+.sl-spin:not(:disabled) { animation: sl-ready 1.8s ease-in-out infinite; }
+@keyframes sl-ready { 50% { box-shadow: 0 6px 0 #5e0a12, 0 14px 26px rgb(0 0 0 / 0.55), inset 0 2px 6px rgb(255 255 255 / 0.45), 0 0 0 7px rgb(255 240 166 / 0.22), 0 0 34px rgb(255 120 90 / 0.7); } }
 .sl-spin:not(:disabled):hover { filter: brightness(1.12); }
 .sl-spin:not(:disabled):active { transform: translateY(4px); box-shadow: 0 2px 0 #5e0a12, 0 8px 16px rgb(0 0 0 / 0.55), inset 0 2px 6px rgb(255 255 255 / 0.45); }
 .sl-spin:disabled { opacity: 1; filter: grayscale(0.65) brightness(0.72); }
@@ -254,6 +262,16 @@
 .sl-odds strong { font-family: var(--mono); }
 .sl-odds strong.pos { color: var(--pos); }
 .sl-odds strong.neg { color: var(--neg); }
+
+/* ---------- win effects: the particle canvas and the big-win shake */
+.sl-fx { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 6; pointer-events: none; }
+.sl-shake { animation: sl-shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+@keyframes sl-shake {
+  10%, 90% { transform: translate(-2px, 1px); }
+  20%, 80% { transform: translate(4px, -2px); }
+  30%, 50%, 70% { transform: translate(-7px, 3px); }
+  40%, 60% { transform: translate(7px, -3px); }
+}
 
 /* ---------- narrow screens: one column, reels first */
 @media (max-width: 900px) {
@@ -276,5 +294,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sl-strip.is-spin, .sl-cell, .sl-coin, .sl-badge, .sl-overlay, .sl-overlay::before, .sl-overlay strong, .sl-win strong, .sl-tube-status, .sl-spin svg { animation: none !important; }
+  .sl-strip.is-spin, .sl-cell, .sl-coin, .sl-badge, .sl-overlay, .sl-overlay::before, .sl-overlay strong, .sl-tube-status, .sl-spin, .sl-spin svg, .sl-shake { animation: none !important; }
+  .sl-fx { display: none; }
 }
