@@ -1,6 +1,8 @@
 # Front end
 
-React + Vite + viem. A sci-fi console where live Monad blocks are the main stage.
+React + Vite + viem. A calm three-pane dashboard: games on the left, the round and live blocks in the middle, the bet panel and history on the right.
+
+**Live demo (sim mode, nothing to install):** https://taborswanson1.github.io/Monad_blitz_gamble/
 
 ```
 npm install
@@ -9,6 +11,16 @@ npm run dev
 ```
 
 Game rules and the planned lineup are in [GAMES.md](GAMES.md).
+
+## Updating the live demo
+
+The demo is not updated automatically. After changes land on `main`, run:
+
+```
+npm run deploy:pages
+```
+
+It builds sim mode (`VITE_MODE=sim`, whatever your `.env` says) and force-pushes the result to the `gh-pages` branch. GitHub Pages serves it about a minute later. Never commit to `gh-pages` by hand, the next deploy overwrites it.
 
 ## Modes
 
