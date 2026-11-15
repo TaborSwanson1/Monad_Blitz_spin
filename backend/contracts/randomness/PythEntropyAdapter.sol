@@ -8,7 +8,7 @@ import {IRandomnessSource, IRandomnessConsumer} from "../interfaces/IRandomness.
 /// @title PythEntropyAdapter
 /// @notice Wraps Pyth Entropy so the casino only sees IRandomnessSource.
 ///
-/// Flow (verified against @pythnetwork/entropy-sdk-solidity 2.2.1):
+/// Flow (verified against Pyth's entropy-sdk-solidity 2.2.1):
 ///   casino.requestSettlement ─► adapter.request{fee} ─► entropy.requestV2{fee}() returns sequence
 ///   ...the default provider reveals (2 blocks on Monad testnet)...
 ///   entropy ─► adapter._entropyCallback (SDK checks msg.sender == entropy)
