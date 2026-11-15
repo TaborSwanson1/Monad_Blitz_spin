@@ -86,7 +86,8 @@ library SeedLib {
     /// Same as frontend/src/lib/crash.ts:
     ///   r = seed % 2^52;  x = 98 * 2^52 / (2^52 - r);  at least 100.
     /// P(crashX100 >= T) = 98 / T, so any target T returns 0.98 per chip: a 2% edge.
-    /// About 2% of rounds crash instantly at 1.00x.
+    /// About 2% of rounds crash instantly (below 1.00x, clamped to 100). Rounding to
+    /// hundredths adds about 1% more that land on exactly 100, so about 3% show 1.00x.
     function crashX100(bytes32 seed) internal pure returns (uint256 x) {
         uint256 r = uint256(seed) % TWO_52;
         x = (98 * TWO_52) / (TWO_52 - r);

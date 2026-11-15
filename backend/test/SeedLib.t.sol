@@ -121,7 +121,9 @@ contract SeedLibTest is Test {
             assertGt(returnBps, 9_500);
             assertLt(returnBps, 10_100);
         }
-        assertGt(instant, 250); // about 2% = 400
-        assertLt(instant, 600);
+        // Exactly 1.00x: 2% instant crashes plus ~0.97% that round down from below 1.01x,
+        // so ~2.97% = ~594 of 20,000.
+        assertGt(instant, 450);
+        assertLt(instant, 750);
     }
 }
