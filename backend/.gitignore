@@ -3,6 +3,7 @@ out/
 cache/
 broadcast/
 lib/
+node_modules/
 
 # Secrets
 .env

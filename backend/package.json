@@ -1,0 +1,13 @@
+{
+  "name": "block-casino-backend",
+  "private": true,
+  "description": "Solidity dependencies for the Foundry project. Run `npm install` once, then use forge.",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test"
+  },
+  "devDependencies": {
+    "@pythnetwork/entropy-sdk-solidity": "2.2.1",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.4"
+  }
+}
