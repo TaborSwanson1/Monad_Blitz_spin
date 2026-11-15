@@ -8,7 +8,9 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 
 - **Branch:** everyone works on `main`. The `scaffold` branch has been deleted.
 - **Frontend (Tabor, Lucas):** React + Vite + viem app in `frontend/`, redesigned 2026-11-15 as a three-pane dashboard (game sidebar, main, bet panel). Sim mode works without a backend. Crash (game 3) and Beauty Contest (game 4, with bots) work in sim mode only. Chain mode is written against the draft backend, which is now restored in `backend/`.
-- **Backend (finkierstead):** Tabor's draft is restored, plus a Pyth Entropy adapter on Pyth's official SDK, `SeedLib` (the randomness derivation), a safer deploy script, and tests. **Compiles. 27 unit tests pass, and 2 fork tests pass against live Monad testnet** (Foundry 1.9.0). Mechanics write-up for game designers: `backend/docs/MECHANICS.md`.
+- **Backend (finkierstead):** Tabor's draft is restored, plus a Pyth Entropy adapter on Pyth's official SDK, a safer deploy script, and tests. **35 unit tests pass, and 2 fork tests pass against live Monad testnet** (Foundry 1.9.0). Mechanics write-up for game designers: `backend/docs/MECHANICS.md`.
+- **Seed toolkit (one source of randomness for every game):** `backend/contracts/lib/SeedLib.sol` turns the Pyth round seed into `gameSeed`, `draw`, `uniform`, `chance`, `weighted`, `coin` and `crashX100`. `backend/sdk/seedlib.mjs` is a bit-for-bit JavaScript copy, enforced by `test/SeedVectors.t.sol`. `crashX100` equals the frontend's `crashPointX100`.
+- **Mechanics sandbox:** `backend/sandbox/SANDBOX.md`, run with `cd backend && npm run sandbox`. It pulls the live frontend models from `frontend/src/lib/` (read only), simulates every game and choice, checks the frontend math against the backend toolkit, and runs experiments written as ```` ```js experiment ```` blocks in the file. Last run: all parity checks match, and every house game returns ≈0.98.
 - **Translation loop is live:** `cd backend && npm run dev` gives the frontend a local chain with the real contracts, an auto-generated `frontend.env`, and a keeper that settles rounds. Tested end to end with a real bet, settle and claim. See `backend/README.md`.
 - **Deployed contracts:** none on testnet yet. When there are, the addresses land in `backend/exports/monad-testnet/` (committed).
 
@@ -29,6 +31,12 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 Requests and questions between the two sides. Mark them `[done]` instead of deleting them.
 
 ### For Tabor (frontend)
+- 2026-11-15, from finkierstead, **for Tabor and Lucas:**
+  - **Please `git pull` if the backend didn't compile for you.** `backend/.gitignore` had `lib/`, which also ignored `backend/contracts/lib/`, so `SeedLib.sol` was never pushed and `BlockCasino` couldn't build from a clean clone. Fixed in `cd20a72`.
+  - **Mechanics sandbox:** `cd backend && npm install && npm run sandbox` simulates your `games.ts` / `outcomes.ts` / `crash.ts` / `beauty.ts` as they are, and writes results into `backend/sandbox/SANDBOX.md`. It never writes to `frontend/`. Crash matches the backend exactly, and every target returns ≈0.98.
+  - **Beauty Contest finding:** against the sim bots, always guessing **18 returns ≈3.4x per entry** (15 gives ≈3.2x, 22 ≈2.2x), because the bots' guess distribution is fixed and the bot entries are minted. That's the fixed-bot weakness in GAMES.md, measured. Options are to make the bots aim at the expected target, or to pay only from real players' entries. See the Beauty table in SANDBOX.md.
+  - **Seed toolkit:** `backend/sdk/seedlib.mjs` has the same math as the contracts, including `draw` (which equals the one in your `beauty.ts`), `weighted`, `chance` and `crashX100`. You're welcome to import or copy it.
+  - **Crash on the contract:** I'm leaning to a generalized `IGame` with `wins(seed, choice)` + `payoutBps(choice)`, so one `claim` path covers all games. Nothing in the seam has changed yet. I'll note it here before anything does.
 - 2026-11-15, from finkierstead, **for Tabor and Lucas: you can test the UI against real contracts now.** Nothing in `frontend/` was changed.
   - **Local (best while the backend is changing):** in one terminal, `cd backend && npm install && FUND=0xYourMetaMaskAddress npm run dev`. Then `cp backend/exports/local/frontend.env frontend/.env` and `cd frontend && npm run dev`. In MetaMask, add the network: RPC `http://127.0.0.1:8545`, chain `31337`. Rounds are 20 blocks with 12 for betting, at 1 block/s. **A keeper settles every round automatically**, so in chain mode you don't need to click "Request result". It may say "AlreadyRequested" if you do. Needs Foundry and Node.
   - **Testnet:** once I deploy, `backend/exports/monad-testnet/frontend.env` will be committed. `git pull` and copy it.
@@ -81,6 +89,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, finkierstead + Claude: seed toolkit (`chance`, `weighted`, `coin`, `crashX100`) with a JS twin and cross-language test vectors. Fixed the `.gitignore` bug that kept `SeedLib.sol` out of git. Added the mechanics sandbox (`backend/sandbox/`), which reads the frontend models, checks parity and found the Beauty Contest bot exploit. Commits `cd20a72`, `daaddb9` and the sandbox commit.
 - 2026-11-15, Tabor + Claude: UI redesign. Calm dark dashboard look (our own CSS, loosely after admin dashboards like daisyUI's Nexus), three panes with a game sidebar, open stat row, bar-list history. Removed the glow, grid drift, heat and screen shake. Fixed a leak where history, session net and balance showed a Crash result before the replay finished.
 - 2026-11-15, Tabor + Claude: built Beauty Contest in sim mode (game 4, `src/lib/beauty.ts`, bots from the round seed, guess input, dot-plot result). Documented the proposed contract in INTEGRATION.md and the fixed-bot weakness in GAMES.md.
 - 2026-11-15, Tabor + Claude: built Crash in sim mode (game 3, `src/lib/crash.ts`, target picker, replay climb), set sim timing to 60/40 at 300 ms, and documented the proposed contract math in INTEGRATION.md and GAMES.md.
