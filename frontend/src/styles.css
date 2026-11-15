@@ -334,11 +334,23 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 
 /* click sparks (src/effects/useClickSparks.ts): above everything, never catch clicks */
 .fx-sparks { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
-.fx-spark { position: absolute; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px 1px var(--c); animation: spark var(--dur) cubic-bezier(0.15, 0.8, 0.3, 1) forwards; }
+.fx-spark { position: absolute; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px 2px var(--c);
+  transform: translate(-50%, -50%); animation: spark var(--dur) cubic-bezier(0.12, 0.8, 0.3, 1) forwards; }
+.fx-spark-square { border-radius: 2px; }
+.fx-spark-streak { border-radius: 999px; }
 @keyframes spark {
-  0% { transform: translate(0, 0) scale(1.2); opacity: 1; }
-  100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+  0% { transform: translate(-50%, -50%) rotate(var(--a)) scale(1.4); opacity: 1; }
+  60% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(calc(var(--a) + var(--spin) * 0.6)) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx) * 1.1), calc(-50% + var(--dy) + var(--fall))) rotate(calc(var(--a) + var(--spin))) scale(0.2); opacity: 0; }
 }
+.fx-click-flash { position: absolute; width: 70px; height: 70px; border-radius: 50%; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgb(255 255 255 / 0.95) 0%, rgb(160 140 255 / 0.6) 35%, transparent 70%);
+  animation: click-flash 0.32s ease-out forwards; }
+@keyframes click-flash { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
+.fx-click-ring { position: absolute; width: 24px; height: 24px; border-radius: 50%; transform: translate(-50%, -50%);
+  border: 3px solid #a08cff; box-shadow: 0 0 14px rgb(131 110 249 / 0.8), inset 0 0 10px rgb(131 110 249 / 0.6);
+  animation: click-ring 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
+@keyframes click-ring { 0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(7); opacity: 0; border-width: 1px; } }
 
 /* ---------- motion: small and purposeful only */
 @keyframes enter { from { margin-left: -142px; opacity: 0; } to { margin-left: 0; opacity: 1; } }
