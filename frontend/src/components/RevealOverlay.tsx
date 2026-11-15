@@ -13,6 +13,7 @@ import { MonadTokens } from './MonadTokens'
 import { Nuke, NUKE_MS } from './Nuke'
 import { OutcomeStrip } from './OutcomeStrip'
 import { SlotDisplay } from './SlotDisplay'
+import { Wheel } from './Wheel'
 import { WinEffects, WinLoop } from '../effects/WinEffects'
 import { LoseEffects, ScreenFlash } from '../effects/LoseEffects'
 import { useLoseEffects, useWinEffects, winIntensity } from '../effects/useOutcomeEffects'
@@ -68,11 +69,17 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
   const crashBets = crashBetsOf(record)
   // A live Crash round was already watched as it climbed, so there's no replay.
   const replay = crashBets.length > 0 && !record.live
-  const [climbDone, setClimbDone] = useState(!replay)
-  const markDone = useCallback(() => {
-    setClimbDone(true)
-    onReplayDone()
-  }, [onReplayDone])
+  // Exact Digit spins its wheel first; the result shows once it stops.
+  const wheelBets = record.bets.filter((b) => b.gameId === 1)
+  const [crashDone, setCrashDone] = useState(!replay)
+  const [wheelDone, setWheelDone] = useState(wheelBets.length === 0)
+  const climbDone = crashDone && wheelDone
+  const markDone = useCallback(() => setCrashDone(true), [])
+  const wheelStopped = useCallback(() => setWheelDone(true), [])
+  // Once every replay or spin has finished, the rest of the page may show the result.
+  useEffect(() => {
+    if (climbDone) onReplayDone()
+  }, [climbDone, onReplayDone])
 
   // Nothing hints at the result until the replay finishes.
   const win = useWinEffects(record, climbDone)
@@ -160,6 +167,9 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
         </div>
 
         {replay && <CrashClimb crashX100={crashBets[0].raw} targetsX100={crashTargets} onDone={markDone} />}
+        {wheelBets.length > 0 && (
+          <Wheel size={250} landOn={wheelBets[0].outcome} picked={wheelBets.map((b) => b.choice)} onDone={wheelStopped} />
+        )}
 
         {climbDone && (
           <>
@@ -187,11 +197,11 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
                 return (
                   <div key={b.index} className="reveal-row">
                     <div className="reveal-game">{g.name}</div>
-                    <SlotDisplay
+                    {g.id !== 1 && <SlotDisplay
                       value={shown}
                       color={g.id === 2 ? LANE_COLORS[b.outcome] : undefined}
                       small={g.kind === 'crash' || g.id === 2}
-                    />
+                    />}
                     {g.kind === 'uniform' && <OutcomeStrip game={g} outcome={b.outcome} choice={b.choice} />}
                     <div className="reveal-pick">
                       {g.kind === 'crash'

@@ -5,6 +5,7 @@ import { GAMES, HOUSE_EDGE_BPS, LANE_COLORS, chanceFor, multiplierFor, payoutBps
 import { fmtChips, toChips } from '../lib/format'
 import type { PlacedBet } from '../client'
 import { IconTarget } from './icons'
+import { Wheel } from './Wheel'
 
 interface Props {
   gameId: number
@@ -149,6 +150,12 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
             drawn as it climbs, so nobody can know it ahead. An auto target cashes you out there if you haven't already.
             Every cash-out point has the same 2% edge.
           </p>
+        </div>
+      ) : g.id === 1 ? (
+        // Exact Digit: pick your number on the game-show wheel.
+        <div className="wheel-pick-wrap">
+          <Wheel size={230} picked={choice === null ? [] : [choice]} onPick={setChoice} />
+          <p className="note center">{choice === null ? 'Tap a segment to pick your number.' : `You picked ${choice}.`}</p>
         </div>
       ) : (
         <div className={`choices choices-${g.outcomes}`}>

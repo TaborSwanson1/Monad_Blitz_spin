@@ -20,6 +20,8 @@ interface Case {
   theme: ThemeDef
   stake: string
   win: boolean
+  /** 1 = an Exact Digit round (the wheel). Default: High / Low. */
+  gameId?: number
 }
 
 const CASES: Case[] = [
@@ -32,11 +34,25 @@ const CASES: Case[] = [
   { label: 'Vegas win', note: 'Coins, confetti, marquee', theme: THEMES.vegas, stake: '25', win: true },
   { label: 'Vegas loss', note: 'Burning wallet', theme: THEMES.vegas, stake: '25', win: false },
   { label: 'Sparks', note: 'Calm, win', theme: THEMES.calm, stake: '25', win: true },
+  { label: 'Wheel win', note: 'Exact Digit, lands on your 7', theme: THEMES.vegas, stake: '10', win: true, gameId: 1 },
+  { label: 'Wheel loss', note: 'Exact Digit, you picked 7', theme: THEMES.vegas, stake: '10', win: false, gameId: 1 },
 ]
 
-/** A fake High / Low round with one bet on HIGH that wins or loses. */
+/** A fake round with one bet that wins or loses: High / Low on HIGH, or Exact Digit on 7. */
 function fakeRound(c: Case, n: number): RoundRecord {
   const amount = toChips(c.stake)
+  if (c.gameId === 1) {
+    const digit = c.win ? 7 : Math.floor(Math.random() * 7) // any digit but 7 on a loss
+    const payout = c.win ? (amount * 98_000n) / 10_000n : 0n
+    return {
+      roundId: BigInt(n),
+      seed: toHex(crypto.getRandomValues(new Uint8Array(32))),
+      bets: [{ roundId: BigInt(n), index: 0, gameId: 1, choice: 7, amount, raw: digit, outcome: digit, won: c.win, payout }],
+      staked: amount,
+      paid: payout,
+      net: payout - amount,
+    }
+  }
   const payout = c.win ? (amount * 19_600n) / 10_000n : 0n
   const raw = c.win ? 72 : 31
   return {

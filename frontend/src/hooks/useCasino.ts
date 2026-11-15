@@ -98,7 +98,9 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
       unpublished.current?.() // an older round still waiting: publish it first
       unpublished.current = null
       // A live Crash climb was already watched in real time, so it publishes right away.
-      if (!liveState && resolved.some((b) => GAMES[b.gameId].kind === 'crash')) unpublished.current = publish
+      // Exact Digit's wheel spins before the result shows, so it waits too.
+      const replays = !liveState && resolved.some((b) => GAMES[b.gameId].kind === 'crash' || b.gameId === 1)
+      if (replays) unpublished.current = publish
       else publish()
     },
     [client, refreshBalance],

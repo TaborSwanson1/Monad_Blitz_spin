@@ -168,6 +168,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, Tabor + Claude: Exact Digit gets a game-show wheel (`Wheel.tsx`): pick by tapping a segment; the result card spins it and lands on the seeded digit, with the net, effects, stats and history held until it stops. Landing spot inside the segment is random and never depends on the pick (no near-miss staging). All safeguards kept. Wheel win/loss cases added to `?fx`.
 - 2026-11-15, Tabor + Claude: renamed the casino to STIM and SPIN in the UI, removed "Originals" and the per-tile name label from the lobby, removed Block Walk from the lobby.
 - 2026-11-15, Tabor + Claude: Crash gets live cash-out in sim mode (Cash Out button, optional auto target, crash point drawn live with a 2% edge checked on 200k runs). Wallet fire and nuke now draw full-screen with no hard edges, and the nuke shockwave spans the screen.
 - 2026-11-15, Zander + Claude: re-themed the slot as Lucky Leprechaun (new SVG symbols, animated leprechaun, coin-heap jackpot at the top), moved it into the sidebar/sign/session shell with the Vegas look, added Buy feature (14x, 98.45% return, net-result effects) and a free Demo jackpot, and checked the return of every game (all 0.98 except Beauty Contest vs bots, see Inbox). Added `sandbox/slot-exact.py`.
