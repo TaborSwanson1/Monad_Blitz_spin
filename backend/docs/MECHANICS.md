@@ -47,6 +47,32 @@ Code: `contracts/lib/SeedLib.sol` (derivation), `contracts/BlockCasino.sol` (clo
 
 One request settles **every bet in the round across all games**. Rounds with no bets are never requested.
 
+## The seed toolkit
+
+Every game turns its `gameSeed` into results with these functions, and nothing else. They exist in two copies that give identical answers:
+
+- `contracts/lib/SeedLib.sol` (on-chain, used by the games)
+- `sdk/seedlib.mjs` (JavaScript, for scripts, simulations and the frontend)
+
+| Function | Gives | Used for |
+|---|---|---|
+| `gameSeed(roundSeed, gameId)` | an independent seed per game | every game |
+| `draw(seed, i)` | the i-th independent 256-bit number | several numbers per round: per lane, per step, per player |
+| `uniform(seed, i, n)` | a number in `[0, n)` | dice, digits, lanes |
+| `chance(seed, i, bps)` | true with probability `bps / 10,000` | yes/no events ("25% chance of a bonus") |
+| `weighted(seed, i, weights)` | index `k` with probability `weights[k] / sum` | unequal outcomes, such as a wheel with big and small slices |
+| `coin(seed)` | a fair true/false from the main number | Block Walk steps (up or down) |
+| `crashX100(seed)` | crash point in hundredths, at least 100 | Crash. `P(≥ T) = 98 / T`, a 2% edge at every target |
+
+Conventions:
+
+1. **Functions that take only a seed** (`coin`, `crashX100`, `UniformGame`) use the seed's own value, the game's main number.
+2. **Functions that take `(seed, i)`** hash first. Give every unrelated use its own `i`, and never reuse one number for two things.
+
+**Changing the math.** Edit both copies, then run `npm run vectors && forge test`. `scripts/seed-vectors.mjs` writes `test/vectors/seed.json` from the JavaScript copy, and `test/SeedVectors.t.sol` fails if the Solidity copy disagrees on any entry. `crashX100` and `gameSeed` are also copied in `frontend/src/lib/`, so a change there needs an Inbox note for the frontend.
+
+**Which games can use one seed for many steps.** Deriving many numbers from one seed (`draw(seed, 0..n)`) is safe only when every result is fixed at lock and only *shown* step by step (a Crash replay, a multi-block race). If players act *between* steps, like trading in Block Walk, each step needs a seed nobody knows yet: a later round's seed, or its own VRF request. One revealed seed would give away every step that follows.
+
 ## Designing a new game
 
 A game is a contract implementing `contracts/interfaces/IGame.sol`:
@@ -62,7 +88,7 @@ Rules every game must follow, from the project's non-negotiables:
 
 1. **State the odds honestly.** Every outcome must be equally likely, *or* the payout per outcome must reflect its real probability. With equal outcomes, `payoutBps = numOutcomes × 9,800` gives exactly a 2% house edge.
 2. **Use only the seed.** No `block.timestamp`, `blockhash`, `msg.sender` or other chain data in the result.
-3. **Need several numbers?** Use `SeedLib.draw(seed, 0)`, `draw(seed, 1)`, and so on. Never reuse one number for two unrelated things.
+3. **Need several numbers or unequal odds?** Use the seed toolkit above. Never reuse one number for two unrelated things.
 4. **Tell the frontend.** A new game ID changes `frontend/src/lib/games.ts` and the deploy order in `script/Deploy.s.sol`. If the game doesn't fit "pick 1 of N equal buckets," `frontend/src/lib/outcomes.ts` needs its math too. Put a note in Tabor's Inbox in `docs/TEAM_CONTEXT.md`.
 
 Example: a Block Race where each of the 4 lanes gets a random speed and the fastest wins. Draw `speed[i] = SeedLib.uniform(seed, i, 1000)` for each lane. Ties need a rule (for example, the lowest lane index wins), and that makes some lanes more likely than others. Either break ties with another draw, or compute the real odds and set the payouts to match.
@@ -72,7 +98,7 @@ Example: a Block Race where each of the 4 lanes gets a random speed and the fast
 ```bash
 cd backend
 npm install            # once: forge-std + Pyth's SDK
-forge test             # 27 unit tests, including a full round through Pyth's MockEntropy
+forge test             # 35 unit tests, including a full round through Pyth's MockEntropy and the JS↔Solidity vectors
 ```
 
 `test/fork/` holds read-only checks against the **real** Entropy contract on Monad testnet. They spend nothing, and they show as skipped unless you fork Monad:
