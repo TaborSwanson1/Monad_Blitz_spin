@@ -4,7 +4,7 @@ Each person's Claude reads this at the start of a session and adds to it at the 
 
 ## Current state (overwrite this section when it changes)
 
-_Last updated 2026-11-15 by finkierstead's Claude_
+_Last updated 2026-11-15 by Zander's Claude_
 
 - **Branch:** everyone works on `main`. The `scaffold` branch has been deleted.
 - **Frontend (Tabor, Lucas):** React + Vite + viem app in `frontend/`, redesigned 2026-11-15 as a three-pane dashboard (game sidebar, main, bet panel). Sim mode works without a backend. Crash (game 3) and Beauty Contest (game 4, with bots) work in sim mode only. Sim mode's clock and block display follow **live Monad testnet blocks** (falls back to fake blocks offline). **Live sim demo for anyone:** https://taborswanson1.github.io/Monad_blitz_gamble/ (served from the `gh-pages` branch; update it with `cd frontend && npm run deploy:pages`). Chain mode is written against the draft backend, which is now restored in `backend/`.
@@ -14,6 +14,7 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 - **Team:** finkierstead (backend, wallet SDK), Tabor and Lucas (games in `frontend/`), Zander (lobby screen in `frontend/`, building on the wallet SDK).
 - **Wallet SDK:** `backend/wallet/` (`@block-casino/wallet`). It finds wallets (EIP-6963), connects and switches to Monad Testnet, follows account and network changes, reconnects silently, and covers chips, bet, settle, claim and refund, with player-ready errors. `dist/` is committed. Frontends install it with `"@block-casino/wallet": "file:../backend/wallet"`. Docs: `backend/wallet/README.md`. It passes end-to-end tests against the real contracts on a local chain (`npm run test:wallet`).
 - **Translation loop is live:** `cd backend && npm run dev` gives the frontend a local chain with the real contracts, an auto-generated `frontend.env`, and a keeper that settles rounds. Tested end to end with a real bet, settle and claim. See `backend/README.md`.
+- **Slot (proposal, sandbox only):** Zander's slot model is an experiment at the end of `sandbox/SANDBOX.md`. It has cascades, free spins and a 1,000x jackpot, with an exact return of 0.97993 (2.007% edge). It's not on the contract or in the UI yet.
 - **Deployed contracts:** none on testnet yet. When there are, the addresses land in `backend/exports/monad-testnet/` (committed).
 
 ## Verified Monad testnet facts (2026-11-15)
@@ -42,6 +43,7 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
   - Anything missing or awkward in the SDK: put it in finkierstead's Inbox.
 
 ### For Tabor (frontend)
+- 2026-11-15, from Zander, for Tabor and Lucas: **a slot model is in `sandbox/SANDBOX.md`** (last experiment), with an exact return of 0.97993. The reels, paytable, cascades and free spins are all derived from the game seed, and the doc lists the draw indices a UI would replay. Games are your area, so the slot screen is yours if we add it. Separately, see the Open question on near-miss framing: I'd like the team to decide it before anyone builds the slot UI.
 - 2026-11-15, from finkierstead, for Tabor and Lucas: **Zander has joined** and owns the lobby screen (game list, entry to every game, wallet connect UI) in `frontend/`. CLAUDE.md and TEAM_RULES.md are updated. The wallet SDK he's building on is in `backend/wallet/`, and it could also replace the hand-written connect in `chain.ts`. See Zander's Inbox.
 - 2026-11-15, from finkierstead, **for Tabor and Lucas: I edited `frontend/` once, with finkierstead's OK. Sim mode now runs on live Monad testnet blocks.** Sorry for stepping into your area. It's a small, contained change, so please review it and change anything you like.
   - **What:** the new `src/client/liveBlocks.ts` subscribes to `wss://testnet-rpc.monad.xyz` (verified: newHeads about every 0.3 s; the `/ws` path doesn't work). `sim.ts`'s clock follows real block numbers (`genesisBlock` 0, so round r starts at block 60r), and the Live blocks card shows the real blocks, with a source badge and Monadscan links. `BlockInfo` gained an optional `source` ('monad' | 'sim' | 'local'), which `chain.ts` sets too.
@@ -72,6 +74,7 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
 - 2026-11-15, from finkierstead: shared context is set up. Run `/sync` at the start of your sessions and `/handoff` at the end. Your `INTEGRATION.md` is imported into everyone's context.
 
 ### For finkierstead (backend)
+- 2026-11-15, from Zander: **before you lock the generalized `IGame` for Crash, please consider `payout(seed, choice)`** (returns payout bps, 0 for a loss) instead of `wins(seed, choice)` + `payoutBps(choice)`. The slot in `sandbox/SANDBOX.md` pays by the symbols that land, not by the player's choice, so it can't use a per-choice payout. `payout(seed, choice)` covers the slot, Crash and the uniform games. The slot needs up to 72 line checks per bet (8 base lines + 8 free spins × 8), so gas is worth a look. Seed toolkit only: `weighted` plus fixed draw indices.
 - 2026-11-15, from Tabor: **Beauty Contest is built in sim mode** as game `4`, hidden in chain mode. It's probably its own contract (a pot, plus commit then reveal), and it doesn't need the VRF with real players. The calls and math the frontend would use are in `frontend/INTEGRATION.md` under "Proposed: Beauty Contest". No rush. Crash is the higher priority.
 - 2026-11-15, from Tabor: **Crash is built in sim mode** as game `3`, hidden in chain mode, so nothing in the seam changes yet. The exact math and what the contract would need are in `frontend/INTEGRATION.md` under "Proposed: Crash". Two corrections to my earlier note: (1) `choice` is a `uint8`, so the target can't go in it as hundredths. It's an index into a fixed ladder (1.10x to 50x) instead. (2) `IGame` doesn't fit, because many targets can win in one round, each with its own payout. Something like `wins(seed, choice)` plus `payoutBps(choice)`, or a Crash path in `claim`. Your call on which.
 - 2026-11-15, from Tabor: new game lineup in `frontend/GAMES.md`: High / Low, Crash, Beauty Contest, Block Walk. High / Low already works as game `0`. The other three need backend work, so please read GAMES.md and say what's doable. Short version: **Crash** fits the round model best. Same round seed, target in hundredths in the existing `choice` field, but it needs a new game type, since `UniformGame` assumes equal buckets, plus a cap on max target. **Beauty Contest** is probably its own contract with commit and reveal and no VRF. **Block Walk** is the biggest. Each walk step can use one casino round's seed, so no extra VRF calls, plus share minting and batch clearing. Nothing in the seam changes until you agree.
@@ -105,6 +108,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 ## Open questions
 
+- **Near-miss framing for the slot demo** (raised by Zander, 2026-11-15). Zander wants the slot UI to show jackpots and features as "almost hit" more often as a player's balance gets low, and a coin pile from cascades that makes the jackpot look closer. Returns would stay honest (0.97993); only the presentation changes. This contradicts CLAUDE.md's non-negotiables ("No near-miss framing", effects that scale with the real result), so nothing has been built and CLAUDE.md is unchanged. **Needs agreement from finkierstead, Tabor and Lucas.** If agreed, record a new Decision and change the CLAUDE.md rule in the same commit.
 - **Testnet deployment (blocks wallet play on testnet):** there's no deployer keystore yet. finkierstead creates it (`cast wallet import monad-deployer --interactive`) and funds it with testnet MON, then `npm run deploy:testnet` runs. The same wallet question applies to the keeper.
 
 - How will the backend support Crash, Beauty Contest, and Block Walk? See `frontend/GAMES.md` and the Inbox note from 2026-11-15.
@@ -117,6 +121,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, Zander + Claude: slot experiment in `sandbox/SANDBOX.md` (cascades, free spins, 1,000x jackpot), tuned to an exact return of 0.97993 with exact fractions and checked by a 2M-spin simulation (`38c6cb1`). Inbox notes for finkierstead (`payout(seed, choice)` interface) and Tabor and Lucas (slot UI), plus an Open question on near-miss framing.
 - 2026-11-15, finkierstead + Claude: added `session.connectWallet()` to the wallet SDK, one call for discover, reconnect, connect and switch network, with e2e tests for every path. Pushed so Zander can build on it.
 - 2026-11-15, finkierstead + Claude: built the wallet SDK `backend/wallet/` (discovery, connect, switch or add chain, events, reconnect, all casino actions, typed errors) with e2e tests on a local chain and a check that it installs as a package. Added Zander to CLAUDE.md, TEAM_RULES.md and TEAM_CONTEXT. The live-feed HTTP fallback (`39e18c8`) is committed with it.
 - 2026-11-15, Tabor + Claude: customizable themes. Sidebar quick switch plus a Customize panel (Presets, Colors, Effects). Presets Calm, Midnight, Monad. Monad theme: token rain on a net win, burning sim wallet on a net loss. Effects follow the real net result, scale with it, can be turned off, and skip for reduced motion. Settings live in the browser (localStorage).
