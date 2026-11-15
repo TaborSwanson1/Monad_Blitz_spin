@@ -11,6 +11,7 @@
     "deploy:pages": "sh scripts/deploy-pages.sh"
   },
   "dependencies": {
+    "@block-casino/wallet": "file:../backend/wallet",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "viem": "2.21.54"

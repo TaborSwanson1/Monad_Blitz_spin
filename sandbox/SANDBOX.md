@@ -248,3 +248,70 @@ Four lanes move 0–3 squares each block, and the first past 30 wins. When lanes
 | lane 3 | 24.8% | 24.8% | 0.971 ± 0.023 | 3.92x | ✓ |
 | lane 4 | 23.5% | 23.5% | 0.922 ± 0.023 | 3.92x | ⚠ pays less than 0.98 |
 <!-- /result -->
+
+### Slot: cascades, free spins and a jackpot (Zander)
+
+A high-variance house game with an honest return. The model and how it was tuned:
+
+- **Reels:** 3 reels, one payline (the middle row). Each symbol is `t.weighted` over the same weights on every reel: blank 10, cherry 38, bell 16, bar 11, seven 7, wild 10, diamond 3, star 5 (out of 100).
+- **Paytable (three of a kind on the line):** cherries 2x, bells 8x, bars 12x, sevens 30x, three wilds 50x. A wild stands in for cherry, bell, bar and seven. The smallest win is 2x, so every win is a real gain.
+- **Jackpot:** three diamonds pay **1,000x**, flat (no multiplier). About 1 spin in 28,000.
+- **Cascades:** a win clears the line, the symbols above fall in, and the line is paid again at 2x, 3x and so on, up to 8 lines. The top row shown on screen *is* what falls in next.
+- **Free spins:** 3 or more stars anywhere on the opening 3×3 grid give 8 free spins with double cascade multipliers (2x, 4x, 6x...). About 1 spin in 120. Free spins don't retrigger.
+- **Exact return: 0.97993** (house edge 2.007%), computed with exact fractions over every symbol combination: base game 0.866, free spins 0.114. A 2,000,000-spin simulation of this block gave 0.984 ± 0.006 (0.7 standard errors away). Per spin: 14.5% win, 1.9% cascade. Standard deviation per spin is about 7.8x, so at 50,000 rounds the sandbox's own interval is about ±0.07. Trust the exact figure for the edge.
+- **Randomness:** everything comes from the game seed with fixed draw indices (line `k` on reel `r` is `3k + r`, bottom row `900 + r`, free spin `s` starts at `1000 + 100s`). Every cascade and free spin is fixed when betting locks and only shown step by step, which `backend/docs/MECHANICS.md` says is safe.
+- **Contract fit:** the payout depends on the symbols, not on a player's choice, so it doesn't fit `IGame.payoutBps()`. It needs a game interface shaped like `payout(seed, choice)`. Worst case on-chain is 8 + 8×8 = 72 line checks per bet.
+
+```js experiment
+({
+  name: 'Slot',
+  rounds: 50000,
+  gameId: 205,
+  resolve(seed, t) {
+    // Symbols: 0 blank, 1 cherry, 2 bell, 3 bar, 4 seven, 5 wild, 6 diamond, 7 star
+    const WEIGHTS = [10, 38, 16, 11, 7, 10, 3, 5] // per reel, out of 100
+    const PAY = [0, 2, 8, 12, 30]                 // three of a kind; wild stands in for 1-4
+    const WILD_PAY = 50, JACKPOT = 1000           // three wilds; three diamonds (flat, no multiplier)
+    const FREE_SPINS = 8, FREE_MULT = 2, MAX_LINES = 8, SCATTERS = 3
+
+    const sym = (i) => t.weighted(seed, i, WEIGHTS)
+    const lineWin = (l) => {
+      if (l.every((s) => s === 6)) return { jackpot: true, pay: JACKPOT }
+      if (l.every((s) => s === 5)) return { pay: WILD_PAY }
+      let best = 0
+      for (let x = 1; x <= 4; x++) if (l.every((s) => s === x || s === 5)) best = Math.max(best, PAY[x])
+      return best ? { pay: best } : null
+    }
+    // One spin: line k (0-based) on reel r is draw index base + 3k + r. A win clears
+    // all three symbols, the ones above fall in, and the multiplier steps up 1x, 2x, 3x...
+    const spin = (base, mult) => {
+      let pay = 0, lines = 0, jackpot = false
+      for (let k = 0; k < MAX_LINES; k++) {
+        const w = lineWin([0, 1, 2].map((r) => sym(base + 3 * k + r)))
+        if (!w) break
+        lines++
+        if (w.jackpot) jackpot = true
+        pay += w.jackpot ? w.pay : w.pay * mult * (k + 1)
+      }
+      return { pay, cascades: Math.max(0, lines - 1), jackpot }
+    }
+
+    const main = spin(0, 1)
+    // Opening grid: middle row = line 0, top row = line 1 (what falls in next), bottom = its own draws.
+    let stars = 0
+    for (let r = 0; r < 3; r++) for (const i of [r, 3 + r, 900 + r]) if (sym(i) === 7) stars++
+    let freePay = 0, jackpot = main.jackpot
+    if (stars >= SCATTERS) {
+      for (let s = 0; s < FREE_SPINS; s++) {
+        const f = spin(1000 + 100 * s, FREE_MULT)
+        freePay += f.pay
+        jackpot ||= f.jackpot
+      }
+    }
+    return { total: main.pay + freePay, basePay: main.pay, freePay, freeSpins: stars >= SCATTERS, cascades: main.cascades, jackpot }
+  },
+  pays(o) {
+    return o.total
+  },
+})
+```

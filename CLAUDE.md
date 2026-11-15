@@ -1,6 +1,6 @@
 # CLAUDE.md: shared by every Claude session on this team
 
-Two people work on this repo, each with their own Claude. This file and the two it imports are how those sessions **share one context**. Claude Code loads this file automatically, in the terminal, VS Code and the desktop app.
+Four people work on this repo (finkierstead, Tabor, Lucas, Zander), each with their own Claude. This file and the two it imports are how those sessions **share one context**. Claude Code loads this file automatically, in the terminal, VS Code and the desktop app.
 
 @docs/TEAM_CONTEXT.md
 @frontend/INTEGRATION.md
@@ -19,9 +19,9 @@ The `/sync` command does all three.
 
 | Area | Owner | Their Claude may edit |
 |---|---|---|
-| `frontend/` | **Tabor** (TaborSwanson1) and **Lucas** | `frontend/**` |
-| `backend/` (Foundry contracts, tests, scripts, keeper) | **finkierstead** | `backend/**` |
-| `CLAUDE.md`, `docs/`, `.claude/` | Both | Shared, append-only where possible |
+| `frontend/` | **Tabor** (TaborSwanson1) and **Lucas** (games), **Zander** (lobby screen: game list, entry to every game, wallet connect UI) | `frontend/**`. Tell each other which files you're in, since you share it. |
+| `backend/` (Foundry contracts, tests, scripts, keeper, **wallet SDK** in `backend/wallet/`) | **finkierstead** | `backend/**` |
+| `CLAUDE.md`, `docs/`, `.claude/` | Everyone | Shared, append-only where possible |
 | `sandbox/` (mechanics sandbox: `SANDBOX.md`, `mechanics.ipynb`) | **finkierstead** builds the engine. Anyone may add experiments. | Experiments in `SANDBOX.md` and the notebook: anyone. Engine files: finkierstead. It only *reads* `frontend/src/lib/` and `backend/sdk/`. |
 
 **Don't edit the other person's area.** If you need something changed there, write it in the TEAM_CONTEXT **Inbox** addressed to them.
@@ -44,6 +44,7 @@ These come from the original root README. Tabor removed it on 2026-11-15, so thi
   - Odds and the 2% edge are shown before every bet, and the session's net result is shown, not just the balance.
   - Reveal effects scale with the real net result: no win fanfare for a payout below the stake.
   - No near-miss framing, no autoplay, no fake "someone won" tickers, no countdown pressure on bonuses.
+  - **Exception: the Slot demo screen only** (team decision 2026-11-15, see Decisions in TEAM_CONTEXT). Its "Near-miss demo" presentation may show near misses, tease the jackpot and free spins more often as the demo balance drops, and show a coin-pile meter that suggests the jackpot is getting closer. Returns stay honest (exact return 0.97993), the screen is labeled as a demo with a switch to the honest view of the same spins, and every other rule here still applies to it.
   - Session limits and reality checks are on.
   - The history view says past rounds don't predict future ones.
 
@@ -80,6 +81,8 @@ cd backend && forge test --match-path "test/fork/*" --fork-url https://testnet-r
 # translation loop: local chain + deploy + export for frontend + seam check + auto-settling keeper
 cd backend && npm run dev                 # then: cp backend/exports/local/frontend.env frontend/.env
 cd backend && npm run check-seam          # run before pushing any contract change
+# wallet SDK for frontends (@block-casino/wallet, docs in backend/wallet/README.md)
+cd backend && npm run test:wallet         # builds wallet/dist and runs its e2e tests on a local chain
 # mechanics sandbox (simulates the frontend models on the backend toolkit; no chain)
 cd sandbox && npm install && npm run sandbox   # runs sandbox/SANDBOX.md; charts in sandbox/mechanics.ipynb
 # deploy to Monad testnet (you type the keystore password; the key never goes in .env)

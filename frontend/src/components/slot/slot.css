@@ -1,0 +1,69 @@
+/* Slot demo. Owner: Zander. Uses the theme variables from styles.css. */
+
+.slot-page { max-width: 1180px; margin: 0 auto; padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 16px; }
+.slot-modebar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--card); border: 1px solid var(--line-2); }
+.seg button { height: 30px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: 13px; font-weight: 500; }
+.seg button.on { background: var(--text); color: var(--page); }
+.mode-nearmiss .seg button.on { background: #ff4fa3; color: #fff; }
+
+.slot-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+@media (max-width: 960px) { .slot-layout { grid-template-columns: 1fr; } }
+
+.machine { display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: calc(var(--radius) + 6px); border: 1px solid var(--line); background: radial-gradient(120% 90% at 50% 0%, rgb(255 79 163 / 0.16), transparent 60%), var(--card); }
+.machine-top { display: flex; align-items: center; justify-content: space-between; }
+.machine-title { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
+
+.reels { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; border-radius: var(--radius); background: #0b0b10; border: 1px solid var(--line-2); }
+.cell { display: grid; place-items: center; aspect-ratio: 1 / 0.82; border-radius: 10px; background: linear-gradient(180deg, #1c1c26, #13131a); font-size: clamp(30px, 6vw, 54px); font-weight: 800; line-height: 1; user-select: none; transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
+.cell:not(.on-line) { opacity: 0.62; }
+.is-spinning .cell { filter: blur(2px); opacity: 0.8; transform: translateY(2px); }
+.cell.lit { box-shadow: 0 0 0 2px var(--pos) inset, 0 0 24px rgb(11 191 88 / 0.35); transform: scale(1.04); }
+.payline { position: absolute; left: 4px; right: 4px; top: 50%; height: 2px; margin-top: -1px; background: rgb(255 255 255 / 0.18); pointer-events: none; }
+
+.sym-3 { font-size: clamp(18px, 3.4vw, 30px); letter-spacing: 0.06em; color: #e6e6e6; }
+.sym-4 { color: #ff4d4d; }
+.sym-5 { color: #ffd34d; }
+
+/* Near-miss demo: what a tease looks like. */
+.cell.teased { opacity: 1; box-shadow: 0 0 0 2px #ff4fa3 inset, 0 0 28px rgb(255 79 163 / 0.45); animation: tease 0.9s ease-in-out 2; }
+@keyframes tease { 50% { transform: scale(1.08); } }
+
+.banner-slot { min-height: 58px; display: grid; place-items: center; }
+.slot-banner { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.slot-banner strong { font-size: 22px; }
+.slot-banner span { color: var(--muted); font-size: 13px; }
+.tone-win strong { color: var(--pos); }
+.tone-big strong { color: var(--pos); font-size: 28px; }
+.tone-jackpot strong { color: #ffd34d; font-size: 32px; text-shadow: 0 0 22px rgb(255 211 77 / 0.5); }
+.tone-free strong { color: var(--primary); }
+.tone-tease strong { color: #ff4fa3; font-size: 26px; }
+
+.slot-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.stakes { display: flex; gap: 6px; flex: 1; }
+.stake { flex: 1; min-width: 44px; height: 40px; border-radius: var(--radius-sm); border: 1px solid var(--line-2); background: var(--card-2); font-weight: 600; }
+.stake.on { border-color: var(--text); background: var(--text); color: var(--page); }
+.spin-btn { height: 48px; min-width: 160px; font-size: 16px; font-weight: 700; border-radius: 999px; }
+
+.slot-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.slot-stats div { display: flex; flex-direction: column; gap: 2px; }
+.slot-stats strong { font-size: 18px; }
+
+.slot-side { display: flex; flex-direction: column; gap: 16px; }
+.paytable { display: flex; flex-direction: column; gap: 8px; }
+.paytable p { margin: 6px 0 0; line-height: 1.5; }
+.pay-row { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; }
+.pay-glyph { font-size: 20px; font-weight: 800; text-align: center; }
+.pay-glyph.sym-3 { font-size: 12px; }
+
+/* Near-miss demo: the coin pile. */
+.pile-card .card-body { display: flex; flex-direction: column; gap: 10px; }
+.pile { position: relative; height: 120px; border-radius: var(--radius-sm); background: linear-gradient(180deg, transparent, rgb(255 211 77 / 0.08)); overflow: hidden; }
+.coin { position: absolute; width: 46px; height: 12px; margin-left: -23px; border-radius: 50%; background: linear-gradient(180deg, #ffe58a, #c9971c); box-shadow: 0 2px 0 #8a6510; animation: drop 0.35s ease-out; }
+@keyframes drop { from { transform: translateY(-40px); opacity: 0; } }
+.pile-bar { height: 8px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
+.pile-bar span { display: block; height: 100%; background: linear-gradient(90deg, #ffd34d, #ff4fa3); transition: width 0.4s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cell, .coin, .cell.teased { animation: none; transition: none; }
+}

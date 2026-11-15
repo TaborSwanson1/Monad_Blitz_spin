@@ -17,7 +17,7 @@ interface Props {
   onEditLimits: () => void
 }
 
-/** Left pane: pick a game, and get to session controls. On phones it becomes a row of pills. */
+/** Left pane: pick a game and get to session controls. On phones it becomes a row of pills. */
 export function Sidebar({ mode, gameId, onPick, onEditLimits }: Props) {
   const games = gamesFor(mode)
   const house = games.filter((g) => g.kind !== 'beauty')

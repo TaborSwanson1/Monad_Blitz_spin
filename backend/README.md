@@ -50,6 +50,7 @@ Needs [Foundry](https://getfoundry.sh) and Node 18+.
 |---|---|
 | `contracts/BlockCasino.sol` | Round clock (blocks), bets, settlement, claims, refunds |
 | `contracts/lib/SeedLib.sol` | **Mechanics core:** VRF number → per-game seed → `uniform`, `chance`, `weighted`, `coin`, `crashX100` |
+| `wallet/` | **Wallet SDK** for frontends (`@block-casino/wallet`): wallet discovery, connect, network switch, and every casino action, with typed errors. Docs: `wallet/README.md`. `npm run test:wallet` runs its e2e tests. |
 | `sdk/seedlib.mjs` | JavaScript copy of `SeedLib`, kept bit-for-bit equal by `test/SeedVectors.t.sol`. For scripts, simulations and the frontend. |
 | `../sandbox/` | Not in backend: the mechanics sandbox at the repo root (`SANDBOX.md` and `mechanics.ipynb`). It reads `sdk/seedlib.mjs` and the frontend models, and writes to neither. |
 | `contracts/games/` | Game logic (`IGame`). New games go here. |
