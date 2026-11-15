@@ -44,6 +44,7 @@ These come from the original root README. Tabor removed it on 2026-11-15, so thi
   - Odds and the 2% edge are shown before every bet, and the session's net result is shown, not just the balance.
   - Reveal effects scale with the real net result: no win fanfare for a payout below the stake.
   - No near-miss framing, no autoplay, no fake "someone won" tickers, no countdown pressure on bonuses.
+  - **Exception: the Slot demo screen only** (team decision 2026-11-15, see Decisions in TEAM_CONTEXT). Its "Near-miss demo" presentation may show near misses, tease the jackpot and free spins more often as the demo balance drops, and show a coin-pile meter that suggests the jackpot is getting closer. Returns stay honest (exact return 0.97993), the screen is labeled as a demo with a switch to the honest view of the same spins, and every other rule here still applies to it.
   - Session limits and reality checks are on.
   - The history view says past rounds don't predict future ones.
 

@@ -84,6 +84,7 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
 
 Settled choices. Changing one means adding a new entry, not editing the old one.
 
+- **2026-11-15: The Slot demo may use near-miss framing** (agreed by finkierstead, Tabor, Lucas and Zander, as reported by Zander). This narrows the "No near-miss framing" rule for one screen: the slot's "Near-miss demo" presentation can tease jackpots and free spins (more often as the demo balance drops) and show a coin-pile meter that suggests the jackpot is closer. Results and payouts don't change: they come from the seed with an exact return of 0.97993. The screen is labeled as a demo and has a switch to the honest view. CLAUDE.md's non-negotiables carry the exception. Every other game keeps the honest-UI rules.
 - **2026-11-15: Wallet connection comes from one backend-owned SDK, `backend/wallet/` (`@block-casino/wallet`)** (finkierstead). Frontends import it rather than writing their own wallet code. It has no UI and no framework. It keeps the casino's chain, ABIs and error mapping in one place, next to the contracts. `dist/` is committed so the frontend needs no backend build.
 - **2026-11-15: Zander joins and co-owns `frontend/`, for the lobby screen and wallet connect UI** (finkierstead). This adds to the earlier ownership decisions.
 
@@ -108,7 +109,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 ## Open questions
 
-- **Near-miss framing for the slot demo** (raised by Zander, 2026-11-15). Zander wants the slot UI to show jackpots and features as "almost hit" more often as a player's balance gets low, and a coin pile from cascades that makes the jackpot look closer. Returns would stay honest (0.97993); only the presentation changes. This contradicts CLAUDE.md's non-negotiables ("No near-miss framing", effects that scale with the real result), so nothing has been built and CLAUDE.md is unchanged. **Needs agreement from finkierstead, Tabor and Lucas.** If agreed, record a new Decision and change the CLAUDE.md rule in the same commit.
+- **[resolved 2026-11-15, see Decisions]** **Near-miss framing for the slot demo** (raised by Zander, 2026-11-15). Zander wants the slot UI to show jackpots and features as "almost hit" more often as a player's balance gets low, and a coin pile from cascades that makes the jackpot look closer. Returns would stay honest (0.97993); only the presentation changes. This contradicts CLAUDE.md's non-negotiables ("No near-miss framing", effects that scale with the real result), so nothing has been built and CLAUDE.md is unchanged. **Needs agreement from finkierstead, Tabor and Lucas.** If agreed, record a new Decision and change the CLAUDE.md rule in the same commit.
 - **Testnet deployment (blocks wallet play on testnet):** there's no deployer keystore yet. finkierstead creates it (`cast wallet import monad-deployer --interactive`) and funds it with testnet MON, then `npm run deploy:testnet` runs. The same wallet question applies to the keeper.
 
 - How will the backend support Crash, Beauty Contest, and Block Walk? See `frontend/GAMES.md` and the Inbox note from 2026-11-15.
