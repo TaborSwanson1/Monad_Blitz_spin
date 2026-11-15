@@ -4,6 +4,8 @@ import { fmtBlock, fmtChips } from '../../lib/format'
 import { BrandMark } from '../icons'
 import { WalletButton } from './WalletButton'
 import { useCountUp } from '../../effects/useCountUp'
+import { addChipToWallet, fmtMon } from '../WalletActivity'
+import { addressUrl } from '../../client/txlog'
 
 interface Props {
   mode: 'sim' | 'chain'
@@ -21,6 +23,8 @@ interface Props {
   onGetChips: () => void
   onSettings: () => void
   wallet: WalletApi
+  /** Chain mode: the wallet's MON (testnet gas money). Null in sim mode or before it loads. */
+  gas?: bigint | null
 }
 
 /**
@@ -65,8 +69,17 @@ export function SiteHeader(p: Props) {
                 {fmtChips(p.net, { sign: true })}
               </span>
             </div>
-            <button className="btn primary purse-add" onClick={p.onGetChips} disabled={!!p.busy} title="Free play chips. No real value.">
-              + Get chips
+            <button
+              className="btn primary purse-add"
+              onClick={p.onGetChips}
+              disabled={!!p.busy}
+              title={
+                p.mode === 'chain'
+                  ? 'Free: your wallet signs a faucet transaction and 1,000 CHIP are minted to it. You pay only gas. Once a day.'
+                  : 'Free play chips. No real value.'
+              }
+            >
+              {p.mode === 'chain' ? '+ Claim to wallet' : '+ Get chips'}
             </button>
           </>
         ) : p.mode === 'sim' ? (
@@ -77,6 +90,17 @@ export function SiteHeader(p: Props) {
           <span className="muted small purse-hint">{chainNeedsWallet ? 'Connect a wallet to get free chips' : ''}</span>
         )}
       </div>
+
+      {p.mode === 'chain' && p.account && (
+        <div className="walletstrip hide-narrow">
+          <a className="walletstrip-gas" href={addressUrl(p.account)} target="_blank" rel="noreferrer" title="Your wallet on Monadscan. MON pays gas and the Pyth fee.">
+            <span className="muted small">Gas</span> <strong className="mono">{p.gas == null ? '…' : fmtMon(p.gas)}</strong>
+          </a>
+          <button className="btn small" onClick={() => void addChipToWallet()} title="Show your CHIP balance inside MetaMask">
+            Add CHIP to MetaMask
+          </button>
+        </div>
+      )}
 
       <WalletButton w={p.wallet} />
 

@@ -14,6 +14,7 @@ import { LimitsDialog, RealityCheck } from './components/Dialogs'
 import { IconCube } from './components/icons'
 import { Sidebar } from './components/Sidebar'
 import { SiteHeader } from './components/lobby/SiteHeader'
+import { TxFeed, useGasBalance } from './components/WalletActivity'
 import { Lobby } from './components/lobby/Lobby'
 import { SettingsDialog } from './components/lobby/SettingsDialog'
 import { useWallet } from './hooks/useWallet'
@@ -120,6 +121,9 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     }
   }, [])
 
+  // Chain mode: the wallet's MON, for the header. Sim mode has no wallet balance.
+  const gas = useGasBalance(client.mode === 'chain' ? casino.account : null)
+
   const { cfg, head } = casino
   const clock = cfg && head !== null ? roundClock(head, cfg) : null
   const stakeInCurrent = !!clock && casino.pending.some((b) => b.roundId === clock.roundId)
@@ -151,6 +155,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         onGetChips={casino.faucet}
         onSettings={() => setSettingsOpen(true)}
         wallet={wallet}
+        gas={gas}
       />
       {view === 'lobby' ? (
         <Lobby mode={client.mode} onPlay={openGame} extra={extraTiles} onLimits={() => setEditingLimits(true)} />
@@ -309,6 +314,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
       )}
       {effectsDemoEnabled() && <EffectsDemo wallet={casino.account} />}
       {loud && <Overlay />}
+      {client.mode === 'chain' && <TxFeed />}
       {loud && <FxControls />}
       {editingLimits && (
         <LimitsDialog limits={session.limits} onSave={session.setLimits} onClose={() => setEditingLimits(false)} />

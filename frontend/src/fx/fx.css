@@ -310,3 +310,20 @@
 
 /* The Close button on a winning result (it stays open until closed). */
 :root:is([data-theme='vegas'], [data-theme='americana']) .reveal-close { margin-top: 8px; height: 38px; min-width: 150px; font-family: var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ---------- chain mode: the wallet at work (components/WalletActivity.tsx) */
+.walletstrip { display: flex; align-items: center; gap: 8px; }
+.walletstrip-gas { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--card-2); color: var(--text); text-decoration: none; font-variant-numeric: tabular-nums; }
+.walletstrip-gas:hover { border-color: var(--primary); }
+.txfeed { position: fixed; right: 14px; bottom: 14px; z-index: 46; display: flex; flex-direction: column; gap: 8px; width: min(340px, calc(100vw - 28px)); }
+.txfeed-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 14px; background: var(--card); border: 2px solid var(--line-2); box-shadow: 0 10px 26px rgb(0 0 0 / 0.45); animation: rise 0.25s ease-out; }
+.txfeed-item.is-confirmed { border-color: var(--pos); }
+.txfeed-item.is-failed { border-color: var(--neg); }
+.txfeed-dot { flex: none; width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 8px var(--warn); animation: tx-pulse 1s ease-in-out infinite alternate; }
+.is-confirmed .txfeed-dot { background: var(--pos); box-shadow: 0 0 8px var(--pos); animation: none; }
+.is-failed .txfeed-dot { background: var(--neg); box-shadow: none; animation: none; }
+@keyframes tx-pulse { to { opacity: 0.35; } }
+.txfeed-label { font-weight: 700; font-size: 13px; }
+.txfeed-meta { font-size: 12px; color: var(--muted); }
+.txfeed-meta a { color: var(--secondary); }
+@media (max-width: 760px) { .txfeed { bottom: 56px; } }

@@ -12,6 +12,7 @@ import {
 } from 'viem'
 import { casinoAbi, chipAbi, randomnessAbi } from './abi'
 import type { CasinoClient, PlacedBet, RoundState, RoundStatus } from './types'
+import { txFinished, txStarted } from './txlog'
 
 declare global {
   interface Window {
@@ -23,7 +24,7 @@ const env = import.meta.env
 const httpUrl = env.VITE_RPC_HTTP || 'https://testnet-rpc.monad.xyz'
 const wsUrl = env.VITE_RPC_WS || undefined
 
-// UNVERIFIED: chain ID 10143 and the RPC URL are from memory. Check Monad's docs.
+// Chain ID 10143 and the RPC URL were verified against docs.monad.xyz on 2026-11-15.
 export const monadTestnet = defineChain({
   id: Number(env.VITE_CHAIN_ID || 10143),
   name: 'Monad Testnet',
@@ -49,10 +50,18 @@ export function createChainClient(): CasinoClient {
 
   // Takes a request from simulateContract. viem's types for those don't line up
   // with writeContract across payable and non-payable calls, hence the cast.
-  async function send(request: object) {
+  // `label` says what the transaction does, for the transaction list and its Monadscan link.
+  async function send(request: object, label: string) {
     const { wallet } = need()
     const hash = await wallet.writeContract(request as Parameters<WalletClient['writeContract']>[0])
-    await pub.waitForTransactionReceipt({ hash })
+    const id = txStarted(label, hash)
+    try {
+      const receipt = await pub.waitForTransactionReceipt({ hash })
+      txFinished(id, receipt.status === 'success')
+    } catch (e) {
+      txFinished(id, false)
+      throw e
+    }
   }
 
   return {
@@ -109,7 +118,7 @@ export function createChainClient(): CasinoClient {
     async faucet() {
       const { account } = need()
       const { request } = await pub.simulateContract({ address: chip, abi: chipAbi, functionName: 'faucet', account })
-      await send(request)
+      await send(request, 'Claimed 1,000 free CHIP to your wallet')
     },
 
     async placeBet(gameId, choice, amount): Promise<PlacedBet> {
@@ -128,7 +137,7 @@ export function createChainClient(): CasinoClient {
           args: [casino, maxUint256],
           account,
         })
-        await send(request)
+        await send(request, 'Let the casino use your CHIP for bets')
       }
       const { request, result } = await pub.simulateContract({
         address: casino,
@@ -137,7 +146,7 @@ export function createChainClient(): CasinoClient {
         args: [gameId, choice, amount],
         account,
       })
-      await send(request)
+      await send(request, `Bet placed in round ${result[0]}`)
       return { roundId: result[0], index: Number(result[1]), gameId, choice, amount }
     },
 
@@ -163,7 +172,7 @@ export function createChainClient(): CasinoClient {
         value: fee,
         account,
       })
-      await send(request)
+      await send(request, `Asked Pyth Entropy for round ${roundId}'s result`)
     },
 
     async claim(bet) {
@@ -175,7 +184,10 @@ export function createChainClient(): CasinoClient {
         args: [bet.roundId, BigInt(bet.index)],
         account,
       })
-      await send(request)
+      await send(request, `Claimed your round ${bet.roundId} payout`)
     },
   }
 }
+
+/** Read-only client for wallet balances (MON for gas). Same chain and RPC as above. */
+export const monadPublic = createPublicClient({ chain: monadTestnet, transport: http(httpUrl) })
