@@ -1,5 +1,6 @@
 import type { Address } from 'viem'
 import { fmtBlock, fmtChips, shortHash } from '../lib/format'
+import { BrandMark } from './icons'
 
 interface Props {
   label: string
@@ -16,24 +17,25 @@ export function TopBar({ label, mode, head, account, balance, busy, onConnect, o
   return (
     <header className="topbar">
       <div className="brand">
-        <span className="brand-mark">▣</span> BLOCK<span className="brand-slash">//</span>CASINO
+        <BrandMark />
+        Block Casino
       </div>
-      <div className={`net-badge net-${mode}`}>
-        <span className="dot" /> {label}
-      </div>
+      <span className={`badge ${mode === 'sim' ? 'badge-warn' : 'badge-pos'}`}>
+        <span className="dot" /> {label === 'SIMULATOR' ? 'Simulator' : label}
+      </span>
       <div className="head-readout">
-        HEAD <strong>{head === null ? '—' : `#${fmtBlock(head)}`}</strong>
+        Block <span className="mono">{head === null ? '—' : `#${fmtBlock(head)}`}</span>
       </div>
       <div className="spacer" />
       {account ? (
         <>
           <div className="balance">
-            <span className="muted">BAL</span> <strong>{fmtChips(balance)}</strong> CHIP
+            <span className="muted">Balance</span> <strong>{fmtChips(balance)}</strong> <span className="muted">CHIP</span>
           </div>
-          <button className="btn ghost" onClick={onFaucet} disabled={!!busy}>
-            Faucet
+          <button className="btn" onClick={onFaucet} disabled={!!busy}>
+            Get chips
           </button>
-          <div className="account">{shortHash(account)}</div>
+          <div className="account mono">{shortHash(account)}</div>
         </>
       ) : (
         <button className="btn primary" onClick={onConnect} disabled={!!busy}>

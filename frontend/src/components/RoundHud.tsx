@@ -1,4 +1,5 @@
 import type { RoundClock } from '../lib/rounds'
+import { IconTimer } from './icons'
 
 interface Props {
   clock: RoundClock
@@ -12,31 +13,40 @@ export function RoundHud({ clock, roundLength, bettingWindow, myStakeInRound }: 
   const pos = Math.round(clock.progress * roundLength)
   const big = clock.open ? clock.blocksToLock : clock.blocksToNext
   return (
-    <div className="hud">
-      <div className="hud-row">
-        <div className="hud-round">
-          ROUND <strong>{clock.roundId.toString()}</strong>
+    <section className="card round-card">
+      <header className="card-head">
+        <IconTimer />
+        <h3>Round {clock.roundId.toString()}</h3>
+        <div className="card-actions">
+          <span className={`badge ${clock.open ? 'badge-primary' : 'badge-warn'}`}>
+            {clock.open ? 'Betting open' : myStakeInRound ? 'Locked · awaiting result' : 'Locked'}
+          </span>
         </div>
-        <div className={`phase phase-${clock.open ? 'open' : 'locked'}`}>
-          {clock.open ? 'BETTING OPEN' : myStakeInRound ? 'LOCKED · AWAITING RESULT' : 'LOCKED'}
+      </header>
+      <div className="card-body">
+        <div className="count">
+          <span className="count-num">{big.toString()}</span>
+          <span className="count-label">{clock.open ? 'blocks until betting locks' : 'blocks until the next round'}</span>
+        </div>
+        <div className="track" style={{ gridTemplateColumns: `repeat(${roundLength}, 1fr)` }}>
+          {Array.from({ length: roundLength }, (_, i) => (
+            <div
+              key={i}
+              className={['cell', i < bettingWindow ? 'cell-open' : 'cell-lock', i < pos ? 'past' : '', i === pos ? 'now' : '']
+                .filter(Boolean)
+                .join(' ')}
+            />
+          ))}
+        </div>
+        <div className="track-legend">
+          <span>
+            <i className="key key-open" /> Betting · {bettingWindow} blocks
+          </span>
+          <span>
+            <i className="key key-lock" /> Locked · {roundLength - bettingWindow} blocks
+          </span>
         </div>
       </div>
-      <div className="hud-count">
-        <span key={big.toString()} className="count-num">
-          {big.toString()}
-        </span>
-        <span className="count-label">{clock.open ? 'blocks until lock' : 'blocks until next round'}</span>
-      </div>
-      <div className="track" style={{ gridTemplateColumns: `repeat(${roundLength}, 1fr)` }}>
-        {Array.from({ length: roundLength }, (_, i) => (
-          <div
-            key={i}
-            className={['cell', i < bettingWindow ? 'cell-open' : 'cell-lock', i < pos ? 'past' : '', i === pos ? 'now' : '']
-              .filter(Boolean)
-              .join(' ')}
-          />
-        ))}
-      </div>
-    </div>
+    </section>
   )
 }

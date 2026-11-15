@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { BEAUTY_ENTRY, BEAUTY_FEE_BPS, BEAUTY_MAX_BOTS, BEAUTY_MIN_BOTS } from '../lib/beauty'
 import { CRASH_DEFAULT_CHOICE, CRASH_TARGETS_X100 } from '../lib/crash'
-import { GAMES, HOUSE_EDGE_BPS, LANE_COLORS, chanceFor, gamesFor, multiplierFor, payoutBpsFor } from '../lib/games'
+import { GAMES, HOUSE_EDGE_BPS, LANE_COLORS, chanceFor, multiplierFor, payoutBpsFor } from '../lib/games'
 import { fmtChips, toChips } from '../lib/format'
 import type { PlacedBet } from '../client'
+import { IconTarget } from './icons'
 
 interface Props {
-  mode: 'sim' | 'chain'
+  gameId: number
   canBet: boolean
   disabledReason: string | null
   busy: string | null
@@ -20,10 +21,9 @@ const QUICK = ['5', '10', '25', '50', '100']
 
 const pct = (p: number) => `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`
 
-export function BetPanel({ mode, canBet, disabledReason, busy, minBet, maxBet, myBets, onPlace }: Props) {
-  const games = gamesFor(mode)
-  const [gameId, setGameId] = useState(0)
-  const [choice, setChoice] = useState<number | null>(null)
+/** Render with key={gameId} so the pick resets when the game changes. */
+export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet, myBets, onPlace }: Props) {
+  const [choice, setChoice] = useState<number | null>(GAMES[gameId].kind === 'crash' ? CRASH_DEFAULT_CHOICE : null)
   const [amount, setAmount] = useState('10')
   const g = GAMES[gameId]
   const isCrash = g.kind === 'crash'
@@ -44,27 +44,15 @@ export function BetPanel({ mode, canBet, disabledReason, busy, minBet, maxBet, m
   const ready = canBet && choice !== null && inRange && !busy && !enteredBeauty
 
   return (
-    <section className="panel bet">
-      <div className="tabs" role="tablist">
-        {games.map((x) => (
-          <button
-            key={x.id}
-            role="tab"
-            aria-selected={x.id === gameId}
-            className={`tab ${x.id === gameId ? 'on' : ''}`}
-            onClick={() => {
-              setGameId(x.id)
-              setChoice(x.kind === 'crash' ? CRASH_DEFAULT_CHOICE : null)
-            }}
-          >
-            {x.short}
-          </button>
-        ))}
-      </div>
-
+    <section className="card bet">
+      <header className="card-head">
+        <IconTarget />
+        <h3>Place a bet</h3>
+      </header>
+      <div className="card-body">
       <h2 className="game-name">
         {g.name}
-        {g.simOnly && <span className="sim-only">SIM ONLY</span>}
+        {g.simOnly && <span className="sim-only">Sim only</span>}
       </h2>
       <p className="muted">{g.describe}</p>
 
@@ -236,6 +224,7 @@ export function BetPanel({ mode, canBet, disabledReason, busy, minBet, maxBet, m
           ))}
         </ul>
       )}
+      </div>
     </section>
   )
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address, Hex } from 'viem'
 import type { BlockInfo, CasinoClient, PlacedBet } from '../client'
 import { resolveBet } from '../lib/outcomes'
+import { GAMES } from '../lib/games'
 import { lockBlock, type RoundConfig } from '../lib/rounds'
 import { errMsg } from '../lib/format'
 
@@ -43,6 +44,7 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
   onResolvedRef.current = onRoundResolved
   const inFlight = useRef(new Set<bigint>())
   const done = useRef(new Set<bigint>())
+  const unpublished = useRef<(() => void) | null>(null)
 
   const refreshBalance = useCallback(() => {
     client.balance().then(setBalance).catch(() => {})
@@ -65,10 +67,19 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
       done.current.add(roundId)
       setPending((p) => p.filter((b) => b.roundId !== roundId))
       setNeedsSettle((s) => s.filter((id) => id !== roundId))
-      setHistory((h) => [record, ...h].slice(0, 30))
       setReveal(record)
-      onResolvedRef.current(record)
-      refreshBalance()
+      // History, session stats and balance would all give the result away, so with a
+      // crash bet they wait until the replay actually finishes (finishReplay). That
+      // holds even if the tab is in the background and the animation is paused.
+      const publish = () => {
+        setHistory((h) => [record, ...h].slice(0, 30))
+        onResolvedRef.current(record)
+        refreshBalance()
+      }
+      unpublished.current?.() // an older round still waiting: publish it first
+      unpublished.current = null
+      if (resolved.some((b) => GAMES[b.gameId].kind === 'crash')) unpublished.current = publish
+      else publish()
     },
     [client, refreshBalance],
   )
@@ -149,6 +160,12 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
 
   // Stable so the reveal's auto-close timer doesn't reset on every block.
   const dismissReveal = useCallback(() => setReveal(null), [])
+  /** The crash replay ended: now history, stats and balance can show the result. */
+  const finishReplay = useCallback(() => {
+    const f = unpublished.current
+    unpublished.current = null
+    f?.()
+  }, [])
   const clearError = useCallback(() => setError(null), [])
 
   return {
@@ -161,6 +178,7 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
     history,
     reveal,
     dismissReveal,
+    finishReplay,
     needsSettle,
     busy,
     error,

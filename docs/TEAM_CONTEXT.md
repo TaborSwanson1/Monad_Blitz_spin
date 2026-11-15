@@ -7,7 +7,7 @@ Each person's Claude reads this at the start of a session and adds to it at the 
 _Last updated 2026-11-15 by finkierstead's Claude_
 
 - **Branch:** everyone works on `main`. The `scaffold` branch has been deleted.
-- **Frontend (Tabor, Lucas):** React + Vite + viem app in `frontend/`. Sim mode works without a backend. Crash (game 3) and Beauty Contest (game 4, with bots) work in sim mode only. Chain mode is written against the draft backend, which is now restored in `backend/`.
+- **Frontend (Tabor, Lucas):** React + Vite + viem app in `frontend/`, redesigned 2026-11-15 as a three-pane dashboard (game sidebar, main, bet panel). Sim mode works without a backend. Crash (game 3) and Beauty Contest (game 4, with bots) work in sim mode only. Chain mode is written against the draft backend, which is now restored in `backend/`.
 - **Backend (finkierstead):** Tabor's draft is restored, plus a Pyth Entropy adapter on Pyth's official SDK, `SeedLib` (the randomness derivation), a safer deploy script, and tests. **Compiles. 27 unit tests pass, and 2 fork tests pass against live Monad testnet** (Foundry 1.9.0). Mechanics write-up for game designers: `backend/docs/MECHANICS.md`.
 - **Translation loop is live:** `cd backend && npm run dev` gives the frontend a local chain with the real contracts, an auto-generated `frontend.env`, and a keeper that settles rounds. Tested end to end with a real bet, settle and claim. See `backend/README.md`.
 - **Deployed contracts:** none on testnet yet. When there are, the addresses land in `backend/exports/monad-testnet/` (committed).
@@ -81,6 +81,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, Tabor + Claude: UI redesign. Calm dark dashboard look (our own CSS, loosely after admin dashboards like daisyUI's Nexus), three panes with a game sidebar, open stat row, bar-list history. Removed the glow, grid drift, heat and screen shake. Fixed a leak where history, session net and balance showed a Crash result before the replay finished.
 - 2026-11-15, Tabor + Claude: built Beauty Contest in sim mode (game 4, `src/lib/beauty.ts`, bots from the round seed, guess input, dot-plot result). Documented the proposed contract in INTEGRATION.md and the fixed-bot weakness in GAMES.md.
 - 2026-11-15, Tabor + Claude: built Crash in sim mode (game 3, `src/lib/crash.ts`, target picker, replay climb), set sim timing to 60/40 at 300 ms, and documented the proposed contract math in INTEGRATION.md and GAMES.md.
 - 2026-11-15, finkierstead + Claude: added the translation loop (`npm run dev`, `export`, `check-seam`, `deploy:testnet`), a local keeper, and `backend/README.md`. Verified with a real local round: bet, keeper settle, claim, balance correct. Seam check passes.

@@ -1,5 +1,6 @@
 import { fmtChips, fmtDuration } from '../lib/format'
 import type { Limits } from '../hooks/useSession'
+import { IconArrowDown, IconArrowUp } from './icons'
 
 interface Props {
   elapsedMs: number
@@ -7,31 +8,58 @@ interface Props {
   staked: bigint
   rounds: number
   limits: Limits
-  onEditLimits: () => void
 }
 
-export function SessionBar({ elapsedMs, net, staked, rounds, limits, onEditLimits }: Props) {
+/** Open row of session numbers: label on top, value below, no boxes. */
+export function SessionBar({ elapsedMs, net, staked, rounds, limits }: Props) {
   const tone = net > 0n ? 'pos' : net < 0n ? 'neg' : ''
+  // Net as a share of what was bet, shown like a dashboard trend.
+  const pct = staked > 0n ? Number((net * 10_000n) / staked) / 100 : null
+
   return (
-    <div className="sessionbar">
-      <Stat k="SESSION" v={fmtDuration(elapsedMs)} sub={limits.timeMin ? `limit ${limits.timeMin}m` : 'no limit'} />
-      <Stat k="NET RESULT" v={`${fmtChips(net, { sign: true })} CHIP`} tone={tone} />
-      <Stat k="WAGERED" v={`${fmtChips(staked)} CHIP`} />
-      <Stat k="ROUNDS" v={String(rounds)} />
-      <Stat k="LOSS LIMIT" v={limits.lossChips ? `${limits.lossChips} CHIP` : 'off'} />
-      <button className="btn ghost small" onClick={onEditLimits}>
-        Limits
-      </button>
+    <div className="stat-row">
+      <Stat label="Session" value={fmtDuration(elapsedMs)} sub={limits.timeMin ? `of ${limits.timeMin} min` : undefined} />
+      <Stat
+        label="Net result"
+        value={fmtChips(net, { sign: true })}
+        tone={tone}
+        badge={
+          pct !== null && pct !== 0 ? (
+            <span className={`badge ${pct > 0 ? 'badge-pos' : 'badge-neg'}`}>
+              {pct > 0 ? <IconArrowUp /> : <IconArrowDown />}
+              {Math.abs(pct).toFixed(1)}%
+            </span>
+          ) : undefined
+        }
+      />
+      <Stat label="Wagered" value={fmtChips(staked)} />
+      <Stat label="Rounds" value={String(rounds)} />
+      <Stat label="Loss limit" value={limits.lossChips ? String(limits.lossChips) : 'Off'} />
     </div>
   )
 }
 
-function Stat({ k, v, sub, tone = '' }: { k: string; v: string; sub?: string; tone?: string }) {
+function Stat({
+  label,
+  value,
+  sub,
+  tone = '',
+  badge,
+}: {
+  label: string
+  value: string
+  sub?: string
+  tone?: string
+  badge?: React.ReactNode
+}) {
   return (
     <div className="stat">
-      <div className="stat-k">{k}</div>
-      <div className={`stat-v ${tone}`}>{v}</div>
-      {sub && <div className="stat-sub">{sub}</div>}
+      <div className="stat-label">{label}</div>
+      <div className="stat-line">
+        <span className={`stat-value ${tone}`}>{value}</span>
+        {sub && <span className="stat-sub">{sub}</span>}
+        {badge}
+      </div>
     </div>
   )
 }

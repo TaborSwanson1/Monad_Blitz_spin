@@ -15,8 +15,8 @@ export function Burst({ intensity }: { intensity: number }) {
     canvas.height = innerHeight * dpr
     ctx.scale(dpr, dpr)
 
-    const colors = ['#3cf2ff', '#5dff9d', '#ffffff', '#b98cff']
-    const n = Math.round(60 + 340 * intensity)
+    const colors = ['#378dff', '#0bbf58', '#f0f4f8', '#b071ff']
+    const n = Math.round(40 + 160 * intensity)
     const cx = innerWidth / 2
     const cy = innerHeight * 0.42
     const ps = Array.from({ length: n }, () => {

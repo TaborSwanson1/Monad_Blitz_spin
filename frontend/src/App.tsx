@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { createClient } from './client'
 import { useCasino } from './hooks/useCasino'
 import { useSession } from './hooks/useSession'
@@ -9,8 +9,10 @@ import { BlockStream } from './components/BlockStream'
 import { RoundHud } from './components/RoundHud'
 import { BetPanel } from './components/BetPanel'
 import { History } from './components/History'
-import { RevealOverlay, revealDelayMs, revealIntensity } from './components/RevealOverlay'
+import { RevealOverlay } from './components/RevealOverlay'
 import { LimitsDialog, RealityCheck } from './components/Dialogs'
+import { IconCube } from './components/icons'
+import { Sidebar } from './components/Sidebar'
 
 export default function App() {
   const [client, clientError] = useMemo(() => {
@@ -30,28 +32,11 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
   const onResolved = useCallback((r: { paid: bigint }) => recordRound(r.paid), [recordRound])
   const casino = useCasino(client, onResolved)
   const [editingLimits, setEditingLimits] = useState(false)
-  const [shake, setShake] = useState(0)
+  const [gameId, setGameId] = useState(0)
 
   const { cfg, head } = casino
   const clock = cfg && head !== null ? roundClock(head, cfg) : null
   const stakeInCurrent = !!clock && casino.pending.some((b) => b.roundId === clock.roundId)
-
-  // Shake on a net-positive reveal, scaled to the real result. Waits for a crash
-  // replay to finish so the shake doesn't give the result away early.
-  useEffect(() => {
-    if (!casino.reveal) return
-    const i = revealIntensity(casino.reveal)
-    if (i === 0) return
-    let stop: ReturnType<typeof setTimeout> | undefined
-    const start = setTimeout(() => {
-      setShake(i)
-      stop = setTimeout(() => setShake(0), 700)
-    }, revealDelayMs(casino.reveal))
-    return () => {
-      clearTimeout(start)
-      if (stop) clearTimeout(stop)
-    }
-  }, [casino.reveal])
 
   const disabledReason = !casino.account
     ? client.mode === 'sim'
@@ -63,14 +48,8 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         ? 'Betting locked'
         : null
 
-  // Heat drives the lock-phase build-up in CSS. It runs harder when you have chips riding.
-  const heat = clock ? clock.heat * (stakeInCurrent ? 1 : 0.45) : 0
-
   return (
-    <div
-      className={`app ${clock && !clock.open ? 'is-locked' : ''} ${shake ? 'shake' : ''}`}
-      style={{ '--heat': heat, '--shake': shake } as React.CSSProperties}
-    >
+    <div className={`app ${clock && !clock.open ? 'is-locked' : ''}`}>
       <TopBar
         label={client.label}
         mode={client.mode}
@@ -81,27 +60,27 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         onConnect={casino.connect}
         onFaucet={casino.faucet}
       />
-      <SessionBar
-        elapsedMs={session.elapsedMs}
-        net={session.net}
-        staked={session.staked}
-        rounds={session.rounds}
-        limits={session.limits}
-        onEditLimits={() => setEditingLimits(true)}
-      />
+      <div className="shell">
+        <Sidebar mode={client.mode} gameId={gameId} onPick={setGameId} onEditLimits={() => setEditingLimits(true)} />
 
-      {casino.error && (
-        <div className="toast" onClick={casino.clearError}>
-          {casino.error}
-        </div>
-      )}
-      {session.blockedReason && (
-        <div className="limit-banner">{session.blockedReason} Betting is paused. You can change limits, but consider taking a break.</div>
-      )}
-
-      <main className="layout">
-        <section className="stage">
-          <div className="grid-bg" aria-hidden />
+        <main className="main-col">
+          <SessionBar
+            elapsedMs={session.elapsedMs}
+            net={session.net}
+            staked={session.staked}
+            rounds={session.rounds}
+            limits={session.limits}
+          />
+          {casino.error && (
+            <div className="toast" onClick={casino.clearError}>
+              {casino.error}
+            </div>
+          )}
+          {session.blockedReason && (
+            <div className="limit-banner">
+              {session.blockedReason} Betting is paused. You can change limits, but consider taking a break.
+            </div>
+          )}
           {clock && cfg ? (
             <RoundHud
               clock={clock}
@@ -110,9 +89,10 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
               myStakeInRound={stakeInCurrent}
             />
           ) : (
-            <div className="hud muted">Waiting for blocks…</div>
+            <section className="card">
+              <div className="card-body muted">Waiting for blocks…</div>
+            </section>
           )}
-          <BlockStream blocks={casino.blocks} />
           {casino.needsSettle.map((id) => (
             <div key={id.toString()} className="settle-callout">
               Round {id.toString()} is locked. Request its random result to settle it. You pay the VRF fee in MON.
@@ -121,12 +101,23 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
               </button>
             </div>
           ))}
-        </section>
+          <section className="card">
+            <header className="card-head">
+              <IconCube />
+              <h3>Live blocks</h3>
+              <div className="card-actions muted small">Display only. Results come from the VRF.</div>
+            </header>
+            <div className="card-body">
+              <BlockStream blocks={casino.blocks} />
+            </div>
+          </section>
+        </main>
 
-        <aside className="side">
+        <aside className="rightbar">
           {cfg && (
             <BetPanel
-              mode={client.mode}
+              key={gameId}
+              gameId={gameId}
               canBet={!disabledReason}
               disabledReason={disabledReason}
               busy={casino.busy}
@@ -141,9 +132,11 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
           )}
           <History history={casino.history} />
         </aside>
-      </main>
+      </div>
 
-      {casino.reveal && <RevealOverlay record={casino.reveal} onClose={casino.dismissReveal} />}
+      {casino.reveal && (
+        <RevealOverlay record={casino.reveal} onClose={casino.dismissReveal} onReplayDone={casino.finishReplay} />
+      )}
       {session.showRealityCheck && (
         <RealityCheck
           elapsedMs={session.elapsedMs}
