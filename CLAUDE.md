@@ -1,6 +1,6 @@
 # CLAUDE.md: shared by every Claude session on this team
 
-Two people work on this repo, each with their own Claude. This file and the two it imports are how those sessions **share one context**. Claude Code loads this file automatically, in the terminal, VS Code and the desktop app.
+Four people work on this repo (finkierstead, Tabor, Lucas, Zander), each with their own Claude. This file and the two it imports are how those sessions **share one context**. Claude Code loads this file automatically, in the terminal, VS Code and the desktop app.
 
 @docs/TEAM_CONTEXT.md
 @frontend/INTEGRATION.md
@@ -19,9 +19,9 @@ The `/sync` command does all three.
 
 | Area | Owner | Their Claude may edit |
 |---|---|---|
-| `frontend/` | **Tabor** (TaborSwanson1) and **Lucas** | `frontend/**` |
-| `backend/` (Foundry contracts, tests, scripts, keeper) | **finkierstead** | `backend/**` |
-| `CLAUDE.md`, `docs/`, `.claude/` | Both | Shared, append-only where possible |
+| `frontend/` | **Tabor** (TaborSwanson1) and **Lucas** (games), **Zander** (lobby screen: game list, entry to every game, wallet connect UI) | `frontend/**`. Tell each other which files you're in, since you share it. |
+| `backend/` (Foundry contracts, tests, scripts, keeper, **wallet SDK** in `backend/wallet/`) | **finkierstead** | `backend/**` |
+| `CLAUDE.md`, `docs/`, `.claude/` | Everyone | Shared, append-only where possible |
 | `sandbox/` (mechanics sandbox: `SANDBOX.md`, `mechanics.ipynb`) | **finkierstead** builds the engine. Anyone may add experiments. | Experiments in `SANDBOX.md` and the notebook: anyone. Engine files: finkierstead. It only *reads* `frontend/src/lib/` and `backend/sdk/`. |
 
 **Don't edit the other person's area.** If you need something changed there, write it in the TEAM_CONTEXT **Inbox** addressed to them.
@@ -80,6 +80,8 @@ cd backend && forge test --match-path "test/fork/*" --fork-url https://testnet-r
 # translation loop: local chain + deploy + export for frontend + seam check + auto-settling keeper
 cd backend && npm run dev                 # then: cp backend/exports/local/frontend.env frontend/.env
 cd backend && npm run check-seam          # run before pushing any contract change
+# wallet SDK for frontends (@block-casino/wallet, docs in backend/wallet/README.md)
+cd backend && npm run test:wallet         # builds wallet/dist and runs its e2e tests on a local chain
 # mechanics sandbox (simulates the frontend models on the backend toolkit; no chain)
 cd sandbox && npm install && npm run sandbox   # runs sandbox/SANDBOX.md; charts in sandbox/mechanics.ipynb
 # deploy to Monad testnet (you type the keystore password; the key never goes in .env)

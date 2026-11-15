@@ -11,6 +11,8 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 - **Backend (finkierstead):** Tabor's draft is restored, plus a Pyth Entropy adapter on Pyth's official SDK, a safer deploy script, and tests. **35 unit tests pass, and 2 fork tests pass against live Monad testnet** (Foundry 1.9.0). Mechanics write-up for game designers: `backend/docs/MECHANICS.md`.
 - **Seed toolkit (one source of randomness for every game):** `backend/contracts/lib/SeedLib.sol` turns the Pyth round seed into `gameSeed`, `draw`, `uniform`, `chance`, `weighted`, `coin` and `crashX100`. `backend/sdk/seedlib.mjs` is a bit-for-bit JavaScript copy, enforced by `test/SeedVectors.t.sol`. `crashX100` equals the frontend's `crashPointX100`.
 - **Mechanics sandbox:** its own top-level folder, `sandbox/`. Run `SANDBOX.md` with `cd sandbox && npm install && npm run sandbox`, or open `sandbox/mechanics.ipynb` (Python kernel) for charts. It pulls the live frontend models from `frontend/src/lib/` (read only), simulates every game and choice, checks the frontend math against the backend toolkit, and runs experiments written as ```` ```js experiment ```` blocks in the file. Last run: all parity checks match, and every house game returns ≈0.98.
+- **Team:** finkierstead (backend, wallet SDK), Tabor and Lucas (games in `frontend/`), Zander (lobby screen in `frontend/`, building on the wallet SDK).
+- **Wallet SDK:** `backend/wallet/` (`@block-casino/wallet`). It finds wallets (EIP-6963), connects and switches to Monad Testnet, follows account and network changes, reconnects silently, and covers chips, bet, settle, claim and refund, with player-ready errors. `dist/` is committed. Frontends install it with `"@block-casino/wallet": "file:../backend/wallet"`. Docs: `backend/wallet/README.md`. It passes end-to-end tests against the real contracts on a local chain (`npm run test:wallet`).
 - **Translation loop is live:** `cd backend && npm run dev` gives the frontend a local chain with the real contracts, an auto-generated `frontend.env`, and a keeper that settles rounds. Tested end to end with a real bet, settle and claim. See `backend/README.md`.
 - **Deployed contracts:** none on testnet yet. When there are, the addresses land in `backend/exports/monad-testnet/` (committed).
 
@@ -30,7 +32,16 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 
 Requests and questions between the two sides. Mark them `[done]` instead of deleting them.
 
+### For Zander (lobby)
+- 2026-11-15, from finkierstead: **welcome! The wallet layer you're waiting on is ready:** `backend/wallet/`, docs in `backend/wallet/README.md`.
+  - **Install:** add `"@block-casino/wallet": "file:../backend/wallet"` to `frontend/package.json`, plus `resolve: { dedupe: ['viem'] }` in `vite.config.ts`. `dist/` is committed, so there's no backend build.
+  - **What you get:** `watchWallets()` for a wallet picker (name and icon for each installed wallet), `session.connect(wallet)` (switches or adds Monad Testnet), `session.subscribe()` for the status (`disconnected` / `connecting` / `connected` / `wrong-network`), address and wallet, `reconnect()` on page load, `disconnect()`, `balances()` (MON for gas, CHIP), `getChips()`, and the bet, settle and claim actions. Every error is a `WalletError` with a message players can read and a `code` for logic. The README has a React `useSyncExternalStore` one-liner.
+  - **What to point it at:** there's **no testnet deployment yet** (blocked on a deployer keystore, see Open questions). For now, run `cd backend && FUND=0xYourAddress npm run dev` and `cp backend/exports/local/frontend.env frontend/.env`, then use MetaMask on `http://127.0.0.1:8545`, chain 31337. The same code works on testnet once `exports/monad-testnet/frontend.env` lands.
+  - **Overlap with Tabor's `chain.ts`:** the frontend already has a basic MetaMask connect in `src/client/chain.ts`. Please agree with Tabor and Lucas whether `chain.ts` moves onto the SDK, so there's one wallet connection in the app, and whether the lobby offers a choice between sim and wallet play at runtime (today it's fixed when the app is built, by `VITE_MODE`).
+  - Anything missing or awkward in the SDK: put it in finkierstead's Inbox.
+
 ### For Tabor (frontend)
+- 2026-11-15, from finkierstead, for Tabor and Lucas: **Zander has joined** and owns the lobby screen (game list, entry to every game, wallet connect UI) in `frontend/`. CLAUDE.md and TEAM_RULES.md are updated. The wallet SDK he's building on is in `backend/wallet/`, and it could also replace the hand-written connect in `chain.ts`. See Zander's Inbox.
 - 2026-11-15, from finkierstead, **for Tabor and Lucas: I edited `frontend/` once, with finkierstead's OK. Sim mode now runs on live Monad testnet blocks.** Sorry for stepping into your area. It's a small, contained change, so please review it and change anything you like.
   - **What:** the new `src/client/liveBlocks.ts` subscribes to `wss://testnet-rpc.monad.xyz` (verified: newHeads about every 0.3 s; the `/ws` path doesn't work). `sim.ts`'s clock follows real block numbers (`genesisBlock` 0, so round r starts at block 60r), and the Live blocks card shows the real blocks, with a source badge and Monadscan links. `BlockInfo` gained an optional `source` ('monad' | 'sim' | 'local'), which `chain.ts` sets too.
   - **Not changed:** sim results still come from `crypto.getRandomValues`, never from block data. Nothing else in the UI changed.
@@ -69,6 +80,9 @@ Requests and questions between the two sides. Mark them `[done]` instead of dele
 
 Settled choices. Changing one means adding a new entry, not editing the old one.
 
+- **2026-11-15: Wallet connection comes from one backend-owned SDK, `backend/wallet/` (`@block-casino/wallet`)** (finkierstead). Frontends import it rather than writing their own wallet code. It has no UI and no framework. It keeps the casino's chain, ABIs and error mapping in one place, next to the contracts. `dist/` is committed so the frontend needs no backend build.
+- **2026-11-15: Zander joins and co-owns `frontend/`, for the lobby screen and wallet connect UI** (finkierstead). This adds to the earlier ownership decisions.
+
 - **2026-11-15: Sim mode's clock and block display follow live Monad testnet blocks** (finkierstead, a one-time frontend edit approved by finkierstead). Blocks stay clock and show only. Sim results still come from `crypto.getRandomValues`. It falls back to fake blocks if the feed stalls, and `VITE_LIVE_BLOCKS=off` turns it off.
 
 - **2026-11-15: The repo root also holds `sandbox/`** (finkierstead). This adds to "The repo root holds only `frontend/` and `backend/`" below. `sandbox/` is the mechanics sandbox: `SANDBOX.md` (a committed record of experiments and results) and `mechanics.ipynb` (charts). It has its own `package.json`, reads `frontend/src/lib/` and `backend/sdk/seedlib.mjs`, and writes to neither. Anyone may add experiments, and finkierstead maintains the engine. CLAUDE.md's ownership table is updated. Tabor and Lucas: if you'd rather it lived somewhere else, say so in finkierstead's Inbox.
@@ -90,6 +104,8 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 ## Open questions
 
+- **Testnet deployment (blocks wallet play on testnet):** there's no deployer keystore yet. finkierstead creates it (`cast wallet import monad-deployer --interactive`) and funds it with testnet MON, then `npm run deploy:testnet` runs. The same wallet question applies to the keeper.
+
 - How will the backend support Crash, Beauty Contest, and Block Walk? See `frontend/GAMES.md` and the Inbox note from 2026-11-15.
 - Who runs the settlement keeper during the demo, and from which wallet? It pays ≈0.124 MON per round.
 - **[resolved 2026-11-15]** Round timing: 60/40 blocks, `settleTimeout` 2,000 blocks (≈10 min). Tune after a live test.
@@ -100,6 +116,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, finkierstead + Claude: built the wallet SDK `backend/wallet/` (discovery, connect, switch or add chain, events, reconnect, all casino actions, typed errors) with e2e tests on a local chain and a check that it installs as a package. Added Zander to CLAUDE.md, TEAM_RULES.md and TEAM_CONTEXT. The live-feed HTTP fallback (`39e18c8`) is committed with it.
 - 2026-11-15, Tabor + Claude: customizable themes. Sidebar quick switch plus a Customize panel (Presets, Colors, Effects). Presets Calm, Midnight, Monad. Monad theme: token rain on a net win, burning sim wallet on a net loss. Effects follow the real net result, scale with it, can be turned off, and skip for reduced motion. Settings live in the browser (localStorage).
 - 2026-11-15, finkierstead + Claude: live Monad block feed in sim mode (`frontend/src/client/liveBlocks.ts`, `sim.ts`, `BlockStream.tsx`), a one-time frontend edit with an Inbox note for Tabor and Lucas. Verified the testnet websocket, ran it in Node and headless Chrome.
 - 2026-11-15, finkierstead + Claude: moved the sandbox to a top-level `sandbox/` (own package.json, engine split from rendering, JSON API) and added `mechanics.ipynb` with `sandbox.py`. Corrected the Crash "instant crash" wording in SeedLib and its test bounds (≈3% show 1.00x). New Decision for the root folder.

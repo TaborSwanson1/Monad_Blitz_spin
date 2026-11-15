@@ -1,0 +1,19 @@
+{
+  "name": "@block-casino/wallet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Wallet connection and casino actions for Block Casino frontends (Monad testnet). Docs: README.md",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/wallet/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/wallet/src/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "peerDependencies": {
+    "viem": "^2.21.0"
+  }
+}
