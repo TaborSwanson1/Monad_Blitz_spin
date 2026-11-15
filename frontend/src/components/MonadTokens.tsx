@@ -28,6 +28,20 @@ export function makeSprite(size: number): HTMLCanvasElement {
   return c
 }
 
+/** The same token with a bright halo baked in, so it reads against a dark, busy screen. */
+export function makeGlowSprite(size: number): HTMLCanvasElement {
+  const pad = Math.round(size * 0.3)
+  const c = document.createElement('canvas')
+  c.width = c.height = size + pad * 2
+  const g = c.getContext('2d')!
+  g.shadowColor = '#e4dbff'
+  g.shadowBlur = pad * 0.8
+  g.drawImage(makeSprite(size), pad, pad)
+  g.shadowBlur = 0
+  g.drawImage(makeSprite(size), pad, pad)
+  return c
+}
+
 function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   g.beginPath()
   g.moveTo(x + r, y)

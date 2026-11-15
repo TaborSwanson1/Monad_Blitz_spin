@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { fmtX } from '../lib/crash'
+import { prefersReducedMotion } from '../lib/themes'
 
 // The climb is a replay. The crash point is already settled by the time this runs.
 //
@@ -19,9 +20,6 @@ export function climbDurationMs(crashX100: number): number {
   if (L <= 0) return 0
   return Math.min(MAX_MS, (-A + Math.sqrt(A * A + 4 * B * L)) / (2 * B))
 }
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 interface Props {
   crashX100: number

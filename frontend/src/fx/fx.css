@@ -1,0 +1,308 @@
+/* The loud layer. Loaded after styles.css.
+   1970s Las Vegas Strip (neon tube lettering, chasing bulbs, sunburst rays, gold)
+   meets a 2010 Silicon Valley web app (candy-gloss buttons, bevels, big rounded
+   corners, a sticker in the corner).
+
+   Two looks share it:
+     vegas      the lobby and every game except High / Low and the slot demo
+     americana  High / Low: navy, flag red, ballpark-scoreboard type
+   The slot demo keeps the Calm look and none of this applies to it.
+
+   Color choices follow the research (see the Decision in docs/TEAM_CONTEXT.md):
+   brightness drives how pleasant a color feels and saturation drives how exciting
+   (Valdez and Mehrabian 1994; Wilms and Oberfeld 2018). So: bright, fully saturated
+   colors on a deep base, in the hue families people rate most pleasant (blue,
+   blue-green, purple, magenta). Yellow rates least pleasant as a field, so it only
+   appears as light: bulbs, gold type, coins.
+
+   Flash safety: nothing covering a large part of the screen changes brightness more
+   than three times a second (WCAG 2.3.1). Bulbs chase faster, but they're tiny.
+   Motion off (the corner switch) or the system reduce-motion setting stills it all. */
+
+/* ---------- tokens */
+:root[data-theme='vegas'] {
+  --page: #1a0550;
+  --pane: rgb(28 7 88 / 0.8);
+  --card: rgb(46 14 126 / 0.84);
+  --card-2: rgb(84 36 184 / 0.62);
+  --line: rgb(255 255 255 / 0.18);
+  --line-2: rgb(255 255 255 / 0.34);
+  --text: #fffdf5;
+  --muted: rgb(255 253 245 / 0.82);
+  --faint: rgb(255 253 245 / 0.58);
+  --primary: #ff2d87;
+  --primary-soft: rgb(255 45 135 / 0.24);
+  --secondary: #19e3ff;
+  --pos: #3dff8f;
+  --pos-soft: rgb(61 255 143 / 0.16);
+  --neg: #ff7183;
+  --neg-soft: rgb(255 113 131 / 0.18);
+  --warn: #ffd23f;
+  --warn-soft: rgb(255 210 63 / 0.16);
+  --display: 'Bungee', 'Oswald', var(--sans);
+  --sign: 'Monoton', 'Bungee', var(--sans);
+  --script: 'Lobster', 'Brush Script MT', cursive;
+  --gold: #ffd23f;
+  --glow: rgb(255 45 135 / 0.75);
+  --ring: #ffd23f;
+}
+:root[data-theme='americana'] {
+  --pane: rgb(9 18 52 / 0.82);
+  --card: rgb(14 27 70 / 0.88);
+  --card-2: rgb(32 52 120 / 0.66);
+  --line: rgb(255 255 255 / 0.16);
+  --line-2: rgb(255 255 255 / 0.32);
+  --primary: #e0162b;
+  --primary-soft: rgb(224 22 43 / 0.22);
+  --secondary: #4f8cff;
+  --pos: #57f09a;
+  --neg: #ff6b7a;
+  --sign: 'Oswald', var(--sans);
+  --script: 'Lobster', 'Brush Script MT', cursive;
+  --gold: #ffd75a;
+  --glow: rgb(224 22 43 / 0.7);
+  --ring: #ffffff;
+}
+
+/* ---------- animated background (fx/Backdrop.tsx) */
+.app { isolation: isolate; }
+.backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background-size: 170% 170%; animation: bg-drift 16s ease-in-out infinite alternate; }
+.backdrop canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.backdrop-vegas {
+  background-image:
+    radial-gradient(70% 55% at 50% 0%, rgb(255 45 135 / 0.85), transparent 70%),
+    radial-gradient(60% 60% at 0% 100%, rgb(25 227 255 / 0.5), transparent 70%),
+    radial-gradient(60% 60% at 100% 100%, rgb(255 122 26 / 0.55), transparent 70%),
+    linear-gradient(160deg, #3a0ca3, #7209b7 45%, #240046);
+}
+.backdrop-americana {
+  background-image:
+    radial-gradient(70% 55% at 50% 0%, rgb(47 107 255 / 0.6), transparent 70%),
+    radial-gradient(60% 60% at 100% 100%, rgb(224 22 43 / 0.5), transparent 70%),
+    radial-gradient(60% 60% at 0% 100%, rgb(224 22 43 / 0.35), transparent 70%),
+    linear-gradient(170deg, #10247a, #0a1128 55%, #071038);
+}
+/* Sunburst rays turning slowly behind everything, like the back of a Strip sign. */
+.backdrop-rays { position: absolute; left: 50%; top: 0; width: 260vmax; height: 260vmax; margin: -130vmax 0 0 -130vmax; background: repeating-conic-gradient(from 0deg, rgb(255 255 255 / 0.07) 0 6deg, transparent 6deg 12deg); -webkit-mask-image: radial-gradient(closest-side, #000 15%, transparent 70%); mask-image: radial-gradient(closest-side, #000 15%, transparent 70%); animation: spin 140s linear infinite; }
+@keyframes bg-drift { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- confetti overlay and corner switches */
+.fx-overlay { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 60; pointer-events: none; }
+/* Bottom left, under the game list, where the page is empty. The bet button lives bottom right. */
+.fx-controls { position: fixed; left: 12px; bottom: 12px; z-index: 45; display: flex; gap: 6px; }
+@media (min-width: 761px) { :root:is([data-theme='vegas'], [data-theme='americana']) .sidebar { padding-bottom: 60px; } }
+:root:is([data-theme='vegas'], [data-theme='americana']) .fx-demo { bottom: 54px; }
+.fx-switch { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; border: 2px solid rgb(255 255 255 / 0.5); background: linear-gradient(180deg, #5b5b6e, #2c2c3a); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; box-shadow: 0 3px 0 rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.4); }
+.fx-switch.on { background: linear-gradient(180deg, #7dffb0, #17b85c 55%, #0a8a40); color: #04260f; }
+.fx-lamp { width: 8px; height: 8px; border-radius: 50%; background: #1b1b22; box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.6); }
+.fx-switch.on .fx-lamp { background: #fff; box-shadow: 0 0 8px #fff; }
+
+/* =====================================================================
+   Everything below applies to both loud looks.
+   ===================================================================== */
+:root:is([data-theme='vegas'], [data-theme='americana']) {
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+:root:is([data-theme='vegas'], [data-theme='americana']) body { font-size: 15px; }
+
+/* ---------- panes let the background through */
+:root:is([data-theme='vegas'], [data-theme='americana']) .topbar { border-bottom: 3px solid var(--ring); background: linear-gradient(180deg, rgb(255 255 255 / 0.16), transparent 55%), var(--pane); box-shadow: 0 6px 24px rgb(0 0 0 / 0.35); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .brand { font-family: var(--display); font-size: 22px; letter-spacing: 0.03em; text-shadow: 0 0 14px var(--glow); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .sidebar,
+:root:is([data-theme='vegas'], [data-theme='americana']) .rightbar { border-color: var(--line-2); }
+
+/* ---------- cards: glossy, bevelled, with a sheen that follows the cursor */
+:root:is([data-theme='vegas'], [data-theme='americana']) .card { position: relative; border: 2px solid var(--line-2); background: linear-gradient(180deg, rgb(255 255 255 / 0.13), rgb(255 255 255 / 0) 46%), var(--card); box-shadow: 0 12px 30px rgb(0 0 0 / 0.38), inset 0 1px 0 rgb(255 255 255 / 0.4); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(circle 340px at var(--mxpx, 50vw) var(--mypx, 30vh), rgb(255 255 255 / 0.16), transparent 70%) fixed; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .card-head { border-bottom: 2px solid var(--line); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .card-head h3 { font-family: var(--display); font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .card-head .icon { color: var(--gold); }
+
+/* ---------- buttons: 2010 candy gloss */
+:root:is([data-theme='vegas'], [data-theme='americana']) .btn { border-radius: 999px; border-width: 2px; font-weight: 700; box-shadow: 0 3px 0 rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.3); background: linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.04) 50%, rgb(0 0 0 / 0.12)), var(--card-2); transition: transform 0.12s, filter 0.12s, box-shadow 0.12s; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .btn:not(:disabled):hover { transform: translateY(-2px) scale(1.04); filter: brightness(1.15); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .btn:not(:disabled):active { transform: translateY(2px); box-shadow: 0 0 0 rgb(0 0 0 / 0.35), inset 0 2px 4px rgb(0 0 0 / 0.4); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .btn.primary { color: #fff; border-color: rgb(255 255 255 / 0.65); text-shadow: 0 1px 0 rgb(0 0 0 / 0.4); background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 62%, #fff) 0%, var(--primary) 48%, color-mix(in srgb, var(--primary) 74%, #000) 100%); box-shadow: 0 4px 0 color-mix(in srgb, var(--primary) 50%, #000), 0 10px 22px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.75); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .btn.ghost { background: rgb(255 255 255 / 0.08); }
+
+/* The bet button is the biggest control on the page. */
+:root:is([data-theme='vegas'], [data-theme='americana']) .btn.wide { height: 68px; font-family: var(--display); font-size: 24px; letter-spacing: 0.06em; text-transform: uppercase; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .btn.wide.primary:not(:disabled) { animation: throb 1.2s ease-in-out infinite alternate; }
+@keyframes throb { from { box-shadow: 0 4px 0 color-mix(in srgb, var(--primary) 50%, #000), 0 0 0 0 var(--glow), inset 0 1px 0 rgb(255 255 255 / 0.75); } to { box-shadow: 0 4px 0 color-mix(in srgb, var(--primary) 50%, #000), 0 0 34px 6px var(--glow), inset 0 1px 0 rgb(255 255 255 / 0.75); } }
+
+:root:is([data-theme='vegas'], [data-theme='americana']) .fx-demo .btn { border-radius: 12px; }
+
+/* ---------- badges, stats */
+:root:is([data-theme='vegas'], [data-theme='americana']) .badge { height: 26px; padding: 0 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border: 2px solid currentColor; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .stat-row { border-bottom: 2px solid var(--line); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .stat-label { font-weight: 700; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .stat-value { font-family: var(--display); font-size: clamp(28px, 3vw, 40px); letter-spacing: 0.01em; text-shadow: 0 2px 0 rgb(0 0 0 / 0.35); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .stat-value.pos { text-shadow: 0 0 18px rgb(61 255 143 / 0.7); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .stat-value.neg { text-shadow: 0 0 18px rgb(255 90 110 / 0.6); }
+
+/* ---------- the round countdown: the focal point of the screen */
+:root:is([data-theme='vegas'], [data-theme='americana']) .round-card .card-body { padding: 10px 20px 20px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .count { flex-direction: column; align-items: center; gap: 0; text-align: center; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .count-num { font-family: var(--display); font-size: clamp(120px, 19vw, 260px); line-height: 0.92; letter-spacing: 0; background: linear-gradient(180deg, #fffbe0 0%, var(--gold) 38%, #ff9d1a 60%, #fff3a8 78%, var(--gold) 100%); background-size: 100% 220%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 3px rgb(0 0 0 / 0.35); filter: drop-shadow(0 6px 0 rgb(0 0 0 / 0.4)) drop-shadow(0 0 26px var(--glow)); animation: shimmer 2.4s ease-in-out infinite alternate; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .is-locked .count-num { background-image: linear-gradient(180deg, #ffffff 0%, #9fe8ff 40%, #19b6ff 62%, #e6fbff 100%); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .count-label { font-family: var(--display); font-size: clamp(14px, 1.6vw, 20px); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); }
+@keyframes shimmer { from { background-position: 0 0; } to { background-position: 0 100%; } }
+:root:is([data-theme='vegas'], [data-theme='americana']) .track { gap: 3px; margin-top: 22px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .cell { height: 14px; border-radius: 7px; background: rgb(255 255 255 / 0.14); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .cell.now { background: #fff; box-shadow: 0 0 14px 3px #fff; }
+:root[data-theme='vegas'] .cell-open.past { background: linear-gradient(180deg, #ff8fc0, var(--primary)); box-shadow: 0 0 8px var(--glow); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .cell-lock.past { background: var(--gold); box-shadow: 0 0 8px rgb(255 210 63 / 0.7); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .block { border: 2px solid var(--line-2); background: linear-gradient(180deg, rgb(255 255 255 / 0.14), transparent 50%), var(--card-2); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .block.is-new { border-color: var(--gold); box-shadow: 0 0 16px rgb(255 210 63 / 0.55); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .block-num { font-family: var(--display); font-size: 13px; }
+
+/* ---------- bet panel */
+:root:is([data-theme='vegas'], [data-theme='americana']) .game-name { font-family: var(--display); font-size: clamp(26px, 2.6vw, 36px); line-height: 1.05; text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 3px 0 rgb(0 0 0 / 0.4), 0 0 20px var(--glow); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .odds div { border: 2px solid var(--line-2); background: rgb(0 0 0 / 0.28); padding: 10px 12px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .odds dt { font-weight: 700; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .odds dd { font-family: var(--display); font-size: 24px; color: var(--gold); text-shadow: 0 0 12px rgb(255 210 63 / 0.5); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .choice { min-height: 72px; border: 3px solid var(--line-2); border-radius: 16px; font-family: var(--display); font-size: 20px; letter-spacing: 0.03em; background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.03) 50%, rgb(0 0 0 / 0.15)), var(--card-2); box-shadow: 0 4px 0 rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.35); transition: transform 0.12s, filter 0.12s; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .choice:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.2); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .choice.on { color: #fff; border-color: #fff; background: linear-gradient(180deg, color-mix(in srgb, var(--lane, var(--primary)) 60%, #fff), var(--lane, var(--primary)) 50%, color-mix(in srgb, var(--lane, var(--primary)) 72%, #000)); box-shadow: 0 4px 0 rgb(0 0 0 / 0.4), 0 0 28px 4px var(--glow), inset 0 1px 0 rgb(255 255 255 / 0.7); text-shadow: 0 2px 0 rgb(0 0 0 / 0.4); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .choices-10 .choice { min-height: 58px; font-size: 22px; padding: 4px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .choices-crash .choice { min-height: 60px; font-size: 17px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .amount { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; color: var(--gold); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .amount input:not([type='range']) { height: 56px; border-width: 2px; border-radius: 14px; background: rgb(0 0 0 / 0.35); font-family: var(--display); font-size: 26px; text-transform: none; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .summary { font-size: 14px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .bar { border-radius: 999px; }
+
+/* ---------- signs (fx/Marquee.tsx) */
+.mq { position: relative; width: fit-content; max-width: calc(100vw - 24px); margin: 0 auto; isolation: isolate; }
+.mq-above { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 2; pointer-events: none; animation: mq-pop 0.55s cubic-bezier(.2, 1.5, .4, 1) both; }
+.mq-face { position: relative; padding: 14px 36px 16px; border-radius: 20px; text-align: center; }
+.mq-plaque .mq-face { background: linear-gradient(180deg, rgb(255 255 255 / 0.28), transparent 42%), linear-gradient(180deg, #2a55d8, #14349a 55%, #0b1f66); border: 4px solid #fff; box-shadow: 0 0 0 4px #c8102e, 0 0 0 7px #fff, 0 16px 34px rgb(0 0 0 / 0.55); }
+.mq-neon .mq-face { background: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent 42%), linear-gradient(180deg, #5a12c2, #2a0768); border: 4px solid var(--gold, #ffd23f); box-shadow: 0 0 0 4px #ff2d87, 0 0 40px rgb(255 45 135 / 0.75), 0 16px 34px rgb(0 0 0 / 0.5); }
+.mq-text { position: relative; display: flex; flex-direction: column; align-items: center; }
+.mq-bulbs { position: absolute; inset: -3px; pointer-events: none; }
+.mq-bulb { position: absolute; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: #fffbe0; box-shadow: 0 0 10px 3px #ffd84a; animation: mq-chase 0.54s calc(var(--i) * 0.18s) steps(1) infinite; }
+@keyframes mq-chase { 0%, 33% { opacity: 1; } 34%, 100% { opacity: 0.3; background: #b8892a; box-shadow: none; } }
+@keyframes mq-pop { from { transform: translateX(-50%) scale(0.2) rotate(-8deg); opacity: 0; } }
+/* Spotlights: two beams from the sign's lower corners, sweeping up and across behind it. */
+.mq-spots { position: absolute; inset: -190px -150px 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.mq-spot { position: absolute; bottom: -10px; width: 190px; height: 520px; transform-origin: 50% 100%; background: linear-gradient(0deg, rgb(255 255 255 / 0.6), rgb(255 255 255 / 0) 88%); clip-path: polygon(44% 100%, 56% 100%, 100% 0, 0 0); filter: blur(5px); animation: spot-sweep 2.4s ease-in-out infinite alternate; }
+.mq-spot-l { left: 6%; --a: -26deg; --b: 40deg; }
+.mq-spot-r { right: 6%; --a: 26deg; --b: -40deg; animation-delay: -1.2s; }
+@keyframes spot-sweep { from { transform: rotate(var(--a)); } to { transform: rotate(var(--b)); } }
+
+/* The Americana win sign: red and white on a blue plaque. */
+.uc-small { font-family: 'Oswald', var(--sans); font-weight: 600; font-size: clamp(13px, 2vw, 22px); letter-spacing: 0.34em; text-transform: uppercase; color: #fff; }
+.uc-big { font-family: 'Oswald', var(--sans); font-weight: 700; font-size: clamp(26px, 5.2vw, 58px); line-height: 1.02; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; color: #ff2238; -webkit-text-stroke: 2px #fff; paint-order: stroke fill; text-shadow: 0 3px 0 #6b0a12, 0 0 20px rgb(255 60 80 / 0.7); }
+
+/* The Vegas win sign. */
+.wc-big { font-family: var(--sign, 'Monoton'); font-size: clamp(38px, 7.4vw, 92px); line-height: 1.05; text-transform: uppercase; white-space: nowrap; color: #fff8cf; text-shadow: 0 0 6px #fff, 0 0 18px #ffd23f, 0 0 42px #ff7a1a, 0 0 70px #ff2d87; animation: neon-buzz 3.2s linear infinite; }
+.wc-script { font-family: var(--script, 'Lobster'); font-size: clamp(20px, 3vw, 34px); color: #19e3ff; text-shadow: 0 0 12px rgb(25 227 255 / 0.8); transform: rotate(-4deg); margin-top: -6px; }
+@keyframes neon-buzz { 0%, 100% { opacity: 1; } 47% { opacity: 1; } 48% { opacity: 0.82; } 50% { opacity: 1; } 71% { opacity: 0.9; } 72% { opacity: 1; } }
+
+/* The game title sign at the top of each game. It leans toward the cursor. */
+.game-sign { width: 100%; max-width: none; margin-bottom: 6px; perspective: 900px; container-type: inline-size; }
+.game-sign .mq-face { padding: 18px 28px 20px; transform: rotateY(calc((var(--mx, 0.5) - 0.5) * 9deg)) rotateX(calc((0.5 - var(--my, 0.5)) * 7deg)); }
+.game-sign .mq-spots { inset: -120px 0 0; }
+.gs-kicker { font-family: var(--script); font-size: clamp(18px, 2vw, 28px); color: var(--gold); text-shadow: 0 2px 0 rgb(0 0 0 / 0.35); transform: rotate(-3deg); margin-bottom: -4px; }
+.gs-name { font-family: var(--sign); font-size: clamp(40px, 15cqw, 148px); line-height: 1; text-transform: uppercase; text-wrap: balance; }
+.mq-plaque .gs-name { font-size: clamp(44px, 19cqw, 156px); }
+.gs-odds { margin-top: 6px; padding: 5px 16px; border-radius: 999px; background: rgb(0 0 0 / 0.4); border: 2px solid rgb(255 255 255 / 0.35); font-weight: 700; font-size: clamp(12px, 1.3vw, 16px); letter-spacing: 0.04em; }
+.mq-neon .gs-name { color: #fff8cf; text-shadow: 0 0 6px #fff, 0 0 20px #ff2d87, 0 0 46px #ff2d87, 0 0 90px #b517ff; animation: neon-buzz 4.1s linear infinite; }
+.mq-plaque .gs-name { font-weight: 700; letter-spacing: 0.02em; color: #fff; -webkit-text-stroke: 3px #c8102e; paint-order: stroke fill; text-shadow: 0 5px 0 #6b0a12, 0 0 26px rgb(255 255 255 / 0.45); }
+/* 2010: every site had a sticker in the corner. This one is true. */
+.gs-sticker { position: absolute; right: -14px; top: -18px; z-index: 1; display: grid; place-items: center; width: 78px; height: 78px; border-radius: 50%; transform: rotate(14deg); background: radial-gradient(circle at 35% 30%, #fff9c4, #ffd23f 55%, #f59e0b); border: 3px dashed #7a4b00; color: #4a2c00; font-size: 12px; font-weight: 800; line-height: 1.05; text-transform: uppercase; letter-spacing: 0.04em; box-shadow: 0 6px 14px rgb(0 0 0 / 0.45); animation: sticker 2.8s ease-in-out infinite alternate; }
+@keyframes sticker { from { transform: rotate(10deg) scale(1); } to { transform: rotate(18deg) scale(1.07); } }
+@media (max-width: 760px) { .gs-sticker { width: 60px; height: 60px; font-size: 10px; right: -6px; } }
+
+/* ---------- result popup */
+:root[data-theme='vegas'] .reveal { background: rgb(26 5 80 / 0.74); }
+:root[data-theme='americana'] .reveal { background: rgb(6 12 40 / 0.8); }
+/* A win puts the result near the top, under the sign, so the strip below it stays
+   open for the flags and the eagle. A loss with a wallet effect keeps the number
+   smaller so the fire or the mushroom cloud has the bottom half of the screen. */
+.reveal.has-sign { place-items: start center; padding-top: calc(var(--sign-h, 140px) + 40px); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal.has-bottom-fx .reveal-raw { font-size: clamp(72px, 10vw, 128px); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal.has-bottom-fx .reveal-line { font-size: clamp(20px, 2.6vw, 30px); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal.has-bottom-fx .reveal-net { font-size: clamp(34px, 5vw, 58px); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-card { padding: 22px 34px 24px; border-radius: 26px; border: 4px solid var(--ring); background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0) 40%), var(--card); box-shadow: 0 0 0 4px var(--primary), 0 24px 60px rgb(0 0 0 / 0.6); animation: card-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-up .reveal-card { border-color: var(--gold); animation: card-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both, win-glow 0.9s 0.45s ease-in-out infinite alternate; }
+@keyframes card-pop { from { transform: scale(0.6); } }
+@keyframes win-glow { from { box-shadow: 0 0 0 4px var(--primary), 0 0 20px 2px rgb(255 210 63 / 0.5), 0 24px 60px rgb(0 0 0 / 0.6); } to { box-shadow: 0 0 0 4px var(--primary), 0 0 70px 14px rgb(255 210 63 / 0.85), 0 24px 60px rgb(0 0 0 / 0.6); } }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-round { font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-game { font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-raw { font-family: var(--display); font-size: clamp(96px, 15vw, 190px); line-height: 0.95; background: linear-gradient(180deg, #fff 0%, #fff 40%, #cfd8ff 60%, #fff 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 3px rgb(0 0 0 / 0.3); filter: drop-shadow(0 6px 0 rgb(0 0 0 / 0.45)) drop-shadow(0 0 24px var(--glow)); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-raw:not([style]) { color: transparent; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-up .reveal-raw:not([style]) { background-image: linear-gradient(180deg, #fffbe0 0%, var(--gold) 40%, #ff9d1a 62%, #fff3a8 100%); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-raw-sm { font-size: clamp(64px, 11vw, 120px); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-pick { font-size: 14px; font-weight: 600; }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-net { font-family: var(--display); font-size: clamp(38px, 6.4vw, 76px); line-height: 1.1; margin-top: 6px; text-shadow: 0 4px 0 rgb(0 0 0 / 0.4); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-net.pos { text-shadow: 0 4px 0 rgb(0 0 0 / 0.4), 0 0 30px rgb(61 255 143 / 0.8); animation: net-bounce 0.6s cubic-bezier(.3, 1.6, .5, 1) 0.2s both; }
+@keyframes net-bounce { from { transform: scale(0.3); } }
+:root:is([data-theme='vegas'], [data-theme='americana']) .reveal-sub { font-family: var(--display); font-size: 18px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
+.reveal-line { margin: 6px 0 2px; font-size: clamp(24px, 3.6vw, 42px); line-height: 1.1; }
+:root[data-theme='vegas'] .reveal-line { font-family: var(--script); color: var(--gold); text-shadow: 0 0 16px rgb(255 210 63 / 0.6); transform: rotate(-2deg); }
+:root[data-theme='americana'] .reveal-line { font-family: 'Oswald', var(--sans); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; text-shadow: 0 3px 0 #6b0a12; }
+.reveal-odds { margin: 10px auto 0; max-width: 46ch; font-size: 13px; color: var(--muted); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .crash-mult { font-family: var(--display); font-size: clamp(64px, 11vw, 120px); text-shadow: 0 0 24px var(--glow); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .crash-line { stroke-width: 4; filter: drop-shadow(0 0 6px var(--primary)); }
+
+/* ---------- Vegas win: page pulse and bulbs chasing round the edge of the screen */
+.win-wash { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, transparent 34%, rgb(255 45 135 / 0.55) 100%); animation: wash 0.5s ease-in-out infinite alternate; }
+@keyframes wash { from { opacity: 0.25; filter: hue-rotate(0deg); } to { opacity: 0.85; filter: hue-rotate(70deg); } }
+.edge-lights { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+.edge-lights::before, .edge-lights::after, .edge-lights i { content: ''; position: absolute; background-image: radial-gradient(circle, #fffbe0 0 4px, #ffd84a 5px, transparent 8px); animation: edge-chase 0.44s steps(2) infinite; }
+.edge-lights::before, .edge-lights::after { left: 0; right: 0; height: 18px; background-size: 36px 18px; }
+.edge-lights::before { top: 2px; }
+.edge-lights::after { bottom: 2px; animation-direction: reverse; }
+.edge-lights i { top: 0; bottom: 0; width: 18px; background-size: 18px 36px; animation-name: edge-chase-y; }
+.edge-lights i:first-child { left: 2px; animation-direction: reverse; }
+.edge-lights i:last-child { right: 2px; }
+@keyframes edge-chase { to { background-position: 36px 0; } }
+@keyframes edge-chase-y { to { background-position: 0 36px; } }
+
+/* ---------- Americana: eagle layers, flags in the wind, still eagle */
+.eagle-flight.is-returning { z-index: 3; }
+.eagle-still { position: fixed; right: 5vw; bottom: 27vh; width: min(260px, 34vw); z-index: 0; pointer-events: none; filter: drop-shadow(0 0 3px #ffd75a) drop-shadow(0 0 12px rgb(255 200 60 / 0.55)); }
+.flag-cloth { transform-origin: 0 50%; animation: flag-gust 2.7s ease-in-out infinite; }
+@keyframes flag-gust { 0%, 100% { transform: skewY(0deg) scaleX(1); } 35% { transform: skewY(-4deg) scaleX(1.06); } 55% { transform: skewY(2deg) scaleX(0.97); } }
+.wind { position: absolute; inset: -40px 0 0; overflow: hidden; pointer-events: none; }
+.wind i { position: absolute; left: 0; top: calc(8% + var(--n) * 11%); width: calc(120px + var(--n) * 22px); height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.7), transparent); animation: wind 1.5s calc(var(--n) * -0.37s) linear infinite; }
+@keyframes wind { from { transform: translateX(-30vw); opacity: 0; } 20% { opacity: 1; } to { transform: translateX(110vw); opacity: 0; } }
+
+/* ---------- Americana page details */
+:root[data-theme='americana'] .topbar { border-image: repeating-linear-gradient(90deg, #e0162b 0 28px, #fff 28px 56px, #2f6bff 56px 84px) 1; }
+:root[data-theme='americana'] .cell-open.past { background: linear-gradient(180deg, #ff4658 50%, #fff 50%); box-shadow: 0 0 8px rgb(224 22 43 / 0.7); }
+:root[data-theme='americana'] .choice { font-size: 24px; letter-spacing: 0.06em; }
+
+/* ---------- lobby in the Vegas look (lobby.css is Zander's: these only restyle it) */
+:root[data-theme='vegas'] .hero { border: 3px solid var(--gold); background: linear-gradient(180deg, rgb(255 255 255 / 0.18), transparent 45%), var(--card); box-shadow: 0 0 0 4px var(--primary), 0 0 44px rgb(255 45 135 / 0.55), 0 18px 40px rgb(0 0 0 / 0.45); }
+:root[data-theme='vegas'] .hero h1 { margin: 6px 0 10px; font-family: var(--sign); font-weight: 400; font-size: clamp(44px, 7.4vw, 108px); line-height: 1.02; letter-spacing: 0; text-transform: uppercase; color: #fff8cf; text-shadow: 0 0 6px #fff, 0 0 20px #ff2d87, 0 0 46px #ff2d87, 0 0 90px #b517ff; animation: neon-buzz 4.1s linear infinite; }
+:root[data-theme='vegas'] .hero p { font-size: 17px; color: var(--text); }
+:root[data-theme='vegas'] .hero-facts strong { font-family: var(--display); font-size: 22px; color: var(--gold); }
+:root[data-theme='vegas'] .lobby-bar { background: var(--pane); border: 2px solid var(--line-2); border-radius: 999px; padding: 8px 12px; }
+:root[data-theme='vegas'] .lobby-h2 { font-family: var(--display); font-size: clamp(22px, 2.6vw, 34px); letter-spacing: 0.04em; text-transform: uppercase; text-shadow: 0 0 18px var(--glow); }
+:root[data-theme='vegas'] .chip { border-width: 2px; font-weight: 700; }
+:root[data-theme='vegas'] .chip.on { background: linear-gradient(180deg, #ff8fc0, var(--primary)); color: #fff; border-color: #fff; }
+:root[data-theme='vegas'] .tile-art { border: 3px solid var(--line-2); border-radius: 20px; box-shadow: 0 8px 0 rgb(0 0 0 / 0.3), 0 14px 26px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.4); transition: transform 0.18s cubic-bezier(.2, 1.6, .4, 1), border-color 0.18s, box-shadow 0.18s; }
+:root[data-theme='vegas'] .tile-art:not(:disabled):hover { transform: translateY(-8px) rotate(-1.5deg) scale(1.05); border-color: var(--gold); box-shadow: 0 8px 0 rgb(0 0 0 / 0.3), 0 0 36px 4px var(--glow), inset 0 1px 0 rgb(255 255 255 / 0.4); }
+:root[data-theme='vegas'] .tile-name { font-family: var(--display); font-size: 17px; letter-spacing: 0.02em; }
+:root[data-theme='vegas'] .tile-play { font-family: var(--display); font-size: 16px; padding: 9px 26px; border: 2px solid #fff; box-shadow: 0 4px 0 rgb(0 0 0 / 0.4); }
+:root[data-theme='vegas'] .tile-highlow { --tile-bg: linear-gradient(160deg, #2f6bff, #0b1f66 60%, #c8102e); }
+:root[data-theme='vegas'] .tile-digit { --tile-bg: linear-gradient(160deg, #b517ff, #3a0ca3); }
+:root[data-theme='vegas'] .tile-race { --tile-bg: linear-gradient(160deg, #19e3ff, #0a7d5a); }
+:root[data-theme='vegas'] .tile-crash { --tile-bg: linear-gradient(160deg, #ff7a1a, #c8102e); }
+:root[data-theme='vegas'] .tile-beauty { --tile-bg: linear-gradient(160deg, #ffd23f, #ff2d87); }
+:root[data-theme='vegas'] .tile-walk { --tile-bg: linear-gradient(160deg, #3dff8f, #0a6d8a); }
+
+/* ---------- motion off: still versions of everything.
+   No animation runs at all, so anything that normally animates INTO view (the flags
+   rising) is put in its final place here. The system reduce-motion setting gets the
+   same treatment. */
+:root[data-motion='off'] *, :root[data-motion='off'] *::before, :root[data-motion='off'] *::after { animation: none !important; transition: none !important; }
+:root[data-motion='off'] .flag { transform: none; }
+:root[data-motion='off'] .game-sign .mq-face { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .flag { transform: none; animation: none; }
+  .game-sign .mq-face { transform: none; }
+}

@@ -3,7 +3,9 @@
 //
 // The wave: the flag image is cut into thin vertical slices. Each slice bobs up and
 // down a little later than the one before it, so a ripple runs from the pole to the
-// fly end. A moving shade adds the folds. Behind the result card, so it never covers it.
+// fly end. A moving shade adds the folds, gusts tug the cloth every couple of seconds,
+// and streaks of wind blow past. Behind the result card, so it never covers it. The
+// flags stay up until the result popup closes.
 
 const FW = 190
 const FH = 100
@@ -79,6 +81,11 @@ export function FlagRow() {
   const width = Math.min(220, Math.max(110, vw / (count + 1.4)))
   return (
     <div className="flag-row" aria-hidden>
+      <div className="wind">
+        {Array.from({ length: 8 }, (_, i) => (
+          <i key={i} style={{ '--n': i } as React.CSSProperties} />
+        ))}
+      </div>
       {Array.from({ length: count }, (_, i) => (
         <Flag key={i} width={width} delay={0.1 + Math.abs(i - (count - 1) / 2) * 0.12} />
       ))}

@@ -23,12 +23,14 @@ interface Case {
 }
 
 const CASES: Case[] = [
-  { label: 'Fireworks', note: 'Americana, small win (bet 10)', theme: THEMES.americana, stake: '10', win: true },
-  { label: 'Eagle', note: 'Americana, big win (bet 150)', theme: THEMES.americana, stake: '150', win: true },
+  { label: 'Americana win', note: 'Rockets, eagle, sign, flags (bet 10)', theme: THEMES.americana, stake: '10', win: true },
+  { label: 'Americana big win', note: 'Same, plus the announcer (bet 150)', theme: THEMES.americana, stake: '150', win: true },
   { label: 'Wallet fire', note: 'Americana, small loss (bet 10)', theme: THEMES.americana, stake: '10', win: false },
   { label: 'Nuke', note: 'Americana, big loss (bet 150)', theme: THEMES.americana, stake: '150', win: false },
   { label: 'Monad tokens', note: 'Monad, win', theme: THEMES.monad, stake: '25', win: true },
   { label: 'Burning wallet', note: 'Monad, loss', theme: THEMES.monad, stake: '25', win: false },
+  { label: 'Vegas win', note: 'Coins, confetti, marquee', theme: THEMES.vegas, stake: '25', win: true },
+  { label: 'Vegas loss', note: 'Burning wallet', theme: THEMES.vegas, stake: '25', win: false },
   { label: 'Sparks', note: 'Calm, win', theme: THEMES.calm, stake: '25', win: true },
 ]
 

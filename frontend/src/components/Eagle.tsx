@@ -1,22 +1,31 @@
 import { useEffect, useRef } from 'react'
 import { prefersReducedMotion } from '../lib/themes'
-import { Fireworks } from './Fireworks'
-import { FlagRow } from './Flags'
+import { makeGlowSprite } from './MonadTokens'
 
-// Americana BIG win effect (stake >= BIG_STAKE and the round is a net win).
+// The Americana win mascot. Plays on any real net win on High / Low, together with
+// the fireworks, the sign and the flags (see fx/AmericanaWin.tsx).
 //
 // A mascot-style bald eagle, drawn by us in a three-quarter view: bold outlines, three
 // shading tones, layered feathers, a big golden eye and a determined brow. Both wings
 // flap around the shoulder (the near wing foreshortens on the downstroke) and the body
 // bobs on each downbeat.
 //
-// Flight: one pass left to right through the open strip BELOW the result card, so it
-// never covers the result. It flaps in, swoops down into a short glide with wings held,
-// then flaps back up and out. Flags wave along the bottom and fireworks go off behind.
+// Flight, two passes:
+//  1. Left to right through the open strip BELOW the result card, behind the card, so
+//     it never covers the result. It flaps in, swoops into a short glide, flaps out.
+//  2. It turns around off-screen and comes back right to left OVER the sign above the
+//     result, in front of the sign.
+// A trail of purple Monad tokens streams off its tail the whole way.
+// Reduced motion (or Motion off) shows the eagle standing still below the result.
 
-const DURATION = 3600
+export const EAGLE_MS = 6800
+const TURN = 0.485 // share of the flight spent on the first pass
 const FLAP_MS = 340
-const GLIDE: [number, number] = [1350, 2050] // ms window where the wings are held
+// ms windows where the wings are held for a glide, one per pass
+const GLIDES: [number, number][] = [
+  [1250, 1900],
+  [4750, 5350],
+]
 
 const INK = '#1b1007'
 
@@ -122,15 +131,15 @@ function EagleArt() {
   )
 }
 
-/** Wing and body keyframes for the whole flight: flap, hold during the glide, flap. */
+/** Wing and body keyframes for the whole flight: flap, hold during each glide, flap. */
 function flightFrames() {
   const near: Keyframe[] = []
   const far: Keyframe[] = []
   const body: Keyframe[] = []
   let down = false
-  for (let t = 0; t <= DURATION; t += FLAP_MS / 2) {
-    const offset = t / DURATION
-    const gliding = t >= GLIDE[0] && t <= GLIDE[1]
+  for (let t = 0; t <= EAGLE_MS; t += FLAP_MS / 2) {
+    const offset = t / EAGLE_MS
+    const gliding = GLIDES.some(([a, b]) => t >= a && t <= b)
     if (gliding) {
       near.push({ offset, transform: 'rotate(-10deg) scaleY(1)' })
       far.push({ offset, transform: 'rotate(-8deg)' })
@@ -145,42 +154,8 @@ function flightFrames() {
   return { near, far, body }
 }
 
-// Four-point sparkle, like the glints on slot-machine symbols.
-function sparkle(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string) {
-  ctx.fillStyle = color
-  ctx.beginPath()
-  ctx.moveTo(x, y - r)
-  ctx.quadraticCurveTo(x, y, x + r, y)
-  ctx.quadraticCurveTo(x, y, x, y + r)
-  ctx.quadraticCurveTo(x, y, x - r, y)
-  ctx.quadraticCurveTo(x, y, x, y - r)
-  ctx.fill()
-}
-
-/** Slot-style "BIG WIN" marquee with chasing bulbs, placed just above the result card. */
-function BigWinMarquee() {
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = ref.current
-    const card = document.querySelector('.reveal-card')?.getBoundingClientRect()
-    if (!el || !card) return
-    const h = el.getBoundingClientRect().height
-    el.style.top = `${Math.max(8, card.top - h - 12)}px`
-  }, [])
-  const bulbs = 28
-  return (
-    <div className="bigwin" ref={ref} aria-hidden>
-      <div className="bigwin-bulbs">
-        {Array.from({ length: bulbs }, (_, i) => (
-          <span key={i} className="bulb" style={{ '--i': i, '--n': bulbs } as React.CSSProperties} />
-        ))}
-      </div>
-      <div className="bigwin-text">BIG WIN</div>
-    </div>
-  )
-}
-
 export function Eagle() {
+  const flight = useRef<HTMLDivElement>(null)
   const mover = useRef<HTMLDivElement>(null)
   const trail = useRef<HTMLCanvasElement>(null)
   const reduced = prefersReducedMotion()
@@ -194,94 +169,120 @@ export function Eagle() {
     const h = (w * 200) / 290
     el.style.width = `${w}px`
 
-    // Find the open strip below the result card.
-    const card = document.querySelector('.reveal-card')?.getBoundingClientRect()
-    const cardBottom = card ? card.bottom : vh * 0.6
+    // Pass 1 uses the open strip below the result card.
+    // Laid-out boxes (offsetTop), because the card and sign are still popping in.
+    const card = document.querySelector<HTMLElement>('.reveal-card')
+    const cardTop = card ? card.offsetTop : vh * 0.3
+    const cardBottom = card ? card.offsetTop + card.offsetHeight : vh * 0.6
     const top = Math.min(cardBottom + 14, vh - h - 24) // eagle's top edge
     const dip = Math.min(48, Math.max(12, vh - (top + h) - 10))
+    // Pass 2 crosses the sign, which sits just above the card.
+    const sign = document.querySelector<HTMLElement>('.mq-above')
+    const signH = sign ? sign.offsetHeight : 120
+    const signMid = Math.max(10, cardTop - signH - 16) + signH / 2
+    const top2 = Math.max(4, signMid - h * 0.62)
 
-    const x = (p: number) => -w * 1.2 + p * (vw + w * 2.4)
+    const left = -w * 1.2
+    const right = vw + w * 0.2
+    const x = (p: number) => left + p * (right - left)
+    const at = (px: number, py: number, rot: number, flip: boolean) => `translate(${px}px, ${py}px) rotate(${rot}deg) scaleX(${flip ? -1 : 1})`
     const path: Keyframe[] = [
-      { offset: 0, transform: `translate(${x(0)}px, ${top}px) rotate(-4deg)` },
-      { offset: 0.3, transform: `translate(${x(0.3)}px, ${top + 6}px) rotate(4deg)` },
-      { offset: 0.47, transform: `translate(${x(0.47)}px, ${top + dip}px) rotate(9deg)` },
-      { offset: 0.6, transform: `translate(${x(0.6)}px, ${top + dip * 0.6}px) rotate(-3deg)` },
-      { offset: 1, transform: `translate(${x(1)}px, ${top - 18}px) rotate(-9deg)` },
+      { offset: 0, transform: at(x(0), top, -4, false), easing: 'ease-out' },
+      { offset: TURN * 0.3, transform: at(x(0.3), top + 6, 4, false) },
+      { offset: TURN * 0.47, transform: at(x(0.47), top + dip, 9, false) },
+      { offset: TURN * 0.6, transform: at(x(0.6), top + dip * 0.6, -3, false) },
+      { offset: TURN, transform: at(x(1), top - 18, -9, false) },
+      // Off-screen: turn around and climb to the height of the sign.
+      { offset: TURN, transform: at(x(1), top2 + 14, 6, true) },
+      { offset: TURN + (1 - TURN) * 0.45, transform: at(x(0.5), top2, -2, true) },
+      { offset: TURN + (1 - TURN) * 0.6, transform: at(x(0.36), top2 + 10, -8, true) },
+      { offset: 1, transform: at(x(0), top2 - 20, 8, true) },
     ]
     const { near, far, body } = flightFrames()
-    const opts: KeyframeAnimationOptions = { duration: DURATION, fill: 'forwards' }
+    const opts: KeyframeAnimationOptions = { duration: EAGLE_MS, fill: 'forwards' }
     const anims = [
-      el.animate(path, { ...opts, easing: 'cubic-bezier(.35,.1,.45,1)' }),
+      el.animate(path, opts),
       el.querySelector('.wing-near')?.animate(near, opts),
       el.querySelector('.wing-far')?.animate(far, opts),
       el.querySelector('.eagle-bodygroup')?.animate(body, opts),
     ]
+    // Behind the card on the way out, in front of the sign on the way back.
+    const lift = setTimeout(() => flight.current?.classList.add('is-returning'), EAGLE_MS * TURN)
 
-    // Sparkle trail streaming off the tail as it flies.
+    // Monad tokens streaming off the tail as it flies.
     const canvas = trail.current
     const ctx = canvas?.getContext('2d')
     let raf = 0
     if (canvas && ctx) {
-      const dpr = window.devicePixelRatio || 1
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
       canvas.width = vw * dpr
       canvas.height = vh * dpr
       ctx.scale(dpr, dpr)
-      type S = { x: number; y: number; vx: number; vy: number; born: number; r: number; c: string }
-      const ss: S[] = []
-      const colors = ['#ffe27a', '#fff6d6', '#ffd23f', '#ffffff']
+      const sprite = makeGlowSprite(48)
+      type T = { x: number; y: number; vx: number; vy: number; rot: number; vr: number; born: number; s: number }
+      const ts: T[] = []
       const t0 = performance.now()
       const frame = (now: number) => {
         const t = now - t0
         ctx.clearRect(0, 0, vw, vh)
         const r = el.getBoundingClientRect()
-        if (t < DURATION) {
-          for (let i = 0; i < 2; i++) {
-            ss.push({
-              x: r.left + r.width * (0.12 + Math.random() * 0.1),
-              y: r.top + r.height * (0.55 + Math.random() * 0.2),
-              vx: -0.6 - Math.random() * 1.2,
-              vy: (Math.random() - 0.5) * 0.8,
-              born: t,
-              r: 4 + Math.random() * 6,
-              c: colors[(Math.random() * colors.length) | 0],
-            })
-          }
+        const back = t >= EAGLE_MS * TURN // flying right to left: the tail is on the right
+        if (t < EAGLE_MS && r.right > 0 && r.left < vw) {
+          const tail = 0.12 + Math.random() * 0.1
+          ts.push({
+            x: back ? r.right - r.width * tail : r.left + r.width * tail,
+            y: r.top + r.height * (0.55 + Math.random() * 0.2),
+            vx: (back ? 1 : -1) * (0.4 + Math.random() * 1.4),
+            vy: (Math.random() - 0.3) * 1.2,
+            rot: Math.random() * Math.PI,
+            vr: (Math.random() - 0.5) * 0.3,
+            born: t,
+            s: (14 + Math.random() * 16) * (w / 240),
+          })
         }
-        for (let i = ss.length - 1; i >= 0; i--) {
-          const p = ss[i]
-          const k = (t - p.born) / 700
+        for (let i = ts.length - 1; i >= 0; i--) {
+          const p = ts[i]
+          const k = (t - p.born) / 1300
           if (k >= 1) {
-            ss.splice(i, 1)
+            ts.splice(i, 1)
             continue
           }
           p.x += p.vx
           p.y += p.vy
-          ctx.globalAlpha = 1 - k
-          sparkle(ctx, p.x, p.y, p.r * (1 - k * 0.5), p.c)
+          p.vy += 0.03
+          p.rot += p.vr
+          ctx.globalAlpha = 1 - k * k
+          ctx.save()
+          ctx.translate(p.x, p.y)
+          ctx.rotate(p.rot)
+          ctx.drawImage(sprite, -p.s / 2, -p.s / 2, p.s, p.s)
+          ctx.restore()
         }
         ctx.globalAlpha = 1
-        if (t < DURATION + 800) raf = requestAnimationFrame(frame)
+        if (t < EAGLE_MS + 1400) raf = requestAnimationFrame(frame)
       }
       raf = requestAnimationFrame(frame)
     }
     return () => {
+      clearTimeout(lift)
       anims.forEach((a) => a?.cancel())
       cancelAnimationFrame(raf)
     }
   }, [reduced])
 
-  if (reduced) return null
-  return (
-    <>
-      <Fireworks intensity={1} duration={3600} />
-      <FlagRow />
-      <BigWinMarquee />
-      <div className="eagle-flight" aria-hidden>
-        <canvas className="eagle-trail" ref={trail} />
-        <div className="eagle-mover" ref={mover}>
-          <EagleArt />
-        </div>
+  if (reduced) {
+    return (
+      <div className="eagle-still" aria-hidden>
+        <EagleArt />
       </div>
-    </>
+    )
+  }
+  return (
+    <div className="eagle-flight" ref={flight} aria-hidden>
+      <canvas className="eagle-trail" ref={trail} />
+      <div className="eagle-mover" ref={mover}>
+        <EagleArt />
+      </div>
+    </div>
   )
 }

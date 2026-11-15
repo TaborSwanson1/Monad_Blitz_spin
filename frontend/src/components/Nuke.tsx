@@ -6,8 +6,10 @@ import { WalletSvg } from './BurningWallet'
 // wallet gets nuked, big, at the bottom of the screen behind the result card.
 // Drawn by us as particles: the wallet vaporizes, a white-hot fireball rises, smoke
 // rolls up the stem into a cap lit orange from below that slowly cools to gray, and a
-// dust skirt and shockwave run along the ground. The screen flash is one soft pulse at
-// low opacity, never a strobe. Reduced motion gets a still image.
+// dust skirt and shockwave run along the ground. The screen flash is a strobe: three
+// flashes in a little over a second. That is the most the WCAG 2.3.1 seizure-safety
+// rule allows (no more than three flashes in any one second), so don't make it faster.
+// Reduced motion (or Motion off) gets a still image and no flash.
 
 export const NUKE_MS = 3600
 const DETONATE = 350

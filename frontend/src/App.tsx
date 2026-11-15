@@ -22,6 +22,13 @@ import { SlotScreen } from './components/slot/SlotScreen'
 import { toChips } from './lib/format'
 import { THEMES, themeForGame, themeForRound } from './lib/themes'
 import { EffectsDemo, effectsDemoEnabled } from './components/EffectsDemo'
+import { GAMES } from './lib/games'
+import { Backdrop } from './fx/Backdrop'
+import { Overlay } from './fx/Overlay'
+import { FxControls } from './fx/FxControls'
+import { GameSign } from './fx/GameSign'
+import { burst } from './fx/bus'
+import { sfx, unlockAudio } from './fx/sound'
 
 export default function App() {
   const [client, clientError] = useMemo(() => {
@@ -90,12 +97,23 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     synced.current = addr
     connectCasino()
   }, [wallet.state.status, wallet.state.address, casino.account, casino.busy, client.mode, connectCasino])
-  // Each game has one fixed theme. The page takes the look of the game you're on;
-  // the lobby and the slot demo use Calm.
-  const theme = view === 'game' ? themeForGame(gameId) : THEMES.calm
+  // Each game has one fixed theme. The page takes the look of the game you're on.
+  // The lobby is Vegas. The slot demo keeps Calm and has no animated background.
+  const theme = view === 'game' ? themeForGame(gameId) : view === 'slot' ? THEMES.calm : THEMES.vegas
   useEffect(() => {
     document.documentElement.dataset.theme = theme.id
   }, [theme.id])
+  const loud = theme.id === 'americana' || theme.id === 'vegas'
+
+  // Browsers only allow sound after a click or key press, so the first one unlocks it.
+  useEffect(() => {
+    window.addEventListener('pointerdown', unlockAudio, { once: true })
+    window.addEventListener('keydown', unlockAudio, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio)
+      window.removeEventListener('keydown', unlockAudio)
+    }
+  }, [])
 
   const { cfg, head } = casino
   const clock = cfg && head !== null ? roundClock(head, cfg) : null
@@ -113,6 +131,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
 
   return (
     <div className={`app ${view === 'game' && clock && !clock.open ? 'is-locked' : ''}`}>
+      <Backdrop mode={theme.id === 'americana' ? 'americana' : theme.id === 'vegas' ? 'vegas' : 'off'} />
       <SiteHeader
         mode={client.mode}
         label={client.label}
@@ -137,6 +156,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         <Sidebar mode={client.mode} gameId={gameId} onPick={setGameId} onEditLimits={() => setEditingLimits(true)} />
 
         <main className="main-col">
+          {loud && <GameSign game={GAMES[gameId]} theme={theme.id} />}
           <SessionBar
             elapsedMs={session.elapsedMs}
             net={session.net}
@@ -199,7 +219,15 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
               myBets={casino.pending}
               onPlace={async (g, c, a) => {
                 const bet = await casino.placeBet(g, c, a)
-                if (bet) session.recordBet(bet.amount)
+                if (!bet) return
+                session.recordBet(bet.amount)
+                // Bet is in: confetti from the bet button, in the game's colors.
+                const palette = themeForGame(g).id === 'americana' ? 'americana' : themeForGame(g).id === 'vegas' ? 'vegas' : null
+                if (palette) {
+                  const btn = document.querySelector('.bet .btn.wide')?.getBoundingClientRect()
+                  burst({ palette, x: btn ? btn.left + btn.width / 2 : undefined, y: btn ? btn.top : undefined, power: Math.min(1, Number(a / 10n ** 18n) / 100) })
+                  sfx.bet()
+                }
               }}
             />
           )}
@@ -237,6 +265,8 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         />
       )}
       {effectsDemoEnabled() && <EffectsDemo wallet={casino.account} />}
+      {loud && <Overlay />}
+      {loud && <FxControls />}
       {editingLimits && (
         <LimitsDialog limits={session.limits} onSave={session.setLimits} onClose={() => setEditingLimits(false)} />
       )}
