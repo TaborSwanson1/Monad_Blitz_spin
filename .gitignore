@@ -1,0 +1,13 @@
+# Backend (Foundry)
+backend/out/
+backend/cache/
+backend/broadcast/
+backend/lib/
+
+# Frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secrets
+.env

@@ -68,17 +68,19 @@ Chips	A plain ERC-20 with a free faucet. No real value and no way to buy it.
 Check Monad's and the randomness provider's docs for current chain IDs, RPC URLs, and contract addresses before deploying. Those change.
 
 Project layout
-block-casino-demo/
-├── contracts/        # Solidity contracts (rounds, games, chip token)
-├── test/             # Foundry tests
-├── script/           # Deploy scripts
+Monad_blitz_gamble/
+├── backend/          # Foundry project
+│   ├── contracts/    # Solidity contracts (rounds, games, chip token)
+│   ├── test/         # Foundry tests
+│   ├── script/       # Deploy scripts
+│   └── docs/         # Architecture notes
 ├── frontend/         # Web app and block visualizer
 └── README.md
 Getting started
 Placeholder. This fills in once the contracts and front end exist.
 
 git clone <repo-url>
-cd block-casino-demo
+cd Monad_blitz_gamble/backend
 forge install
 forge test
 You'll need:
