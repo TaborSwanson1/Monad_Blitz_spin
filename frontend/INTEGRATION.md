@@ -38,8 +38,8 @@ ABIs are written by hand in [src/client/abi.ts](src/client/abi.ts).
 2. **Game list and order.** `src/lib/games.ts` has to match the order of games
    passed to the `BlockCasino` constructor in `backend/script/Deploy.s.sol`:
    0 High / Low (range 100, 2 outcomes), 1 Exact Digit (10, 10), 2 Block Race (4, 4).
-   Game 3 (Crash) is `simOnly` and hidden in chain mode, so it doesn't affect this
-   until the contract adds it. See "Proposed: Crash" below.
+   Games 3 (Crash) and 4 (Beauty Contest) are `simOnly` and hidden in chain mode, so
+   they don't affect this until the contracts add them. See the "Proposed" sections below.
 3. **Outcome math.** `src/lib/outcomes.ts` copies `BlockCasino.gameSeed` and
    `UniformGame.rawResult` / `outcome`. The UI computes results from the seed
    itself instead of calling `gameResult`, which saves reads. If the contract
@@ -62,6 +62,22 @@ Full rules and reasoning are in [GAMES.md](GAMES.md#2-crash).
   Needs something like `wins(seed, choice)` plus `payoutBps(choice)`, or a Crash path in `claim`.
 - When the contract has it: drop `simOnly`, add the ABI pieces, and add Crash to the
   outcome cross-check test below.
+
+## Proposed: Beauty Contest (game 4, sim mode only)
+
+Not on any contract yet. Full rules are in [GAMES.md](GAMES.md#3-beauty-contest).
+
+- **Probably its own contract**, not a `BlockCasino` game: a pot split between players
+  instead of house payouts, and a commit phase then a reveal phase.
+- **Calls the frontend would need:** `commit(roundId, hash)` with the entry fee,
+  `reveal(roundId, guess, salt)` where `hash = keccak256(abi.encode(guess, salt, player))`,
+  `settle(roundId)`, `claim(roundId)`, and reads for the phase, the revealed guesses, and the winners.
+- **Math to match** (`src/lib/beauty.ts`): target is 2/3 of the average of revealed guesses.
+  Closest wins, compared as `|3n × guess − 2 × sum|` so it's exact. Pot × 0.98 split evenly
+  between tied winners, rounded down. Unrevealed entries stay in the pot.
+- **Open:** minimum players, and what happens if nobody reveals.
+- In sim mode, bots stand in for other players, with guesses drawn from the round seed.
+  On-chain the game doesn't need the VRF.
 
 ## Polish once contracts are deployed
 

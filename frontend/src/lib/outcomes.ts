@@ -1,4 +1,5 @@
 import { encodeAbiParameters, keccak256, type Hex } from 'viem'
+import { beautyPayout, resolveBeauty } from './beauty'
 import { CRASH_TARGETS_X100, crashPointX100, fmtX } from './crash'
 import { GAMES, payoutBpsFor, type GameDef } from './games'
 
@@ -25,6 +26,16 @@ export interface BetResult {
 /** Works for every game kind. Payouts round down, same as the contract. */
 export function resolveBet(roundSeed: Hex, gameId: number, choice: number, amount: bigint): BetResult {
   const g = GAMES[gameId]
+  if (g.kind === 'beauty') {
+    const r = resolveBeauty(gameSeed(roundSeed, g.id), choice)
+    // raw: the target in hundredths. outcome: the first winning guess.
+    return {
+      raw: Math.round(r.target * 100),
+      outcome: r.guesses[r.winners[0]],
+      won: r.youWon,
+      payout: beautyPayout(amount, r),
+    }
+  }
   if (g.kind === 'crash') {
     const raw = crashPointX100(gameSeed(roundSeed, g.id))
     let outcome = -1
@@ -42,5 +53,6 @@ export function resolveBet(roundSeed: Hex, gameId: number, choice: number, amoun
 /** Short result text for history rows, like "HI·LO HIGH 50–99" or "CRASH 2.37×". */
 export function resultLabel(gameId: number, raw: number, outcome: number): string {
   const g = GAMES[gameId]
+  if (g.kind === 'beauty') return `${g.short} target ${(raw / 100).toFixed(1)}`
   return g.kind === 'crash' ? `${g.short} ${fmtX(raw)}` : `${g.short} ${g.labels[outcome]}`
 }

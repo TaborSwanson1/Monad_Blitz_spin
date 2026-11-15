@@ -1,12 +1,13 @@
 // Games 0-2 mirror the UniformGame contracts deployed by backend/script/Deploy.s.sol.
 // Game IDs must match the order passed to the BlockCasino constructor.
-// Game 3 (Crash) is a proposal that only exists in sim mode. See src/lib/crash.ts.
+// Games 3 (Crash) and 4 (Beauty Contest) are proposals that only exist in sim mode.
+// See src/lib/crash.ts and src/lib/beauty.ts.
 
 import { CRASH_TARGETS_X100, crashWinChance, fmtX } from './crash'
 
 export const HOUSE_EDGE_BPS = 200
 
-export type GameKind = 'uniform' | 'crash'
+export type GameKind = 'uniform' | 'crash' | 'beauty'
 
 export interface GameDef {
   id: number
@@ -38,6 +39,7 @@ function game(id: number, name: string, short: string, range: number, labels: st
 }
 
 export const CRASH_ID = 3
+export const BEAUTY_ID = 4
 
 export const GAMES: GameDef[] = [
   game(0, 'High / Low', 'HI·LO', 100, ['LOW 0–49', 'HIGH 50–99'], 'The result is a number from 0 to 99.'),
@@ -56,6 +58,19 @@ export const GAMES: GameDef[] = [
     describe:
       'Pick a cash-out target before betting closes. If the crash point reaches your target, you win your stake times the target.',
   },
+  {
+    id: BEAUTY_ID,
+    name: 'Beauty Contest',
+    short: 'BEAUTY',
+    kind: 'beauty',
+    simOnly: true,
+    range: 101,
+    outcomes: 101, // choice is the guess itself, 0 to 100
+    payoutBps: 0,
+    labels: Array.from({ length: 101 }, (_, i) => String(i)),
+    describe:
+      'Everyone pays the same entry and picks a number from 0 to 100. Closest to 2/3 of the average wins the pot.',
+  },
 ]
 
 export const LANE_COLORS = ['var(--lane-red)', 'var(--lane-blue)', 'var(--lane-green)', 'var(--lane-gold)']
@@ -63,6 +78,8 @@ export const LANE_COLORS = ['var(--lane-red)', 'var(--lane-blue)', 'var(--lane-g
 /** Games the current client can actually play. */
 export const gamesFor = (mode: 'sim' | 'chain') => GAMES.filter((g) => mode === 'sim' || !g.simOnly)
 
+// Fixed-odds games only. Beauty Contest's payout and odds depend on the other
+// players, so BetPanel shows its pot rules instead.
 export const payoutBpsFor = (g: GameDef, choice: number) =>
   g.kind === 'crash' ? CRASH_TARGETS_X100[choice] * 100 : g.payoutBps
 

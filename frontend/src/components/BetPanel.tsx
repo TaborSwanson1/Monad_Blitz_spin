@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BEAUTY_ENTRY, BEAUTY_FEE_BPS, BEAUTY_MAX_BOTS, BEAUTY_MIN_BOTS } from '../lib/beauty'
 import { CRASH_DEFAULT_CHOICE, CRASH_TARGETS_X100 } from '../lib/crash'
 import { GAMES, HOUSE_EDGE_BPS, LANE_COLORS, chanceFor, gamesFor, multiplierFor, payoutBpsFor } from '../lib/games'
 import { fmtChips, toChips } from '../lib/format'
@@ -26,10 +27,11 @@ export function BetPanel({ mode, canBet, disabledReason, busy, minBet, maxBet, m
   const [amount, setAmount] = useState('10')
   const g = GAMES[gameId]
   const isCrash = g.kind === 'crash'
+  const isBeauty = g.kind === 'beauty'
 
   let amt = 0n
   try {
-    amt = toChips(amount)
+    amt = isBeauty ? BEAUTY_ENTRY : toChips(amount)
   } catch {
     amt = 0n
   }
@@ -37,7 +39,9 @@ export function BetPanel({ mode, canBet, disabledReason, busy, minBet, maxBet, m
   // Odds for the current pick. Uniform games have the same odds for every pick.
   const oddsChoice = choice ?? 0
   const winPays = (amt * BigInt(payoutBpsFor(g, oddsChoice))) / 10_000n
-  const ready = canBet && choice !== null && inRange && !busy
+  // Pending bets only last until their round settles, so a pending entry means this round.
+  const enteredBeauty = isBeauty && myBets.some((b) => GAMES[b.gameId].kind === 'beauty')
+  const ready = canBet && choice !== null && inRange && !busy && !enteredBeauty
 
   return (
     <section className="panel bet">
@@ -64,22 +68,60 @@ export function BetPanel({ mode, canBet, disabledReason, busy, minBet, maxBet, m
       </h2>
       <p className="muted">{g.describe}</p>
 
-      <dl className="odds">
-        <div>
-          <dt>Win chance</dt>
-          <dd>{pct(chanceFor(g, oddsChoice))}</dd>
-        </div>
-        <div>
-          <dt>Payout</dt>
-          <dd>{multiplierFor(g, oddsChoice)}×</dd>
-        </div>
-        <div>
-          <dt>House edge</dt>
-          <dd>{HOUSE_EDGE_BPS / 100}%</dd>
-        </div>
-      </dl>
+      {isBeauty ? (
+        <dl className="odds">
+          <div>
+            <dt>Entry</dt>
+            <dd>{fmtChips(BEAUTY_ENTRY)}</dd>
+          </div>
+          <div>
+            <dt>Players</dt>
+            <dd>
+              {BEAUTY_MIN_BOTS + 1}–{BEAUTY_MAX_BOTS + 1}
+            </dd>
+          </div>
+          <div>
+            <dt>Fee</dt>
+            <dd>{BEAUTY_FEE_BPS / 100}% of pot</dd>
+          </div>
+        </dl>
+      ) : (
+        <dl className="odds">
+          <div>
+            <dt>Win chance</dt>
+            <dd>{pct(chanceFor(g, oddsChoice))}</dd>
+          </div>
+          <div>
+            <dt>Payout</dt>
+            <dd>{multiplierFor(g, oddsChoice)}×</dd>
+          </div>
+          <div>
+            <dt>House edge</dt>
+            <dd>{HOUSE_EDGE_BPS / 100}%</dd>
+          </div>
+        </dl>
+      )}
 
-      {isCrash ? (
+      {isBeauty ? (
+        <div className="beauty-picker">
+          <label className="amount">
+            <span>Your guess (0 to 100)</span>
+            <input
+              inputMode="numeric"
+              placeholder="Type a number"
+              value={choice ?? ''}
+              onChange={(e) => {
+                const v = e.target.value.replace(/[^0-9]/g, '')
+                setChoice(v === '' ? null : Math.min(100, Number(v)))
+              }}
+            />
+          </label>
+          <p className="note">
+            Target = ⅔ of the average guess, so it can't go above 66.7. Your guess is sealed until betting closes. In sim
+            mode the other players are bots, and their guesses come from the round's random seed.
+          </p>
+        </div>
+      ) : isCrash ? (
         <div className="crash-picker">
           <label className="amount">
             <span>Cash-out target</span>
@@ -121,20 +163,34 @@ export function BetPanel({ mode, canBet, disabledReason, busy, minBet, maxBet, m
         </div>
       )}
 
-      <label className="amount">
-        <span>Stake (CHIP)</span>
-        <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} />
-      </label>
-      <div className="quick">
-        {QUICK.map((q) => (
-          <button key={q} className="btn ghost small" onClick={() => setAmount(q)}>
-            {q}
-          </button>
-        ))}
-      </div>
+      {!isBeauty && (
+        <>
+          <label className="amount">
+            <span>Stake (CHIP)</span>
+            <input
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+            />
+          </label>
+          <div className="quick">
+            {QUICK.map((q) => (
+              <button key={q} className="btn ghost small" onClick={() => setAmount(q)}>
+                {q}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       <p className="summary">
-        {inRange ? (
+        {isBeauty ? (
+          <>
+            Entry <strong>{fmtChips(BEAUTY_ENTRY)}</strong>. The pot is {fmtChips(BEAUTY_ENTRY)} × the number of players.
+            The closest guess wins the pot minus {BEAUTY_FEE_BPS / 100}%, and ties split it. If you don't win, you lose{' '}
+            {fmtChips(BEAUTY_ENTRY)}. One entry per round.
+          </>
+        ) : inRange ? (
           <>
             Stake <strong>{fmtChips(amt)}</strong>.{' '}
             {isCrash && choice !== null && (
@@ -155,7 +211,17 @@ export function BetPanel({ mode, canBet, disabledReason, busy, minBet, maxBet, m
         disabled={!ready}
         onClick={() => choice !== null && onPlace(gameId, choice, amt)}
       >
-        {busy ?? (disabledReason || (choice === null ? 'Pick an outcome' : 'Place bet'))}
+        {busy ??
+          (disabledReason ||
+            (enteredBeauty
+              ? 'Entered this round'
+              : choice === null
+                ? isBeauty
+                  ? 'Type a guess'
+                  : 'Pick an outcome'
+                : isBeauty
+                  ? 'Enter guess'
+                  : 'Place bet'))}
       </button>
 
       {myBets.length > 0 && (

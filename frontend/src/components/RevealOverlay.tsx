@@ -3,6 +3,7 @@ import type { RoundRecord } from '../hooks/useCasino'
 import { CRASH_TARGETS_X100, fmtX } from '../lib/crash'
 import { GAMES, LANE_COLORS } from '../lib/games'
 import { fmtChips } from '../lib/format'
+import { BeautyResult } from './BeautyResult'
 import { Burst } from './Burst'
 import { CrashClimb, climbDurationMs } from './CrashClimb'
 
@@ -60,6 +61,17 @@ export function RevealOverlay({ record, onClose }: { record: RoundRecord; onClos
             <div className="reveal-results">
               {record.bets.map((b) => {
                 const g = GAMES[b.gameId]
+                if (g.kind === 'beauty') {
+                  return (
+                    <div key={b.index} className="reveal-row reveal-row-wide">
+                      <div className="reveal-game">{g.name}</div>
+                      <BeautyResult roundSeed={record.seed} yourGuess={b.choice} />
+                      <div className="reveal-pick">
+                        Your guess {b.choice} · {b.won ? `paid ${fmtChips(b.payout)}` : 'no payout'}
+                      </div>
+                    </div>
+                  )
+                }
                 const shown = g.kind === 'crash' ? fmtX(b.raw) : g.id === 2 ? g.labels[b.outcome] : b.raw
                 return (
                   <div key={b.index} className="reveal-row">

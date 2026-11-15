@@ -10,7 +10,7 @@ All games use play chips only. The project rules in [CLAUDE.md](../CLAUDE.md#non
 |---|---|---|---|---|
 | High / Low | Fixed odds | The house | Yes, game `0` | 1st (built) |
 | Crash | Fixed odds | The house | Needs a new game type. Built in sim mode. | 2nd |
-| Beauty Contest | Skill | Other players | Needs commit and reveal | 3rd |
+| Beauty Contest | Skill | Other players | Needs its own contract with commit and reveal. Built in sim mode with bots. | 3rd |
 | Block Walk | Market (batch auction) | Other players | Needs an order book | 4th |
 
 Exact Digit and Block Race (games `1` and `2`) are dropped from the lineup. They stay in the contract and the frontend until the backend is ready for the new games, so the game order doesn't change before then.
@@ -149,9 +149,22 @@ Everything on-chain is public. If guesses went in plainly, the last player could
 
 Players who don't reveal lose their entry. The frontend stores the salt locally and reveals for the player.
 
+### Built in sim mode (2026-11-15)
+
+Game `4`, hidden in chain mode. Code is in `src/lib/beauty.ts`.
+
+- **Entry is fixed at 10 CHIP**, so every player has the same stake in the pot. One entry per player per round.
+- **The guess is the `choice` itself** (0 to 100). That fits in a `uint8`, unlike Crash.
+- **Winner math is exact.** Distance to the target is compared as `|3n × guess − 2 × sum|`, all integers, so rounding never picks a winner.
+- **Payout:** `entry × players × 0.98 ÷ winners`, rounded down. Checked on 5,000 simulated wins, including 347 ties.
+- **Bots stand in for other players.** Each round has 4 to 9 bots. Their guesses come from the round seed, so nobody sees them before betting locks. They're a mix of reasoning levels: 20% guess at random, 35% think one step (around 33), 30% think two steps (around 22), and 15% go further (around 8). Over 20,000 simulated rounds they averaged 29, close to what lab experiments find in first-time play, and the average target was about 19.
+- **No real commit and reveal in sim.** There's nobody to hide from, so the guess just goes in. The UI still says it's sealed until betting closes, which is what the contract would do.
+
+**Known weakness: fixed bots can be solved.** Against these bots, a guess around 18 wins about half the time and returns about 3.4× the entry on average. A player who figures that out will farm the bots. With real players this goes away, because people adjust to each other. Fixes for sim mode, if we want one: bots that learn from past targets, which pushes guesses lower each round like real repeated play does, or more randomness in the mix.
+
 ### Fit with the contract
 
-This doesn't fit `BlockCasino`'s round model. It has no seed, a pot instead of house payouts, and two phases. It's probably its own small contract with `commit`, `reveal`, and `settle`, timed by blocks.
+This doesn't fit `BlockCasino`'s round model. It has a pot instead of house payouts, and two phases. It's probably its own small contract with `commit`, `reveal`, and `settle`, timed by blocks. It doesn't need the VRF at all with real players. The sim only uses the seed to make up bot guesses.
 
 ### Frontend
 

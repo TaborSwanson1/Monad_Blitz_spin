@@ -2,6 +2,7 @@ import { toHex, type Address, type Hex } from 'viem'
 import { lockBlock, roundIdAt, type RoundConfig } from '../lib/rounds'
 import { toChips } from '../lib/format'
 import { GAMES } from '../lib/games'
+import { BEAUTY_ENTRY } from '../lib/beauty'
 import type { BlockInfo, CasinoClient, PlacedBet, RoundState } from './types'
 
 // A fake chain that runs in the browser. Blocks every 300 ms, Monad testnet's measured pace.
@@ -26,6 +27,7 @@ export function createSimClient(): CasinoClient {
   let balance = 0n
   const seeds = new Map<bigint, Hex>()
   const betCounts = new Map<bigint, number>()
+  const beautyEntered = new Set<bigint>()
   const listeners = new Set<(b: BlockInfo) => void>()
   let timer: ReturnType<typeof setInterval> | undefined
 
@@ -82,6 +84,12 @@ export function createSimClient(): CasinoClient {
       // Same checks as BlockCasino.placeBet: UnknownGame and BadChoice.
       if (!GAMES[gameId]) throw new Error('Unknown game')
       if (choice < 0 || choice >= GAMES[gameId].outcomes) throw new Error('Bad choice for this game')
+      // Beauty Contest: one entry per player per round, at the fixed entry fee.
+      if (GAMES[gameId].kind === 'beauty') {
+        if (amount !== BEAUTY_ENTRY) throw new Error('Beauty Contest entry is 10 CHIP')
+        if (beautyEntered.has(roundId)) throw new Error('You already entered this round')
+        beautyEntered.add(roundId)
+      }
       if (amount < cfg.minBet || amount > cfg.maxBet) throw new Error('Bet must be between 1 and 500 CHIP')
       if (amount > balance) throw new Error('Not enough chips. Use the faucet.')
       balance -= amount
