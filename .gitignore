@@ -1,0 +1,20 @@
+# Foundry
+out/
+cache/
+broadcast/*/31337/
+broadcast/**/dry-run/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Frontend
+node_modules/
+dist/
+.next/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
