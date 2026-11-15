@@ -28,6 +28,8 @@ import { Backdrop } from './fx/Backdrop'
 import { Overlay } from './fx/Overlay'
 import { FxControls } from './fx/FxControls'
 import { GameSign } from './fx/GameSign'
+import { Marquee } from './fx/Marquee'
+import { EXACT_RTP } from './lib/slot'
 import { burst } from './fx/bus'
 import { sfx, unlockAudio } from './fx/sound'
 import { useClickSparks } from './effects/useClickSparks'
@@ -68,14 +70,14 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     () => [
       {
         key: 'slot',
-        name: 'Diamond Cascade',
+        name: 'Lucky Leprechaun',
         art: 'slot',
         category: 'house',
         odds: 'About 1 spin in 7 wins · jackpot 1,000×',
         rtp: '98% RTP',
         tag: 'demo',
         describe:
-          'Cascading reels, free spins and a 1,000× jackpot, with demo chips. Shows near-miss slot design, with a switch to the honest view of the same spins.',
+          'Cascading reels, free spins, a buy-feature button and a 1,000× jackpot, with demo chips. Shows near-miss slot design, with a switch to the honest view of the same spins.',
         play: () => {
           setView('slot')
           window.scrollTo(0, 0)
@@ -101,8 +103,8 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     connectCasino()
   }, [wallet.state.status, wallet.state.address, casino.account, casino.busy, client.mode, connectCasino])
   // Each game has one fixed theme. The page takes the look of the game you're on.
-  // The lobby is Vegas. The slot demo keeps Calm and has no animated background.
-  const theme = view === 'game' ? themeForGame(gameId) : view === 'slot' ? THEMES.calm : THEMES.vegas
+  // The lobby and the slot are Vegas (the slot used to stay Calm; changed at Zander's request, see Decisions).
+  const theme = view === 'game' ? themeForGame(gameId) : THEMES.vegas
   useEffect(() => {
     document.documentElement.dataset.theme = theme.id
   }, [theme.id])
@@ -153,10 +155,46 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
       {view === 'lobby' ? (
         <Lobby mode={client.mode} onPlay={openGame} extra={extraTiles} onLimits={() => setEditingLimits(true)} />
       ) : view === 'slot' ? (
-        <SlotScreen blockedReason={session.blockedReason} onStake={onSlotStake} onPaid={onSlotPaid} />
+        <div className="shell sl-shell">
+          <Sidebar
+            mode={client.mode}
+            gameId={gameId}
+            onPick={(id) => {
+              setGameId(id)
+              setView('game')
+            }}
+            onEditLimits={() => setEditingLimits(true)}
+            slot={{ active: true, onPick: () => undefined }}
+          />
+          <main className="main-col">
+            <Marquee tone="neon" className="game-sign sl-sign">
+              <span className="gs-sticker" aria-hidden>
+                Play
+                <br />
+                money
+              </span>
+              <span className="gs-kicker">Now playing</span>
+              <span className="gs-name">Lucky Leprechaun</span>
+              <span className="gs-odds">About 1 spin in 7 wins · jackpot 1,000× · {(EXACT_RTP * 100).toFixed(2)}% return</span>
+            </Marquee>
+            <SessionBar elapsedMs={session.elapsedMs} net={session.net} staked={session.staked} rounds={session.rounds} limits={session.limits} />
+            {session.blockedReason && (
+              <div className="limit-banner">
+                {session.blockedReason} Betting is paused. You can change limits, but consider taking a break.
+              </div>
+            )}
+            <SlotScreen blockedReason={session.blockedReason} onStake={onSlotStake} onPaid={onSlotPaid} />
+          </main>
+        </div>
       ) : (
       <div className="shell">
-        <Sidebar mode={client.mode} gameId={gameId} onPick={setGameId} onEditLimits={() => setEditingLimits(true)} />
+        <Sidebar
+          mode={client.mode}
+          gameId={gameId}
+          onPick={setGameId}
+          onEditLimits={() => setEditingLimits(true)}
+          slot={{ active: false, onPick: () => setView('slot') }}
+        />
 
         <main className="main-col">
           {loud && <GameSign game={GAMES[gameId]} theme={theme.id} />}

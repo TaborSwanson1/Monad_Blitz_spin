@@ -103,7 +103,7 @@
 .tile-race { --tile-bg: linear-gradient(160deg, #1f4436, #0d1d17); }
 .tile-crash { --tile-bg: linear-gradient(160deg, #5a2a2a, #1e0f12); }
 .tile-beauty { --tile-bg: linear-gradient(160deg, #5a4520, #1e170b); }
-.tile-slot { --tile-bg: linear-gradient(160deg, #6b2058, #1f0a1b); }
+.tile-slot { --tile-bg: linear-gradient(160deg, #137a3a, #052a14); }
 .tile-walk { --tile-bg: linear-gradient(160deg, #24414f, #0d171c); }
 .art-num { font-size: 64px; font-weight: 700; fill: #fff; font-family: var(--sans); }
 .art-sym { font-size: 34px; font-weight: 700; fill: #ffd76a; font-family: var(--sans); }

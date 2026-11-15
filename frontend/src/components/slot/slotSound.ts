@@ -2,32 +2,20 @@
 // The audio context starts on the first spin click, which browsers require.
 // Owner: Zander.
 
-const KEY = 'block-casino.slot.sound'
+import { getFxPrefs, setFxPrefs } from '../../fx/prefs'
 
 let ctx: AudioContext | null = null
-let muted = readMuted()
 
-function readMuted(): boolean {
-  try {
-    return localStorage.getItem(KEY) === 'off'
-  } catch {
-    return false
-  }
-}
-
-export const isMuted = () => muted
+// One sound switch for the whole app: the corner "Sound" switch (fx/prefs) and this screen's
+// speaker button are the same setting, so muting either one mutes both.
+export const isMuted = () => !getFxPrefs().sound
 
 export function setMuted(next: boolean) {
-  muted = next
-  try {
-    localStorage.setItem(KEY, next ? 'off' : 'on')
-  } catch {
-    /* storage blocked: the choice lasts for this visit */
-  }
+  setFxPrefs({ sound: !next })
 }
 
 function audio(): AudioContext | null {
-  if (muted || typeof window === 'undefined') return null
+  if (isMuted() || typeof window === 'undefined') return null
   try {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!Ctor) return null
