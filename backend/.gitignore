@@ -2,7 +2,7 @@
 out/
 cache/
 broadcast/
-lib/
+/lib/
 node_modules/
 
 # Local dev loop (npm run dev). Testnet deployments ARE committed.
