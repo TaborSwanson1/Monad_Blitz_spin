@@ -19,7 +19,8 @@ ChipToken ◄──── mints payouts ──── BlockCasino ────►
 | `contracts/games/UniformGame.sol` | Maps a seed to one of N equal outcomes. Pays N × 0.98. |
 | `contracts/interfaces/IRandomness.sol` | The only thing the casino knows about randomness. |
 | `contracts/randomness/MockRandomness.sol` | Caller picks the number. Tests only. |
-| `contracts/randomness/PythEntropyAdapter.sol` | Wraps Pyth Entropy. Signatures not yet checked against Pyth docs. |
+| `contracts/randomness/PythEntropyAdapter.sol` | Wraps Pyth Entropy. Built on Pyth's official SDK 2.2.1 (`IEntropyV2`, `IEntropyConsumer`). Testnet address verified 2026-11-15. |
+| `contracts/lib/SeedLib.sol` | Round seed → per-game seed → extra draws. See `MECHANICS.md`. |
 
 ## Round lifecycle
 
