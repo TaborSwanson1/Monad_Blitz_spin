@@ -564,8 +564,11 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .crash-cashout-amt { font-variant-numeric: tabular-nums; margin-left: 6px; opacity: 0.9; }
 .crash-live-bets { list-style: none; padding: 0; margin: 12px 0 0; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
 .crash-live-bets li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; font-variant-numeric: tabular-nums; }
-.crash-live-chart { width: 100%; height: 100%; min-height: 160px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card-2); }
-.crash-live-grid line { stroke: var(--line-2); stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
-.crash-live-grid text { fill: var(--faint); font-size: 10px; }
+.crash-live-stage { position: relative; overflow: hidden; min-height: 180px; border: 1px solid var(--line); border-radius: var(--radius-sm); isolation: isolate; }
+.crash-live-chart { position: relative; display: block; width: 100%; height: 100%; min-height: 180px; }
+.crash-live .crash-line { filter: drop-shadow(0 0 3px rgb(0 0 0 / 0.7)); }
+.crash-live-grid text { paint-order: stroke; stroke: rgb(0 0 0 / 0.5); stroke-width: 3px; }
+.crash-live-grid line { stroke: rgb(255 255 255 / 0.35); stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.crash-live-grid text { fill: rgb(255 255 255 / 0.85); font-size: 10px; }
 .crash-live .crash-line { stroke: var(--pos); }
 .crash-live.is-crashed .crash-line { stroke: var(--neg); }

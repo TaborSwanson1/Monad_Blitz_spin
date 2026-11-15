@@ -46,6 +46,27 @@
   --glow: rgb(255 45 135 / 0.75);
   --ring: #ffd23f;
 }
+:root[data-theme='space'] {
+  --page: #03040c;
+  --pane: rgb(6 9 26 / 0.72);
+  --card: rgb(12 17 44 / 0.78);
+  --card-2: rgb(30 40 92 / 0.6);
+  --line: rgb(160 190 255 / 0.16);
+  --line-2: rgb(160 190 255 / 0.3);
+  --text: #f2f6ff;
+  --muted: rgb(242 246 255 / 0.74);
+  --faint: rgb(242 246 255 / 0.5);
+  --primary: #4f8cff;
+  --primary-soft: rgb(79 140 255 / 0.2);
+  --secondary: #a78bfa;
+  --pos: #3ddc84;
+  --pos-soft: rgb(61 220 132 / 0.16);
+  --neg: #ff6b7a;
+  --neg-soft: rgb(255 107 122 / 0.18);
+  --warn: #ffd23f;
+  --warn-soft: rgb(255 210 63 / 0.14);
+  --display: 'Bungee', 'Oswald', var(--sans);
+}
 :root[data-theme='americana'] {
   --pane: rgb(9 18 52 / 0.82);
   --card: rgb(14 27 70 / 0.88);
@@ -75,6 +96,17 @@
     radial-gradient(60% 60% at 100% 100%, rgb(255 122 26 / 0.55), transparent 70%),
     linear-gradient(160deg, #3a0ca3, #7209b7 45%, #240046);
 }
+.backdrop-space {
+  background-image:
+    radial-gradient(45% 40% at 78% 22%, rgb(167 139 250 / 0.32), transparent 70%),
+    radial-gradient(50% 45% at 20% 70%, rgb(34 211 238 / 0.16), transparent 70%),
+    radial-gradient(40% 35% at 60% 85%, rgb(244 114 182 / 0.14), transparent 70%),
+    linear-gradient(180deg, #050716, #03040c 60%, #070a1f);
+}
+:root[data-theme='space'] .card { backdrop-filter: blur(6px); }
+:root[data-theme='space'] .game-name,
+:root[data-theme='space'] .crash-live-mult { font-family: var(--display); letter-spacing: 0.02em; }
+:root[data-theme='space'] .crash-live-mult { font-size: clamp(40px, 5.2vw, 68px); white-space: nowrap; text-shadow: 0 0 18px rgb(61 220 132 / 0.45); }
 .backdrop-americana {
   background-image:
     radial-gradient(70% 55% at 50% 0%, rgb(47 107 255 / 0.6), transparent 70%),

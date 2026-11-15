@@ -2,6 +2,7 @@ import { CRASH_MANUAL, CRASH_TARGETS_X100, fmtX } from '../lib/crash'
 import { fmtChips } from '../lib/format'
 import { MAX_CLIMB_MS, multAt } from '../lib/liveCrash'
 import type { LiveCrash } from '../hooks/useCasino'
+import { CrashScene, zoneOf } from './CrashScene'
 
 // The live Crash climb, in the game page (not a popup). The multiplier climbs after betting
 // locks; the big button cashes out every bet still riding at the multiplier on screen. The
@@ -77,6 +78,10 @@ export function CrashLive({ live, onCashOut }: { live: LiveCrash; onCashOut: () 
             })}
           </ul>
         </div>
+        <div className="crash-live-stage">
+        {/* Ground below 5x, atmosphere to 20x, space above. Follows the multiplier on screen. */}
+        <CrashScene mult={m} crashed={crashed} />
+        <div className="crash-zone">{zoneOf(m)}</div>
         <svg className="crash-live-chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
           {CRASH_TARGETS_X100.filter((t) => t / 100 < top).map((t) => (
             <g key={t} className="crash-live-grid">
@@ -88,6 +93,7 @@ export function CrashLive({ live, onCashOut }: { live: LiveCrash; onCashOut: () 
           ))}
           {elapsed > 0 && <polyline className="crash-line" points={pts.join(' ')} />}
         </svg>
+        </div>
       </div>
     </section>
   )
