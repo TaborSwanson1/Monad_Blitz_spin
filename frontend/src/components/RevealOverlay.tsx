@@ -4,19 +4,19 @@ import { CRASH_TARGETS_X100, fmtX } from '../lib/crash'
 import { GAMES, LANE_COLORS } from '../lib/games'
 import { fmtChips } from '../lib/format'
 import { BeautyResult } from './BeautyResult'
-import { Burst } from './Burst'
 import { CrashClimb } from './CrashClimb'
+import { OutcomeStrip } from './OutcomeStrip'
+import { WinEffects } from '../effects/WinEffects'
+import { Embers, LossVignette } from '../effects/LoseEffects'
+import { useLoseEffects, useWinEffects } from '../effects/useOutcomeEffects'
 
-/**
- * Effect size follows the real net result for the round:
- * - net > 0: a short burst, bigger for bigger multiples
- * - net <= 0: plain result, no fanfare, even if one bet in the round won
+/*
+ * Effects follow the real net result for the round, never a single bet:
+ * - net > 0: coins, confetti and a gold glow, bigger for bigger multiples
+ * - net < 0: a short ember rise, shake and red vignette
+ * - net = 0: plain result
+ * The result, your pick and the net are shown at once. The effects sit behind the card.
  */
-export function revealIntensity(r: RoundRecord): number {
-  if (r.net <= 0n || r.staked === 0n) return 0
-  const ratio = Number((r.paid * 1000n) / r.staked) / 1000
-  return Math.max(0.2, Math.min(1, Math.log2(ratio) / Math.log2(10)))
-}
 
 const crashBetsOf = (r: RoundRecord) => r.bets.filter((b) => GAMES[b.gameId].kind === 'crash')
 
@@ -36,8 +36,9 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
   }, [onReplayDone])
 
   // Nothing hints at the result until the replay finishes.
-  const intensity = climbDone ? revealIntensity(record) : 0
-  const up = intensity > 0
+  const win = useWinEffects(record, climbDone)
+  const lose = useLoseEffects(record, climbDone)
+  const up = win.intensity > 0
 
   useEffect(() => {
     if (!climbDone) return
@@ -54,8 +55,10 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
       role="dialog"
       aria-live="polite"
     >
-      {up && <Burst intensity={intensity} />}
-      <div className="reveal-card" style={{ '--intensity': intensity } as React.CSSProperties}>
+      {win.particles && <WinEffects {...win} />}
+      {lose.particles && <LossVignette />}
+      <div className={`reveal-card ${win.cardClass} ${lose.cardClass}`} style={win.cardStyle}>
+        {lose.particles && <Embers />}
         <div className="reveal-round">Round {record.roundId.toString()} settled</div>
 
         {crashBets.length > 0 && <CrashClimb crashX100={crashBets[0].raw} targetsX100={crashTargets} onDone={markDone} />}
@@ -86,6 +89,7 @@ export function RevealOverlay({ record, onClose, onReplayDone }: Props) {
                     >
                       {shown}
                     </div>
+                    {g.kind === 'uniform' && <OutcomeStrip game={g} outcome={b.outcome} choice={b.choice} />}
                     <div className="reveal-pick">
                       {g.kind === 'crash' ? 'Your target' : 'You picked'} {g.labels[b.choice]} ·{' '}
                       {b.won ? `paid ${fmtChips(b.payout)}` : 'no payout'}

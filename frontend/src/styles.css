@@ -184,7 +184,6 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 
 /* ---------- reveal */
 .reveal { position: fixed; inset: 0; display: grid; place-items: center; z-index: 20; background: rgb(10 12 15 / 0.72); padding: 16px; animation: fade 0.2s; }
-.burst { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .reveal-card { position: relative; text-align: center; padding: 24px 28px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--card); min-width: min(420px, calc(100vw - 32px)); max-width: calc(100vw - 32px); box-shadow: 0 20px 50px rgb(0 0 0 / 0.45); animation: rise 0.25s ease-out; }
 .reveal-up .reveal-card { border-color: rgb(11 191 88 / 0.5); }
 .reveal-round { font-size: 13px; color: var(--muted); font-weight: 500; }
@@ -255,6 +254,63 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
   .main-col { padding: 16px; }
   .card-head .card-actions.small { display: none; }
 }
+
+/* ---------- outcome effects (src/effects). Decoration only: they sit behind the
+   result card or fade within ~1.5 s, and scale with the round's real net result. */
+.fx-layer { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+.reveal-card { z-index: 1; }
+.reveal-card > :not(.fx-embers) { position: relative; z-index: 1; }
+
+.fx-coin { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff4c9 0 16%, #f2c94c 17% 58%, #c8961e 59% 100%);
+  border: 2px solid #8a6412; box-shadow: inset 0 0 0 3px rgb(255 236 170 / 0.45);
+  opacity: 0; animation: coin-fly var(--dur) cubic-bezier(0.2, 0.7, 0.4, 1) var(--delay) forwards; }
+@keyframes coin-fly {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) rotateY(0deg) scale(calc(var(--s) * 0.4)); }
+  10% { opacity: 1; }
+  45% { transform: translate(var(--x1), var(--y1)) rotate(calc(var(--rot) * 0.5)) rotateY(360deg) scale(var(--s)); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--x2), var(--y2)) rotate(var(--rot)) rotateY(720deg) scale(var(--s)); }
+}
+
+.reveal-card.fx-glow { animation: rise 0.25s ease-out, glow-pulse 0.8s ease-in-out 0.15s var(--glow-pulses); }
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 20px 50px rgb(0 0 0 / 0.45), 0 0 0 0 rgb(233 185 73 / 0); }
+  50% { box-shadow: 0 20px 50px rgb(0 0 0 / 0.45), 0 0 calc(18px + 42px * var(--intensity)) calc(2px + 6px * var(--intensity)) rgb(233 185 73 / calc(0.25 + 0.45 * var(--intensity))); }
+}
+
+.reveal-card.fx-shake { animation: rise 0.25s ease-out, shake 0.3s ease-in-out 0.2s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-5px); }
+  35% { transform: translateX(5px); }
+  55% { transform: translateX(-4px); }
+  75% { transform: translateX(3px); }
+  90% { transform: translateX(-1px); }
+}
+
+.fx-vignette { background: radial-gradient(ellipse at center, transparent 50%, rgb(243 18 96 / 0.3) 100%); opacity: 0; animation: vignette 0.5s ease-out forwards; }
+@keyframes vignette { 40% { opacity: 1; } 100% { opacity: 0; } }
+
+.fx-embers { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; z-index: 0; }
+.fx-ember { position: absolute; bottom: -6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 6px 2px var(--c); opacity: 0; animation: ember-rise var(--dur) ease-out var(--delay) forwards; }
+@keyframes ember-rise {
+  0% { opacity: 0; transform: translate(0, 0) scale(1); }
+  15% { opacity: 0.95; }
+  100% { opacity: 0; transform: translate(var(--dx), calc(var(--rise) * -1)) scale(0.4); }
+}
+
+.fx-strip { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 8px 0 6px; }
+.fx-opt { font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--faint); font-variant-numeric: tabular-nums; transition: opacity 0.4s; }
+.fx-opt.is-pick { color: var(--muted); border-style: dashed; }
+.fx-opt.is-result { color: var(--page); background: var(--opt, var(--text)); border-color: var(--opt, var(--text)); animation: opt-pop 0.35s ease-out 0.15s backwards; }
+.fx-strip.is-lost .fx-opt.is-pick { animation: opt-dim 0.45s ease-out 0.1s forwards; }
+@keyframes opt-pop { from { transform: scale(0.85); opacity: 0.4; } }
+@keyframes opt-dim { to { opacity: 0.35; } }
+
+.balance-num { font-variant-numeric: tabular-nums; transition: color 0.4s; }
+.balance-num.tick-up { color: var(--pos); }
+.balance-num.tick-down { color: var(--neg); }
 
 /* ---------- motion: small and purposeful only */
 @keyframes enter { from { margin-left: -142px; opacity: 0; } to { margin-left: 0; opacity: 1; } }

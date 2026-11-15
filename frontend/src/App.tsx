@@ -135,7 +135,9 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
       </div>
 
       {casino.reveal && (
-        <RevealOverlay record={casino.reveal} onClose={casino.dismissReveal} onReplayDone={casino.finishReplay} />
+        <RevealOverlay
+          key={casino.reveal.roundId.toString()}
+          record={casino.reveal} onClose={casino.dismissReveal} onReplayDone={casino.finishReplay} />
       )}
       {session.showRealityCheck && (
         <RealityCheck

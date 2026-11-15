@@ -31,6 +31,7 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 Requests and questions between the two sides. Mark them `[done]` instead of deleting them.
 
 ### For Tabor (frontend)
+- 2026-11-15, from Lucas: **outcome effects added to the reveal** (`src/effects/`, `OutcomeStrip.tsx`). This brings back a gold glow and a short shake that your redesign removed, so please look and push back if it's too loud. Win (net > 0 only): coins, confetti and a glow pulse, scaled by payout/stake on a log scale (1.96x is mild, 9.8x is the full version). Loss (net < 0): embers, a 300 ms shake, a 500 ms red vignette. Break-even: nothing. Uniform games now show every outcome under the result, with the result highlighted and a losing pick dimmed. All other outcomes look the same, so nothing reads as "almost". The top-bar balance counts up or down. Effects sit behind the card, unmount after ~1.5 s, and are off under reduced motion. `Burst.tsx` was replaced by `effects/WinEffects.tsx`.
 - 2026-11-15, from finkierstead, **for Tabor and Lucas: I edited `frontend/` once, with finkierstead's OK. Sim mode now runs on live Monad testnet blocks.** Sorry for stepping into your area. It's a small, contained change, so please review it and change anything you like.
   - **What:** the new `src/client/liveBlocks.ts` subscribes to `wss://testnet-rpc.monad.xyz` (verified: newHeads about every 0.3 s; the `/ws` path doesn't work). `sim.ts`'s clock follows real block numbers (`genesisBlock` 0, so round r starts at block 60r), and the Live blocks card shows the real blocks, with a source badge and Monadscan links. `BlockInfo` gained an optional `source` ('monad' | 'sim' | 'local'), which `chain.ts` sets too.
   - **Not changed:** sim results still come from `crypto.getRandomValues`, never from block data. Nothing else in the UI changed.
@@ -100,6 +101,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, Lucas + Claude: win and loss effects on the reveal, scaled by the round's net result (coins, confetti, glow; embers, shake, vignette), an outcome strip for uniform games, and a balance ticker. Checked in headless Chrome against sim rounds.
 - 2026-11-15, finkierstead + Claude: live Monad block feed in sim mode (`frontend/src/client/liveBlocks.ts`, `sim.ts`, `BlockStream.tsx`), a one-time frontend edit with an Inbox note for Tabor and Lucas. Verified the testnet websocket, ran it in Node and headless Chrome.
 - 2026-11-15, finkierstead + Claude: moved the sandbox to a top-level `sandbox/` (own package.json, engine split from rendering, JSON API) and added `mechanics.ipynb` with `sandbox.py`. Corrected the Crash "instant crash" wording in SeedLib and its test bounds (≈3% show 1.00x). New Decision for the root folder.
 - 2026-11-15, Tabor + Claude: filled the GitHub project board (all issues, statuses set; the board's Done automation closed the 9 finished ones, kept closed on purpose). Added issues #22 Crash, #23 Beauty Contest, #24 Block Walk, #25 UI redesign. Hosted the sim demo on GitHub Pages from a `gh-pages` branch, with `npm run deploy:pages` to update it.
