@@ -1,0 +1,53 @@
+{
+  "network": "monad-testnet",
+  "chainId": 10143,
+  "rpc": "https://testnet-rpc.monad.xyz",
+  "explorer": "https://testnet.monadvision.com",
+  "randomnessKind": "pyth-entropy",
+  "contracts": {
+    "blockCasino": "0xC5043A7cF0D0c0E80D1759c4731B666fB8202512",
+    "chipToken": "0xbCe555D837B31F5BE0E4F31a4F58806576782d14",
+    "randomness": "0x84d234c1732F6C137632C61730c5A43242fd11fE",
+    "pythEntropy": "0x825c0390f379C631f3Cf11A82a37D20BddF93c07"
+  },
+  "genesisBlock": "80071259",
+  "roundLength": 60,
+  "bettingWindow": 40,
+  "settleTimeout": 2000,
+  "minBet": "1",
+  "maxBet": "500",
+  "vrfFeeMon": "0.123805606509000001",
+  "games": [
+    {
+      "id": 0,
+      "name": "High / Low",
+      "address": "0x4Eed7D27651150b78ce8E081437224Fdb7E31B07",
+      "numOutcomes": 2,
+      "range": 100,
+      "payoutBps": 19600,
+      "multiplier": 1.96,
+      "houseEdgePct": 2
+    },
+    {
+      "id": 1,
+      "name": "Exact Digit",
+      "address": "0x4Ee7BC903C0225Cc164B2B21cFA43812017A8618",
+      "numOutcomes": 10,
+      "range": 10,
+      "payoutBps": 98000,
+      "multiplier": 9.8,
+      "houseEdgePct": 2
+    },
+    {
+      "id": 2,
+      "name": "Block Race",
+      "address": "0xB3fb9088Dfe563fA4913767b4388C09a1934e6a8",
+      "numOutcomes": 4,
+      "range": 4,
+      "payoutBps": 39200,
+      "multiplier": 3.92,
+      "houseEdgePct": 2
+    }
+  ],
+  "exportedAt": "2026-11-15T23:33:59.920Z"
+}

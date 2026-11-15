@@ -75,20 +75,28 @@ export function BurningWallet({ wallet, intensity, variant = 'full' }: Props) {
   const reduced = prefersReducedMotion()
   const top = variant === 'top'
   const s = fxScale()
+  // The wallet box sits centered at the bottom (12px up). The fire draws full-screen,
+  // lined up with that box, so nothing it draws ever gets cut off at an edge.
+  const screen =
+    typeof window === 'undefined' ? undefined : { ox: (window.innerWidth - BASE * s) / 2, oy: window.innerHeight - 12 - BASE * s }
 
   return (
-    <div
-      className={`fx-bottom burn burn-${variant} ${reduced ? 'burn-static' : ''}`}
-      style={{ '--burn': intensity, width: BASE * s, height: BASE * s } as React.CSSProperties}
-      aria-hidden
-    >
-      <WalletSvg wallet={wallet} width={WALLET_W * s} />
+    <>
+      <div
+        className={`fx-bottom burn burn-${variant} ${reduced ? 'burn-static' : ''}`}
+        style={{ '--burn': intensity, width: BASE * s, height: BASE * s } as React.CSSProperties}
+        aria-hidden
+      >
+        <WalletSvg wallet={wallet} width={WALLET_W * s} />
+      </div>
+      {/* After the wallet, so flames draw in front of it; behind the result card. */}
       {!reduced && (
         <FireCanvas
           className="fire-canvas"
           width={BASE}
           height={BASE}
           scale={s}
+          screen={screen}
           emitters={top ? TOP_FIRE : FULL_FIRE}
           intensity={top ? 0.6 : intensity}
           duration={BURN_MS}
@@ -96,6 +104,6 @@ export function BurningWallet({ wallet, intensity, variant = 'full' }: Props) {
           billFrom={BILLS_FROM}
         />
       )}
-    </div>
+    </>
   )
 }

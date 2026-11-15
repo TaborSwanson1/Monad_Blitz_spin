@@ -3,7 +3,7 @@
 // Games 3 (Crash) and 4 (Beauty Contest) are proposals that only exist in sim mode.
 // See src/lib/crash.ts and src/lib/beauty.ts.
 
-import { CRASH_TARGETS_X100, crashWinChance, fmtX } from './crash'
+import { CRASH_MANUAL, CRASH_TARGETS_X100, crashWinChance, fmtX } from './crash'
 
 export const HOUSE_EDGE_BPS = 200
 
@@ -52,11 +52,11 @@ export const GAMES: GameDef[] = [
     kind: 'crash',
     simOnly: true,
     range: 0,
-    outcomes: CRASH_TARGETS_X100.length,
+    outcomes: CRASH_TARGETS_X100.length + 1, // the targets, plus CRASH_MANUAL
     payoutBps: 0,
-    labels: CRASH_TARGETS_X100.map(fmtX),
+    labels: [...CRASH_TARGETS_X100.map(fmtX), 'Manual'],
     describe:
-      'Pick a cash-out target before betting closes. If the crash point reaches your target, you win your stake times the target.',
+      'The multiplier climbs after betting locks. Cash out before it crashes to win your stake times the multiplier.',
   },
   {
     id: BEAUTY_ID,
@@ -81,9 +81,9 @@ export const gamesFor = (mode: 'sim' | 'chain') => GAMES.filter((g) => mode === 
 // Fixed-odds games only. Beauty Contest's payout and odds depend on the other
 // players, so BetPanel shows its pot rules instead.
 export const payoutBpsFor = (g: GameDef, choice: number) =>
-  g.kind === 'crash' ? CRASH_TARGETS_X100[choice] * 100 : g.payoutBps
+  g.kind === 'crash' ? (choice === CRASH_MANUAL ? 0 : CRASH_TARGETS_X100[choice] * 100) : g.payoutBps
 
 export const multiplierFor = (g: GameDef, choice: number) => payoutBpsFor(g, choice) / 10_000
 
 export const chanceFor = (g: GameDef, choice: number) =>
-  g.kind === 'crash' ? crashWinChance(CRASH_TARGETS_X100[choice]) : 1 / g.outcomes
+  g.kind === 'crash' ? (choice === CRASH_MANUAL ? NaN : crashWinChance(CRASH_TARGETS_X100[choice])) : 1 / g.outcomes

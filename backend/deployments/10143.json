@@ -1,0 +1,9 @@
+{
+  "blockCasino": "0xC5043A7cF0D0c0E80D1759c4731B666fB8202512",
+  "chainId": 10143,
+  "chipToken": "0xbCe555D837B31F5BE0E4F31a4F58806576782d14",
+  "genesisBlock": 80071196,
+  "pythEntropy": "0x825c0390f379C631f3Cf11A82a37D20BddF93c07",
+  "randomness": "0x84d234c1732F6C137632C61730c5A43242fd11fE",
+  "randomnessKind": "pyth-entropy"
+}

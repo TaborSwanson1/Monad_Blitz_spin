@@ -66,7 +66,9 @@ interface Props {
 
 export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, demo = false }: Props) {
   const crashBets = crashBetsOf(record)
-  const [climbDone, setClimbDone] = useState(crashBets.length === 0)
+  // A live Crash round was already watched as it climbed, so there's no replay.
+  const replay = crashBets.length > 0 && !record.live
+  const [climbDone, setClimbDone] = useState(!replay)
   const markDone = useCallback(() => {
     setClimbDone(true)
     onReplayDone()
@@ -157,7 +159,7 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
           {demo ? <span className="demo-tag">Demo, no chips moved</span> : <>Round {record.roundId.toString()} settled</>}
         </div>
 
-        {crashBets.length > 0 && <CrashClimb crashX100={crashBets[0].raw} targetsX100={crashTargets} onDone={markDone} />}
+        {replay && <CrashClimb crashX100={crashBets[0].raw} targetsX100={crashTargets} onDone={markDone} />}
 
         {climbDone && (
           <>
@@ -192,8 +194,12 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
                     />
                     {g.kind === 'uniform' && <OutcomeStrip game={g} outcome={b.outcome} choice={b.choice} />}
                     <div className="reveal-pick">
-                      {g.kind === 'crash' ? 'Your target' : 'You picked'} {g.labels[b.choice]} ·{' '}
-                      {b.won ? `paid ${fmtChips(b.payout)}` : 'no payout'}
+                      {g.kind === 'crash'
+                        ? b.cashoutX100 !== undefined && b.won
+                          ? `${b.autoCashout ? 'Auto cash-out' : 'You cashed out'} at ${fmtX(b.cashoutX100)}`
+                          : "You didn't cash out in time"
+                        : `You picked ${g.labels[b.choice]}`}{' '}
+                      · {b.won ? `paid ${fmtChips(b.payout)}` : 'no payout'}
                     </div>
                   </div>
                 )
@@ -206,7 +212,9 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
             {loud && record.net < 0n && <div className="reveal-odds">{SAME_ODDS}</div>}
           </>
         )}
-        <div className="reveal-seed">seed {record.seed.slice(0, 18)}…</div>
+        <div className="reveal-seed">
+          seed {record.seed.slice(0, 18)}…{record.live && ' · crash point drawn live, not from the seed'}
+        </div>
         {up && (
           <button className="btn reveal-close" onClick={onClose}>
             Close
