@@ -56,6 +56,7 @@ function fakeWallet({ account, startChainId = 1 }) {
         }
         switch (method) {
           case 'eth_requestAccounts':
+            w.popups = (w.popups ?? 0) + 1
             w.authorized = true
             return [w.account]
           case 'eth_accounts':
@@ -264,4 +265,64 @@ test('reacts to wallet events: account switch, wrong network, disconnect', async
   assert.equal(s.getState().status, 'disconnected')
   assert.equal(storage.getItem('block-casino:wallet'), null)
   assert.equal(await s.reconnect([wallet]), false)
+})
+
+test('connectWallet(): the one call, every path', async () => {
+  const mk = (rdns, account) => {
+    const w = fakeWallet({ account })
+    return { w, d: { info: { uuid: rdns, name: rdns, icon: '', rdns }, provider: w.provider } }
+  }
+  const a = mk('wallet.a', accounts[4])
+  const b = mk('wallet.b', accounts[5])
+  const storage = memoryStorage()
+
+  // Nothing installed (and no window in Node): NO_WALLET with an install hint.
+  const empty = createWalletSession({ deployment, storage: memoryStorage(), chain })
+  await expectCode(empty.connectWallet(), 'NO_WALLET')
+  await expectCode(empty.connectWallet({ wallets: [] }), 'NO_WALLET')
+
+  // Several wallets, no preference, no picker: CHOOSE_WALLET carries the list.
+  const s = createWalletSession({ deployment, storage, chain })
+  await assert.rejects(s.connectWallet({ wallets: [a.d, b.d] }), (e) => e.code === 'CHOOSE_WALLET' && e.wallets.length === 2)
+
+  // Picker returns null: treated as the player cancelling.
+  await expectCode(s.connectWallet({ wallets: [a.d, b.d], pick: () => null }), 'USER_REJECTED')
+
+  // Picker chooses b: connects, adds and switches the chain, one popup.
+  let st = await s.connectWallet({ wallets: [a.d, b.d], pick: async (ws) => ws[1] })
+  assert.equal(st.status, 'connected')
+  assert.equal(st.wallet.rdns, 'wallet.b')
+  assert.equal(b.w.chainId, 31337)
+  assert.equal(b.w.popups, 1)
+
+  // Already connected: returns at once, no popup.
+  st = await s.connectWallet({ wallets: [a.d, b.d] })
+  assert.equal(st.status, 'connected')
+  assert.equal(b.w.popups, 1)
+
+  // Player switches network in the wallet: connectWallet switches back.
+  b.w.chainId = 1
+  b.w.emit('chainChanged', '0x1')
+  assert.equal(s.getState().status, 'wrong-network')
+  st = await s.connectWallet()
+  assert.equal(st.status, 'connected')
+  assert.equal(b.w.chainId, 31337)
+
+  // Page reload: new session, same storage. Silent reconnect to b, no popup, no picker.
+  const reloaded = createWalletSession({ deployment, storage, chain })
+  st = await reloaded.connectWallet({ wallets: [a.d, b.d], pick: () => assert.fail('picker should not open') })
+  assert.equal(st.wallet.rdns, 'wallet.b')
+  assert.equal(b.w.popups, 1)
+
+  // prefer wins over last-used.
+  const fresh = createWalletSession({ deployment, storage: memoryStorage(), chain })
+  st = await fresh.connectWallet({ wallets: [a.d, b.d], prefer: 'wallet.a' })
+  assert.equal(st.wallet.rdns, 'wallet.a')
+
+  // Exactly one wallet installed: no picker needed.
+  const single = createWalletSession({ deployment, storage: memoryStorage(), chain })
+  const c = mk('wallet.c', accounts[6])
+  st = await single.connectWallet({ wallets: [c.d] })
+  assert.equal(st.status, 'connected')
+  assert.equal(c.w.popups, 1)
 })

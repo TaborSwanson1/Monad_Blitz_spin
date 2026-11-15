@@ -1,5 +1,5 @@
 import { type Address, type Chain, type Hash } from 'viem';
-import type { DiscoveredWallet, WalletInfo } from './discovery';
+import { type DiscoveredWallet, type WalletInfo } from './discovery';
 /** The parts of backend/exports/<network>/deployment.json the SDK needs. */
 export interface CasinoDeployment {
     chainId: number;
@@ -64,6 +64,20 @@ export interface ClaimResult extends TxResult {
     won: boolean;
     payout: bigint;
 }
+export interface ConnectWalletOptions {
+    /** Wallets to choose from. Default: discover installed wallets now. */
+    wallets?: DiscoveredWallet[];
+    /** Preferred wallet by rdns (for example "io.metamask"), used if installed. */
+    prefer?: string;
+    /**
+     * Called when several wallets are installed and none is preferred or last-used.
+     * Show a picker and return the player's choice, or null to cancel.
+     * Without it, connectWallet throws CHOOSE_WALLET with e.wallets.
+     */
+    pick?: (wallets: DiscoveredWallet[]) => Promise<DiscoveredWallet | null> | DiscoveredWallet | null;
+    /** How long to wait for wallets to announce themselves. Default 400 ms. */
+    discoveryMs?: number;
+}
 export interface SessionOptions {
     deployment: CasinoDeployment;
     /** Where to remember the last wallet for reconnect(). Defaults to localStorage when available. */
@@ -87,7 +101,17 @@ export declare function createWalletSession(opts: SessionOptions): {
     getState: () => WalletState;
     /** Calls `listener` on every state change. Returns an unsubscribe function. */
     subscribe(listener: (s: WalletState) => void): () => void;
-    /** Asks the wallet for an account (opens its popup), then switches it to the casino's chain. */
+    /**
+     * THE ONE CALL: find the wallet, connect, and land on the casino's chain.
+     *   1. Already connected on the right chain: returns at once.
+     *   2. Silent reconnect to the last-used wallet if it still authorizes this site (no popup).
+     *   3. Otherwise picks a wallet (`prefer`, then last-used, then the only one installed,
+     *      then `pick()`), opens its popup, and switches or adds the network.
+     * Throws WalletError: NO_WALLET (none installed), CHOOSE_WALLET (several, no `pick`),
+     * USER_REJECTED, WRONG_NETWORK.
+     */
+    connectWallet(options?: ConnectWalletOptions): Promise<WalletState>;
+    /** Connects one specific wallet (opens its popup), then switches it to the casino's chain. */
     connect(w: DiscoveredWallet): Promise<WalletState>;
     /**
      * Silent reconnect on page load: if the last-used wallet is installed and

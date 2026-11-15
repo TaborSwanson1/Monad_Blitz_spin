@@ -15,7 +15,7 @@ import {
 } from 'viem'
 import { blockCasinoAbi, chipTokenAbi, randomnessSourceAbi } from '../../exports/abis'
 import { CHAINS } from './chains'
-import type { DiscoveredWallet, WalletInfo } from './discovery'
+import { discoverWallets, type DiscoveredWallet, type WalletInfo } from './discovery'
 import { WalletError, toWalletError } from './errors'
 
 // ------------------------------------------------------------------ types
@@ -90,6 +90,21 @@ export interface PlacedBet extends TxResult {
 export interface ClaimResult extends TxResult {
   won: boolean
   payout: bigint
+}
+
+export interface ConnectWalletOptions {
+  /** Wallets to choose from. Default: discover installed wallets now. */
+  wallets?: DiscoveredWallet[]
+  /** Preferred wallet by rdns (for example "io.metamask"), used if installed. */
+  prefer?: string
+  /**
+   * Called when several wallets are installed and none is preferred or last-used.
+   * Show a picker and return the player's choice, or null to cancel.
+   * Without it, connectWallet throws CHOOSE_WALLET with e.wallets.
+   */
+  pick?: (wallets: DiscoveredWallet[]) => Promise<DiscoveredWallet | null> | DiscoveredWallet | null
+  /** How long to wait for wallets to announce themselves. Default 400 ms. */
+  discoveryMs?: number
 }
 
 export interface SessionOptions {
@@ -221,7 +236,41 @@ export function createWalletSession(opts: SessionOptions) {
 
     // -------------------------------------------------------------- connection
 
-    /** Asks the wallet for an account (opens its popup), then switches it to the casino's chain. */
+    /**
+     * THE ONE CALL: find the wallet, connect, and land on the casino's chain.
+     *   1. Already connected on the right chain: returns at once.
+     *   2. Silent reconnect to the last-used wallet if it still authorizes this site (no popup).
+     *   3. Otherwise picks a wallet (`prefer`, then last-used, then the only one installed,
+     *      then `pick()`), opens its popup, and switches or adds the network.
+     * Throws WalletError: NO_WALLET (none installed), CHOOSE_WALLET (several, no `pick`),
+     * USER_REJECTED, WRONG_NETWORK.
+     */
+    async connectWallet(options: ConnectWalletOptions = {}): Promise<WalletState> {
+      if (state.status === 'connected') return state
+      if (state.status === 'wrong-network') {
+        await api.switchNetwork()
+        return state
+      }
+      const wallets = options.wallets ?? (await discoverWallets(options.discoveryMs ?? 400))
+      if (wallets.length === 0) {
+        throw new WalletError('NO_WALLET', { message: 'No wallet found. Install a browser wallet such as MetaMask, then reload.' })
+      }
+      if (await api.reconnect(wallets)) {
+        // reconnect() updated state; read it fresh (TypeScript still has the narrowed type).
+        if (api.getState().status === 'wrong-network') await api.switchNetwork()
+        return state
+      }
+      const byRdns = (rdns: string | null | undefined) => (rdns ? wallets.find((w) => w.info.rdns === rdns) : undefined)
+      let chosen = byRdns(options.prefer) ?? byRdns(storage?.getItem(STORAGE_KEY)) ?? (wallets.length === 1 ? wallets[0] : undefined)
+      if (!chosen) {
+        if (!options.pick) throw new WalletError('CHOOSE_WALLET', { wallets })
+        chosen = (await options.pick(wallets)) ?? undefined
+        if (!chosen) throw new WalletError('USER_REJECTED')
+      }
+      return api.connect(chosen)
+    },
+
+    /** Connects one specific wallet (opens its popup), then switches it to the casino's chain. */
     async connect(w: DiscoveredWallet): Promise<WalletState> {
       if (provider) detach('disconnected')
       set({ status: 'connecting', wallet: w.info })

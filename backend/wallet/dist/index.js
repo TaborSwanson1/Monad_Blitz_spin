@@ -1241,10 +1241,55 @@ var localAnvil = defineChain({
 var CHAINS = { [monadTestnet.id]: monadTestnet, [localAnvil.id]: localAnvil };
 var MON_FAUCET_URL = "https://faucet.monad.xyz";
 
+// wallet/src/discovery.ts
+var defaultTarget = () => typeof window === "undefined" ? void 0 : window;
+function watchWallets(onChange, target = defaultTarget()) {
+  if (!target) {
+    onChange([]);
+    return () => {
+    };
+  }
+  const found = /* @__PURE__ */ new Map();
+  const emit = () => onChange([...found.values()]);
+  const onAnnounce = (event) => {
+    const detail = event.detail;
+    if (!detail?.info?.rdns || !detail.provider) return;
+    found.set(detail.info.rdns, { info: detail.info, provider: detail.provider });
+    emit();
+  };
+  target.addEventListener("eip6963:announceProvider", onAnnounce);
+  target.dispatchEvent(new Event("eip6963:requestProvider"));
+  const legacy = setTimeout(() => {
+    if (found.size === 0 && target.ethereum) {
+      found.set("injected", {
+        info: { uuid: "injected", name: "Browser wallet", icon: "", rdns: "injected" },
+        provider: target.ethereum
+      });
+      emit();
+    }
+  }, 300);
+  emit();
+  return () => {
+    clearTimeout(legacy);
+    target.removeEventListener("eip6963:announceProvider", onAnnounce);
+  };
+}
+function discoverWallets(ms = 400, target = defaultTarget()) {
+  return new Promise((resolve) => {
+    let latest = [];
+    const stop = watchWallets((w) => latest = w, target);
+    setTimeout(() => {
+      stop();
+      resolve(latest);
+    }, ms);
+  });
+}
+
 // wallet/src/errors.ts
 import { BaseError, ContractFunctionRevertedError, InsufficientFundsError, UserRejectedRequestError } from "viem";
 var MESSAGES = {
   NO_WALLET: "Connect a wallet first.",
+  CHOOSE_WALLET: "Choose a wallet to connect.",
   USER_REJECTED: "Request cancelled in your wallet.",
   WRONG_NETWORK: "Switch your wallet to Monad Testnet to play.",
   INSUFFICIENT_GAS: "Not enough MON for gas. Get testnet MON from the faucet.",
@@ -1283,6 +1328,8 @@ var WalletError = class extends Error {
   /** Contract error arguments, for example [availableAt] for FaucetCooldown. */
   args;
   cause;
+  /** CHOOSE_WALLET only: the installed wallets, to show in a picker. */
+  wallets;
   constructor(code, opts = {}) {
     super(opts.message ?? MESSAGES[code]);
     this.name = "WalletError";
@@ -1290,6 +1337,7 @@ var WalletError = class extends Error {
     this.revert = opts.revert;
     this.args = opts.args;
     this.cause = opts.cause;
+    this.wallets = opts.wallets;
   }
 };
 function toWalletError(e) {
@@ -1402,7 +1450,39 @@ function createWalletSession(opts) {
       return () => listeners.delete(listener);
     },
     // -------------------------------------------------------------- connection
-    /** Asks the wallet for an account (opens its popup), then switches it to the casino's chain. */
+    /**
+     * THE ONE CALL: find the wallet, connect, and land on the casino's chain.
+     *   1. Already connected on the right chain: returns at once.
+     *   2. Silent reconnect to the last-used wallet if it still authorizes this site (no popup).
+     *   3. Otherwise picks a wallet (`prefer`, then last-used, then the only one installed,
+     *      then `pick()`), opens its popup, and switches or adds the network.
+     * Throws WalletError: NO_WALLET (none installed), CHOOSE_WALLET (several, no `pick`),
+     * USER_REJECTED, WRONG_NETWORK.
+     */
+    async connectWallet(options = {}) {
+      if (state.status === "connected") return state;
+      if (state.status === "wrong-network") {
+        await api.switchNetwork();
+        return state;
+      }
+      const wallets = options.wallets ?? await discoverWallets(options.discoveryMs ?? 400);
+      if (wallets.length === 0) {
+        throw new WalletError("NO_WALLET", { message: "No wallet found. Install a browser wallet such as MetaMask, then reload." });
+      }
+      if (await api.reconnect(wallets)) {
+        if (api.getState().status === "wrong-network") await api.switchNetwork();
+        return state;
+      }
+      const byRdns = (rdns) => rdns ? wallets.find((w) => w.info.rdns === rdns) : void 0;
+      let chosen = byRdns(options.prefer) ?? byRdns(storage?.getItem(STORAGE_KEY)) ?? (wallets.length === 1 ? wallets[0] : void 0);
+      if (!chosen) {
+        if (!options.pick) throw new WalletError("CHOOSE_WALLET", { wallets });
+        chosen = await options.pick(wallets) ?? void 0;
+        if (!chosen) throw new WalletError("USER_REJECTED");
+      }
+      return api.connect(chosen);
+    },
+    /** Connects one specific wallet (opens its popup), then switches it to the casino's chain. */
     async connect(w) {
       if (provider) detach("disconnected");
       set({ status: "connecting", wallet: w.info });
@@ -1568,50 +1648,6 @@ function createWalletSession(opts) {
     }
   };
   return api;
-}
-
-// wallet/src/discovery.ts
-var defaultTarget = () => typeof window === "undefined" ? void 0 : window;
-function watchWallets(onChange, target = defaultTarget()) {
-  if (!target) {
-    onChange([]);
-    return () => {
-    };
-  }
-  const found = /* @__PURE__ */ new Map();
-  const emit = () => onChange([...found.values()]);
-  const onAnnounce = (event) => {
-    const detail = event.detail;
-    if (!detail?.info?.rdns || !detail.provider) return;
-    found.set(detail.info.rdns, { info: detail.info, provider: detail.provider });
-    emit();
-  };
-  target.addEventListener("eip6963:announceProvider", onAnnounce);
-  target.dispatchEvent(new Event("eip6963:requestProvider"));
-  const legacy = setTimeout(() => {
-    if (found.size === 0 && target.ethereum) {
-      found.set("injected", {
-        info: { uuid: "injected", name: "Browser wallet", icon: "", rdns: "injected" },
-        provider: target.ethereum
-      });
-      emit();
-    }
-  }, 300);
-  emit();
-  return () => {
-    clearTimeout(legacy);
-    target.removeEventListener("eip6963:announceProvider", onAnnounce);
-  };
-}
-function discoverWallets(ms = 400, target = defaultTarget()) {
-  return new Promise((resolve) => {
-    let latest = [];
-    const stop = watchWallets((w) => latest = w, target);
-    setTimeout(() => {
-      stop();
-      resolve(latest);
-    }, ms);
-  });
 }
 export {
   CHAINS,

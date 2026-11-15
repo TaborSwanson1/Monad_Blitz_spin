@@ -16,6 +16,7 @@ export type {
   TxResult,
   PlacedBet,
   ClaimResult,
+  ConnectWalletOptions,
 } from './session'
 export { discoverWallets, watchWallets } from './discovery'
 export type { DiscoveredWallet, WalletInfo } from './discovery'

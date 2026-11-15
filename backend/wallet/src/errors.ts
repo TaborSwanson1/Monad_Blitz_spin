@@ -1,7 +1,9 @@
+import type { DiscoveredWallet } from './discovery'
 import { BaseError, ContractFunctionRevertedError, InsufficientFundsError, UserRejectedRequestError } from 'viem'
 
 export type WalletErrorCode =
   | 'NO_WALLET' // nothing installed, or not connected yet
+  | 'CHOOSE_WALLET' // connectWallet() found several wallets; e.wallets has them for a picker
   | 'USER_REJECTED' // the player said no in their wallet
   | 'WRONG_NETWORK' // wallet is on another chain and refused to switch
   | 'INSUFFICIENT_GAS' // not enough MON for gas or the VRF fee
@@ -18,6 +20,7 @@ export type WalletErrorCode =
 
 const MESSAGES: Record<WalletErrorCode, string> = {
   NO_WALLET: 'Connect a wallet first.',
+  CHOOSE_WALLET: 'Choose a wallet to connect.',
   USER_REJECTED: 'Request cancelled in your wallet.',
   WRONG_NETWORK: 'Switch your wallet to Monad Testnet to play.',
   INSUFFICIENT_GAS: 'Not enough MON for gas. Get testnet MON from the faucet.',
@@ -60,14 +63,20 @@ export class WalletError extends Error {
   /** Contract error arguments, for example [availableAt] for FaucetCooldown. */
   readonly args?: readonly unknown[]
   readonly cause?: unknown
+  /** CHOOSE_WALLET only: the installed wallets, to show in a picker. */
+  readonly wallets?: readonly DiscoveredWallet[]
 
-  constructor(code: WalletErrorCode, opts: { message?: string; revert?: string; args?: readonly unknown[]; cause?: unknown } = {}) {
+  constructor(
+    code: WalletErrorCode,
+    opts: { message?: string; revert?: string; args?: readonly unknown[]; cause?: unknown; wallets?: readonly DiscoveredWallet[] } = {},
+  ) {
     super(opts.message ?? MESSAGES[code])
     this.name = 'WalletError'
     this.code = code
     this.revert = opts.revert
     this.args = opts.args
     this.cause = opts.cause
+    this.wallets = opts.wallets
   }
 }
 

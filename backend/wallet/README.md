@@ -49,7 +49,37 @@ The values come from `backend/exports/<network>/frontend.env`:
 - **Local, available now:** `cd backend && FUND=0xYourAddress npm run dev`, then `cp backend/exports/local/frontend.env frontend/.env`. MetaMask needs network `http://127.0.0.1:8545`, chain `31337`. `FUND` gives your address local MON for gas.
 - **Testnet, after the first deploy:** `backend/exports/monad-testnet/frontend.env` will be committed.
 
-## Connect flow
+## Connect in one call
+
+```ts
+try {
+  const { address } = await session.connectWallet()
+} catch (e) {
+  if (e.code === 'CHOOSE_WALLET') showPicker(e.wallets)  // several wallets installed
+  else showToast(e.message)                               // e.g. "No wallet found. Install…"
+}
+```
+
+`connectWallet()` does the whole flow:
+
+1. **Already connected on the right chain?** Returns at once.
+2. **Connected before?** Reconnects silently to the last-used wallet. No popup.
+3. **Otherwise** it picks a wallet: `prefer`, then the last-used one, then the only one installed. If there are several, it calls your `pick()`, or throws `CHOOSE_WALLET` with `e.wallets`. Then it opens the wallet's popup and switches or adds Monad Testnet.
+
+Options, all optional:
+
+```ts
+await session.connectWallet({
+  prefer: 'io.metamask',                         // use this wallet if installed
+  pick: async (wallets) => await openPicker(wallets),  // your picker; return null to cancel
+  wallets,                                        // skip discovery if you already have the list
+  discoveryMs: 400,                               // how long to wait for wallets to announce
+})
+```
+
+The same call works on page load (silent reconnect) and on a "Connect wallet" button click. Use the step-by-step flow below only if you want full control.
+
+## Connect flow, step by step
 
 ```ts
 import { watchWallets, type DiscoveredWallet } from '@block-casino/wallet'
@@ -121,7 +151,8 @@ Everything throws `WalletError`. `e.message` can be shown to players as is, and 
 
 | `code` | When |
 |---|---|
-| `NO_WALLET` | Not connected |
+| `NO_WALLET` | Not connected, or (from `connectWallet`) no wallet installed |
+| `CHOOSE_WALLET` | `connectWallet()` found several wallets and has no `pick`. `e.wallets` lists them for a picker. |
 | `USER_REJECTED` | The player said no in their wallet. Usually show nothing, or a quiet note. |
 | `WRONG_NETWORK` | The wallet is on another chain. Offer `switchNetwork()`. |
 | `INSUFFICIENT_GAS` | Not enough MON. Link `MON_FAUCET_URL`. |
