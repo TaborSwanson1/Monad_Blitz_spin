@@ -1,14 +1,22 @@
 // Beauty Contest. PROPOSED, sim mode only. See frontend/GAMES.md (Beauty Contest).
 //
 // Everyone pays the same entry and picks a whole number from 0 to 100.
-// Target = 2/3 of the average guess. Closest guess wins the pot minus a 2% fee.
-// Ties split it. The target can't go above 66.67, so guesses above 67 never win.
+// Target = 2/3 of the average guess. The closest guess wins; ties split the prize.
+// The target can't go above 66.67, so guesses above 67 never win.
+//
+// PAYOUT (changed 2026-11-15, was "the pot minus 2%"): against the sim bots the bot entries were minted,
+// so a player who learned where the bots guess won about 3.4x per entry. Now a win pays
+// entry x BEAUTY_PAYOUT_BPS[guess] / 10,000, shared between tied winners, and that multiplier is
+// 98% divided by the guess's real win share against the bot crowd (lib/beautyOdds.ts, made by
+// sandbox/beauty-odds.mjs). So every guess returns about 98%, like Crash's targets, and a guess the
+// bots rarely agree with pays more. Guesses 0-2 and 40+ hit the 200x cap and return less than 98%.
 //
 // In sim mode the other players are bots. Their guesses come from the round seed,
 // which only exists after betting locks, so nobody can see them early. On-chain,
 // real players would commit a hash of (guess, salt), then reveal after commits close.
 
 import { encodeAbiParameters, keccak256, type Hex } from 'viem'
+import { BEAUTY_PAYOUT_BPS } from './beautyOdds'
 
 /** 10 CHIP (18 decimals). Same for every player, so the pot is fair. */
 export const BEAUTY_ENTRY = 10n * 10n ** 18n
@@ -66,9 +74,11 @@ export function resolveBeauty(gameSeed: Hex, yourGuess: number): BeautyResult {
   return { guesses, average: sum / n, target: (2 * sum) / (3 * n), winners, youWon: winners.includes(0) }
 }
 
-/** Pot = entry x players. Winners split it after the fee, rounded down. */
+/** What a win pays per 1 staked for this guess (before splitting with ties). Shown before you enter. */
+export const beautyMultiplier = (guess: number) => BEAUTY_PAYOUT_BPS[guess] / 10_000
+
+/** A win pays entry x the guess's multiplier, split between tied winners, rounded down. */
 export function beautyPayout(entry: bigint, r: BeautyResult): bigint {
   if (!r.youWon) return 0n
-  const pot = entry * BigInt(r.guesses.length)
-  return (pot * BigInt(10_000 - BEAUTY_FEE_BPS)) / 10_000n / BigInt(r.winners.length)
+  return (entry * BigInt(BEAUTY_PAYOUT_BPS[r.guesses[0]])) / 10_000n / BigInt(r.winners.length)
 }

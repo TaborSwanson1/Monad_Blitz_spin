@@ -40,7 +40,7 @@ function tileFor(g: GameDef, onPlay: (id: number) => void): Tile {
     const hi = CRASH_TARGETS_X100[CRASH_TARGETS_X100.length - 1]
     return { ...base, category: 'house', odds: `Cash-out targets ${fmtX(lo)} to ${fmtX(hi)}`, rtp: '98% RTP' }
   }
-  if (g.kind === 'beauty') return { ...base, category: 'players', odds: 'Closest to ⅔ of the average wins the pot', rtp: '2% pot fee' }
+  if (g.kind === 'beauty') return { ...base, category: 'players', odds: 'Closest to ⅔ of the average wins', rtp: '98% RTP' }
   const chance = Math.round(100 / g.outcomes)
   const mult = (g.payoutBps / 10_000).toFixed(2)
   return { ...base, category: 'house', odds: `${chance}% win chance · pays ${mult}×`, rtp: '98% RTP' }

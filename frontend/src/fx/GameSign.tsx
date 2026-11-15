@@ -14,7 +14,7 @@ function oddsLine(g: GameDef): string {
     const t = CRASH_TARGETS_X100
     return `Pick a target, ${fmtX(t[0])} to ${fmtX(t[t.length - 1])} · ${edge} house edge at every target`
   }
-  if (g.kind === 'beauty') return `Closest to two-thirds of the average takes the pot · ${edge} fee`
+  if (g.kind === 'beauty') return `Closest to two-thirds of the average wins · ${edge} house edge at every number`
   return `Pays ${multiplierFor(g, 0)}× · wins 1 time in ${g.outcomes} · ${edge} house edge`
 }
 

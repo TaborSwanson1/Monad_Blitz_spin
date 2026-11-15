@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { BEAUTY_ENTRY, BEAUTY_FEE_BPS, BEAUTY_MAX_BOTS, BEAUTY_MIN_BOTS } from '../lib/beauty'
+import { BEAUTY_ENTRY, BEAUTY_MAX_BOTS, BEAUTY_MIN_BOTS, beautyMultiplier } from '../lib/beauty'
+import { BEAUTY_PAYOUT_BPS } from '../lib/beautyOdds'
 import { CRASH_DEFAULT_CHOICE, CRASH_MANUAL, CRASH_TARGETS_X100 } from '../lib/crash'
 import { GAMES, HOUSE_EDGE_BPS, LANE_COLORS, chanceFor, multiplierFor, payoutBpsFor } from '../lib/games'
 import { fmtChips, toChips } from '../lib/format'
@@ -70,8 +71,8 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
             </dd>
           </div>
           <div>
-            <dt>Fee</dt>
-            <dd>{BEAUTY_FEE_BPS / 100}% of pot</dd>
+            <dt>Win pays</dt>
+            <dd>{choice === null ? 'Pick a number' : `${beautyMultiplier(choice).toFixed(2)}×`}</dd>
           </div>
         </dl>
       ) : isCrash && choice === CRASH_MANUAL ? (
@@ -195,9 +196,20 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
       <p className="summary">
         {isBeauty ? (
           <>
-            Entry <strong>{fmtChips(BEAUTY_ENTRY)}</strong>. The pot is {fmtChips(BEAUTY_ENTRY)} × the number of players.
-            The closest guess wins the pot minus {BEAUTY_FEE_BPS / 100}%, and ties split it. If you don't win, you lose{' '}
-            {fmtChips(BEAUTY_ENTRY)}. One entry per round.
+            Entry <strong>{fmtChips(BEAUTY_ENTRY)}</strong>. The closest guess to ⅔ of the average wins.{' '}
+            {choice === null ? (
+              <>Each number pays a different amount, set so that every number returns 98% on average against the bots.</>
+            ) : BEAUTY_PAYOUT_BPS[choice] >= 2_000_000 ? (
+              <>
+                This number almost never wins against the bots, so its payout is capped at 200× and it returns less than 98%.
+              </>
+            ) : (
+              <>
+                If you win you get <strong>{fmtChips((BEAUTY_ENTRY * BigInt(BEAUTY_PAYOUT_BPS[choice])) / 10_000n)}</strong> back, split with anyone tied. That
+                pays {beautyMultiplier(choice).toFixed(2)}× and returns 98% on average.
+              </>
+            )}{' '}
+            If you don't win, you lose {fmtChips(BEAUTY_ENTRY)}. One entry per round.
           </>
         ) : inRange ? (
           <>
