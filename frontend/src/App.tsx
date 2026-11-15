@@ -19,6 +19,9 @@ import { Lobby } from './components/lobby/Lobby'
 import { SettingsDialog } from './components/lobby/SettingsDialog'
 import { useWallet } from './hooks/useWallet'
 import { hasContracts } from './wallet/session'
+import type { Tile } from './components/lobby/Lobby'
+import { SlotScreen } from './components/slot/SlotScreen'
+import { toChips } from './lib/format'
 
 export default function App() {
   const [client, clientError] = useMemo(() => {
@@ -42,7 +45,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
   const { settings: theme, update: updateTheme, applyPreset } = useTheme()
   const [themeOpen, setThemeOpen] = useState(false)
   // Lobby first, like casino sites. Owner of the lobby, top bar, wallet and settings: Zander.
-  const [view, setView] = useState<'lobby' | 'game'>('lobby')
+  const [view, setView] = useState<'lobby' | 'game' | 'slot'>('lobby')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const wallet = useWallet()
 
@@ -51,6 +54,31 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     setView('game')
     window.scrollTo(0, 0)
   }, [])
+
+  // Slot demo (sim only, demo chips): not a round-based casino game, so it's an extra lobby tile.
+  const extraTiles = useMemo<Tile[]>(
+    () => [
+      {
+        key: 'slot',
+        name: 'Diamond Cascade',
+        art: 'slot',
+        category: 'house',
+        odds: 'About 1 spin in 7 wins · jackpot 1,000×',
+        rtp: '98% RTP',
+        tag: 'demo',
+        describe:
+          'Cascading reels, free spins and a 1,000× jackpot, with demo chips. Shows near-miss slot design, with a switch to the honest view of the same spins.',
+        play: () => {
+          setView('slot')
+          window.scrollTo(0, 0)
+        },
+      },
+    ],
+    [],
+  )
+  const { recordBet } = session
+  const onSlotStake = useCallback((n: number) => recordBet(toChips(String(n))), [recordBet])
+  const onSlotPaid = useCallback((n: number) => recordRound(toChips(String(n))), [recordRound])
 
   // When a wallet connects through the wallet SDK, start the casino session too: in sim mode
   // that's the sim account, in chain mode chain.ts connects to the same wallet (no extra popup
@@ -85,7 +113,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         mode={client.mode}
         label={client.label}
         head={head}
-        view={view}
+        view={view === 'lobby' ? 'lobby' : 'game'}
         onHome={() => setView('lobby')}
         account={casino.account}
         balance={casino.balance}
@@ -97,7 +125,9 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         wallet={wallet}
       />
       {view === 'lobby' ? (
-        <Lobby mode={client.mode} onPlay={openGame} onLimits={() => setEditingLimits(true)} />
+        <Lobby mode={client.mode} onPlay={openGame} extra={extraTiles} onLimits={() => setEditingLimits(true)} />
+      ) : view === 'slot' ? (
+        <SlotScreen blockedReason={session.blockedReason} onStake={onSlotStake} onPaid={onSlotPaid} />
       ) : (
       <div className="shell">
         <Sidebar mode={client.mode} gameId={gameId} onPick={setGameId} onEditLimits={() => setEditingLimits(true)}
