@@ -38,6 +38,8 @@ export interface CasinoClient {
   connect(): Promise<Address>
   balance(): Promise<bigint>
   faucet(): Promise<void>
+  /** Sim only: move the balance by `delta` chips, for games that run outside the round model (the slot). */
+  adjustBalance?(delta: bigint): Promise<void>
   placeBet(gameId: number, choice: number, amount: bigint): Promise<PlacedBet>
   roundState(roundId: bigint): Promise<RoundState>
   requestSettlement(roundId: bigint): Promise<void>

@@ -108,6 +108,9 @@ export function createSimClient(): CasinoClient {
     async faucet() {
       balance += toChips('1000')
     },
+    async adjustBalance(delta) {
+      balance += delta
+    },
     async placeBet(gameId, choice, amount): Promise<PlacedBet> {
       const roundId = roundIdAt(head, cfg)
       if (head >= lockBlock(roundId, cfg)) throw new Error('Betting is closed for this round')

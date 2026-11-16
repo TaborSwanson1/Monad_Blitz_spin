@@ -67,7 +67,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     window.scrollTo(0, 0)
   }, [])
 
-  // Slot demo (sim only, demo chips): not a round-based casino game, so it's an extra lobby tile.
+  // Slot demo (sim only, plays on the account's chips): not a round-based casino game, so it's an extra lobby tile.
   const extraTiles = useMemo<Tile[]>(
     () => [
       {
@@ -79,7 +79,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         rtp: '98% RTP',
         tag: 'demo',
         describe:
-          'Cascading reels, free spins, a buy-feature button and a 1,000× jackpot, with demo chips. Shows near-miss slot design, with a switch to the honest view of the same spins.',
+          'Cascading reels, free spins, a buy-feature button and a 1,000× jackpot, played with your chips. Shows near-miss slot design, with a switch to the honest view of the same spins.',
         play: () => {
           setView('slot')
           window.scrollTo(0, 0)
@@ -89,8 +89,22 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     [],
   )
   const { recordBet } = session
-  const onSlotStake = useCallback((n: number) => recordBet(toChips(String(n))), [recordBet])
-  const onSlotPaid = useCallback((n: number) => recordRound(toChips(String(n))), [recordRound])
+  // The slot plays on the account's own chips: stakes come off the balance and wins go back on it.
+  const { adjustBalance } = casino
+  const onSlotStake = useCallback(
+    (n: number) => {
+      adjustBalance(-toChips(String(n)))
+      recordBet(toChips(String(n)))
+    },
+    [adjustBalance, recordBet],
+  )
+  const onSlotPaid = useCallback(
+    (n: number) => {
+      adjustBalance(toChips(String(n)))
+      recordRound(toChips(String(n)))
+    },
+    [adjustBalance, recordRound],
+  )
 
   // When a wallet connects through the wallet SDK, start the casino session too: in sim mode
   // that's the sim account, in chain mode chain.ts connects to the same wallet (no extra popup
@@ -195,7 +209,14 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
                 {session.blockedReason} Betting is paused. You can change limits, but consider taking a break.
               </div>
             )}
-            <SlotScreen blockedReason={session.blockedReason} onStake={onSlotStake} onPaid={onSlotPaid} />
+            <SlotScreen
+              blockedReason={session.blockedReason}
+              balance={Math.floor(Number(casino.balance / 10n ** 15n) / 1000)}
+              signedIn={!!casino.account}
+              onGetChips={casino.faucet}
+              onStake={onSlotStake}
+              onPaid={onSlotPaid}
+            />
           </main>
         </div>
       ) : (

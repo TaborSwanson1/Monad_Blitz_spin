@@ -121,13 +121,16 @@ const restReels = (): Reel[] => [0, 1, 2].map((x) => ({ key: x, dur: 0, cells: [
 interface Props {
   /** Session limit reason from useSession; spins are blocked while it's set. */
   blockedReason: string | null
+  /** The account's chips (whole chips). The slot plays on these, not on a separate balance. */
+  balance: number
+  signedIn: boolean
+  onGetChips: () => void
   onStake: (chips: number) => void
   onPaid: (chips: number) => void
 }
 
-export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
+export function SlotScreen({ blockedReason, balance, signedIn, onGetChips, onStake, onPaid }: Props) {
   const [mode, setMode] = useState<Mode>('nearmiss')
-  const [balance, setBalance] = useState(START)
   const [stake, setStake] = useState(10)
   const [staked, setStaked] = useState(0)
   const [paid, setPaid] = useState(0)
@@ -295,7 +298,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     if (busy || blockedReason || balance < cost) return
     const bet = stake
     const nm = mode === 'nearmiss'
-    const ratioAfter = (balance - cost) / START
+    const ratioAfter = Math.min(1, (balance - cost) / START)
     setBusy(true)
     setInfoOpen(false)
     setBuyOpen(false)
@@ -306,7 +309,6 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     setFx(null)
     setWin(0)
     if (cost > 0) {
-      setBalance((b) => b - cost)
       setStaked((s) => s + cost)
       onStake(cost)
     }
@@ -371,7 +373,6 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
     if (payout !== won) console.warn('slot: shown wins differ from the result', { payout, won })
     owed.current = 0
     if (which !== 'demo') {
-      setBalance((b) => b + payout)
       setPaid((p) => p + payout)
       onPaid(payout)
     }
@@ -597,7 +598,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
                     </div>
                   </dl>
                   <p className="sl-buy-note">
-                    Any single feature can pay far less or far more than its price. Demo chips have no value. Celebrations only play once the winnings pass the
+                    Any single feature can pay far less or far more than its price. Chips have no value. Celebrations only play once the winnings pass the
                     price.
                   </p>
                   <div className="sl-buy-actions">
@@ -690,7 +691,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
               </button>
             </div>
             <div className="sl-field">
-              <span>Demo chips</span>
+              <span>Chips</span>
               <strong>
                 <Rolling value={balance} ms={reduced ? 0 : 600} />
               </strong>
@@ -719,7 +720,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
               </strong>
             </div>
           </div>
-          <button ref={spinBtn} className={`sl-spin ${busy ? 'is-busy' : ''}`} onClick={() => spin('spin')} disabled={!canSpin} aria-label={`Spin for ${stake} demo chips`}>
+          <button ref={spinBtn} className={`sl-spin ${busy ? 'is-busy' : ''}`} onClick={() => spin('spin')} disabled={!canSpin} aria-label={`Spin for ${stake} chips`}>
             <svg viewBox="0 0 48 48" aria-hidden focusable="false">
               <path d="M38 24a14 14 0 0 1-24.6 9.2" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
               <path d="M10 24a14 14 0 0 1 24.6-9.2" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
@@ -735,9 +736,9 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
               <p className="limit-banner">{blockedReason} Spins are paused.</p>
             ) : (
               <>
-                <span>Not enough demo chips for a {stake} chip spin.</span>
-                <button className="btn" onClick={() => setBalance((b) => b + START)}>
-                  Refill {fmt(START)} free demo chips
+                <span>{signedIn ? `Not enough chips for a ${stake} chip spin.` : 'Start playing to get free chips.'}</span>
+                <button className="btn" onClick={onGetChips}>
+                  {signedIn ? 'Get 1,000 free chips' : 'Start playing'}
                 </button>
               </>
             )}
@@ -750,7 +751,7 @@ export function SlotScreen({ blockedReason, onStake, onPaid }: Props) {
       <p className="sl-odds">
         About 1 spin in 7 wins. Free spins come about 1 spin in 120, the jackpot about 1 in 28,000. Long-run return{' '}
         <strong>{(EXACT_RTP * 100).toFixed(2)}%</strong>, a {((1 - EXACT_RTP) * 100).toFixed(2)}% house edge (bought features: {(BUY_RTP * 100).toFixed(2)}%).
-        Every spin is independent, and demo chips have no value. Net on this machine:{' '}
+        Every spin is independent, and chips have no value. Net on this machine:{' '}
         <strong className={net > 0 ? 'pos' : net < 0 ? 'neg' : ''}>{net > 0 ? `+${fmt(net)}` : net < 0 ? `−${fmt(-net)}` : '±0'}</strong>.
       </p>
     </div>

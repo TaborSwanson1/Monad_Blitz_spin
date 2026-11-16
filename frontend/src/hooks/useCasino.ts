@@ -206,6 +206,16 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
       refreshBalance()
     })
 
+  /** Slot spins and wins go straight onto the account's chips (sim mode). */
+  const adjustBalance = useCallback(
+    (delta: bigint) => {
+      if (!client.adjustBalance) return
+      setBalance((b) => b + delta)
+      void client.adjustBalance(delta)
+    },
+    [client],
+  )
+
   const faucet = () =>
     run('Claiming chips', async () => {
       await client.faucet()
@@ -256,6 +266,7 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
     clearError,
     connect,
     faucet,
+    adjustBalance,
     placeBet,
     settle,
   }
