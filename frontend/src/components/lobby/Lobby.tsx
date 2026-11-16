@@ -35,8 +35,8 @@ const ART_FOR: Record<string, ArtId> = {
   'Beauty Contest': 'beauty',
 }
 
-function tileFor(g: GameDef, onPlay: (id: number) => void): Tile {
-  const base = { key: `game-${g.id}`, name: g.name, art: ART_FOR[g.name] ?? 'digit', describe: g.describe, tag: g.simOnly ? 'sim' : undefined, play: () => onPlay(g.id) }
+function tileFor(g: GameDef, onPlay: (id: number) => void, mode: 'sim' | 'chain'): Tile {
+  const base = { key: `game-${g.id}`, name: g.name, art: ART_FOR[g.name] ?? 'digit', describe: g.describe, tag: g.simOnly && mode === 'sim' ? 'sim' : undefined, play: () => onPlay(g.id) }
   if (g.kind === 'crash') {
     const lo = CRASH_TARGETS_X100[0]
     const hi = CRASH_TARGETS_X100[CRASH_TARGETS_X100.length - 1]
@@ -63,15 +63,20 @@ interface Props {
   /** Extra playable tiles that aren't round-based casino games (for example the slot demo). */
   extra?: Tile[]
   onLimits: () => void
+  /** Chain mode: how many games the contract has (gameCount). */
+  chainGameCount?: number
 }
 
-export function Lobby({ mode, onPlay, extra = [], onLimits }: Props) {
+export function Lobby({ mode, onPlay, extra = [], onLimits, chainGameCount }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
   const [favs, setFavs] = useState(readFavs)
   const [info, setInfo] = useState<string | null>(null)
 
-  const tiles = useMemo<Tile[]>(() => [...gamesFor(mode).map((g) => tileFor(g, onPlay)), ...extra], [mode, onPlay, extra])
+  const tiles = useMemo<Tile[]>(
+    () => [...gamesFor(mode, chainGameCount).map((g) => tileFor(g, onPlay, mode)), ...extra],
+    [mode, onPlay, extra, chainGameCount],
+  )
 
   const toggleFav = (key: string) => {
     setFavs((prev) => {

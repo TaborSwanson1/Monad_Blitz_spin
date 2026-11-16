@@ -6,6 +6,10 @@ export interface RoundConfig {
   bettingWindow: bigint
   minBet: bigint
   maxBet: bigint
+  /** How many games the contract has. Chain mode shows Crash (3) and Beauty Contest (4) only when it has them. */
+  gameCount?: number
+  /** On-chain Crash: blocks of climb after lock (lib/crashChain.ts). Unset = no on-chain Crash, or sim mode. */
+  crashClimbBlocks?: number
 }
 
 export const roundIdAt = (block: bigint, c: RoundConfig) =>

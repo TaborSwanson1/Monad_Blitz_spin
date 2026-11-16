@@ -45,4 +45,9 @@ export interface CasinoClient {
   requestSettlement(roundId: bigint): Promise<void>
   /** Called only for winning bets. */
   claim(bet: PlacedBet, payout: bigint): Promise<void>
+  /**
+   * On-chain Crash only: cash out one bet during the climb. Resolves to k, the number of blocks
+   * after lock where the transaction landed (lib/crashChain.ts). The sim runs Crash live instead.
+   */
+  cashOut?(bet: PlacedBet): Promise<number>
 }

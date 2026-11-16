@@ -18,11 +18,13 @@ interface Props {
   onEditLimits: () => void
   /** The slot demo is a separate screen, so it gets its own entry (Zander's addition). */
   slot?: { active: boolean; onPick: () => void }
+  /** Chain mode: how many games the contract has (gameCount). */
+  chainGameCount?: number
 }
 
 /** Left pane: pick a game and get to session controls. On phones it becomes a row of pills. */
-export function Sidebar({ mode, gameId, onPick, onEditLimits, slot }: Props) {
-  const games = gamesFor(mode)
+export function Sidebar({ mode, gameId, onPick, onEditLimits, slot, chainGameCount }: Props) {
+  const games = gamesFor(mode, chainGameCount)
   const house = games.filter((g) => g.kind !== 'beauty')
   const pvp = games.filter((g) => g.kind === 'beauty')
 
@@ -35,7 +37,7 @@ export function Sidebar({ mode, gameId, onPick, onEditLimits, slot }: Props) {
     >
       {GAME_ICONS[g.name] ?? <IconSliders />}
       <span>{g.name}</span>
-      {g.simOnly && <span className="nav-tag">sim</span>}
+      {g.simOnly && mode === 'sim' && <span className="nav-tag">sim</span>}
     </button>
   )
 

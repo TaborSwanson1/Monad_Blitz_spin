@@ -147,7 +147,10 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
 
   const headline = climbDone && loud ? resultLine(theme.id, record.net, record.seed) : null
 
-  const crashTargets = [...new Set(crashBets.map((b) => CRASH_TARGETS_X100[b.choice]))]
+  // Lines on the replay: each bet's actual cash-out (click, auto target or end of window).
+  const crashTargets = [
+    ...new Set(crashBets.map((b) => b.cashoutX100 ?? CRASH_TARGETS_X100[b.choice]).filter((t) => Number.isFinite(t))),
+  ]
 
   return (
     <div

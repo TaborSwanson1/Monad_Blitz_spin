@@ -17,6 +17,8 @@ interface Props {
   maxBet: bigint
   myBets: PlacedBet[]
   onPlace: (gameId: number, choice: number, amount: bigint) => void
+  /** On-chain: Crash uses the blind block window and Beauty is on the contract. */
+  chain?: boolean
 }
 
 const QUICK = ['5', '10', '25', '50', '100']
@@ -24,7 +26,7 @@ const QUICK = ['5', '10', '25', '50', '100']
 const pct = (p: number) => `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`
 
 /** Render with key={gameId} so the pick resets when the game changes. */
-export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet, myBets, onPlace }: Props) {
+export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet, myBets, onPlace, chain = false }: Props) {
   const [choice, setChoice] = useState<number | null>(GAMES[gameId].kind === 'crash' ? CRASH_DEFAULT_CHOICE : null)
   const [amount, setAmount] = useState('10')
   const g = GAMES[gameId]
@@ -54,7 +56,7 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
       <div className="card-body">
       <h2 className="game-name">
         {g.name}
-        {g.simOnly && <span className="sim-only">Sim only</span>}
+        {g.simOnly && !chain && <span className="sim-only">Sim only</span>}
       </h2>
       <p className="muted">{g.describe}</p>
 
@@ -122,8 +124,8 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
             />
           </label>
           <p className="note">
-            Target = ⅔ of the average guess, so it can't go above 66.7. Your guess is sealed until betting closes. In sim
-            mode the other players are bots, and their guesses come from the round's random seed.
+            Target = ⅔ of the average guess, so it can't go above 66.7. The other players are bots. Their guesses come
+            from the round's random seed, which nobody has until betting closes.
           </p>
         </div>
       ) : isCrash ? (
@@ -147,9 +149,22 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
             ))}
           </div>
           <p className="note">
-            After betting locks, the multiplier climbs live. Hit Cash Out any time before it crashes. The crash point is
-            drawn as it climbs, so nobody can know it ahead. An auto target cashes you out there if you haven't already.
-            Every cash-out point has the same 2% edge.
+            {chain ? (
+              <>
+                After betting locks, the multiplier steps up 20% every block for the locked part of the
+                round. Hit Cash Out any time in that window. Your cash-out counts at the
+                block it lands in, which can be one block after your click. The crash point is drawn
+                from the round's random seed after the window closes, so nobody can know it ahead. A bet
+                still riding at the end cashes out at the final multiplier. Every cash-out point has the
+                same 2% edge.
+              </>
+            ) : (
+              <>
+                After betting locks, the multiplier climbs live. Hit Cash Out any time before it crashes. The
+                crash point is drawn as it climbs, so nobody can know it ahead. An auto target cashes you out
+                there if you haven't already. Every cash-out point has the same 2% edge.
+              </>
+            )}
           </p>
         </div>
       ) : g.id === 1 ? (

@@ -5,13 +5,15 @@ import {
   defineChain,
   http,
   maxUint256,
+  parseEventLogs,
   webSocket,
   type Address,
   type EIP1193Provider,
   type WalletClient,
 } from 'viem'
-import { casinoAbi, chipAbi, randomnessAbi } from './abi'
+import { casinoAbi, chipAbi, crashAbi, randomnessAbi } from './abi'
 import type { CasinoClient, PlacedBet, RoundState, RoundStatus } from './types'
+import { lockBlock, type RoundConfig } from '../lib/rounds'
 import { txFinished, txStarted } from './txlog'
 
 declare global {
@@ -42,6 +44,7 @@ export function createChainClient(): CasinoClient {
   const pub = createPublicClient({ chain: monadTestnet, transport: wsUrl ? webSocket(wsUrl) : http(httpUrl) })
   let wallet: WalletClient | undefined
   let account: Address | undefined
+  let cfg: RoundConfig | undefined
 
   function need() {
     if (!wallet || !account) throw new Error('Connect a wallet first')
@@ -58,6 +61,7 @@ export function createChainClient(): CasinoClient {
     try {
       const receipt = await pub.waitForTransactionReceipt({ hash })
       txFinished(id, receipt.status === 'success')
+      return receipt
     } catch (e) {
       txFinished(id, false)
       throw e
@@ -79,7 +83,29 @@ export function createChainClient(): CasinoClient {
         read('minBet'),
         read('maxBet'),
       ])
-      return { genesisBlock, roundLength, bettingWindow, minBet, maxBet }
+      // Newer contracts only. Older deploys revert or lack these, and then the UI hides the games.
+      const gameCount = await pub
+        .readContract({ address: casino, abi: casinoAbi, functionName: 'gameCount' })
+        .then(Number)
+        .catch(() => 3)
+      const crashClimbBlocks =
+        gameCount > 3
+          ? await pub
+              .readContract({ address: casino, abi: crashAbi, functionName: 'crashClimbBlocks' })
+              .then(Number)
+              .catch(() => undefined)
+          : undefined
+      // Crash needs the climb window. Without it, keep Crash (and everything after it) hidden.
+      cfg = {
+        genesisBlock,
+        roundLength,
+        bettingWindow,
+        minBet,
+        maxBet,
+        gameCount: crashClimbBlocks ? gameCount : Math.min(gameCount, 3),
+        crashClimbBlocks,
+      }
+      return cfg
     },
 
     subscribeBlocks(cb) {
@@ -185,6 +211,23 @@ export function createChainClient(): CasinoClient {
         account,
       })
       await send(request, `Claimed your round ${bet.roundId} payout`)
+    },
+
+    async cashOut(bet) {
+      const { account } = need()
+      const { request } = await pub.simulateContract({
+        address: casino,
+        abi: crashAbi,
+        functionName: 'cashOut',
+        args: [bet.roundId, BigInt(bet.index)],
+        account,
+      })
+      const receipt = await send(request, `Cashed out your round ${bet.roundId} Crash bet`)
+      // The block it landed in is what counts, not the moment of the click.
+      const [log] = parseEventLogs({ abi: crashAbi, eventName: 'CashedOut', logs: receipt.logs })
+      if (log) return Number(log.args.k)
+      if (!cfg) throw new Error('Not initialized')
+      return Number(receipt.blockNumber - lockBlock(bet.roundId, cfg))
     },
   }
 }

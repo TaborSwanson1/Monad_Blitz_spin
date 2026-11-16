@@ -117,6 +117,8 @@ export function createSimClient(): CasinoClient {
       // Same checks as BlockCasino.placeBet: UnknownGame and BadChoice.
       if (!GAMES[gameId]) throw new Error('Unknown game')
       if (choice < 0 || choice >= GAMES[gameId].outcomes) throw new Error('Bad choice for this game')
+      // One bet per round, across all games (team decision 2026-11-15). The sim has one player.
+      if ((betCounts.get(roundId) ?? 0) > 0) throw new Error('One bet per round. You already bet this round.')
       // Beauty Contest: one entry per player per round, at the fixed entry fee.
       if (GAMES[gameId].kind === 'beauty') {
         if (amount !== BEAUTY_ENTRY) throw new Error('Beauty Contest entry is 10 CHIP')

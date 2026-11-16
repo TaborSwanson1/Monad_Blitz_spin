@@ -6,6 +6,8 @@ import { GAMES } from '../lib/games'
 import { lockBlock, type RoundConfig } from '../lib/rounds'
 import { errMsg } from '../lib/format'
 import { advance, cashOutAll, settleLive, startLive, type LiveBet, type LiveState } from '../lib/liveCrash'
+import { autoTargetX100 } from '../lib/crash'
+import { chainManualX100, climbAt } from '../lib/crashChain'
 
 export interface ResolvedBet extends PlacedBet {
   outcome: number
@@ -36,7 +38,21 @@ export interface LiveCrash {
   bets: LiveBet[]
 }
 
+/** On-chain Crash: a round in its climb window (blind: the crash point isn't drawn yet). */
+export interface ChainCrash {
+  roundId: bigint
+  /** Blocks since lock, 0 to climbBlocks. */
+  k: number
+  climbBlocks: number
+  /** Cash-outs still land (the next block is inside the window). */
+  open: boolean
+  bets: PlacedBet[]
+  /** Bet index -> k where its cash-out landed. */
+  cashouts: Map<number, number>
+}
+
 const MAX_BLOCKS = 28
+const betKey = (roundId: bigint, index: number) => `${roundId}-${index}`
 
 export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord) => void) {
   const [cfg, setCfg] = useState<RoundConfig | null>(null)
@@ -63,6 +79,12 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
   // re-renders whatever shows it.
   const live = useRef<(LiveCrash & { seed: Hex; timer: ReturnType<typeof setInterval> }) | null>(null)
   const [liveTick, setLiveTick] = useState(0)
+  // On-chain Crash: where each bet's cash-out landed, as k blocks after lock.
+  const [chainCashouts, setChainCashouts] = useState<Map<string, number>>(new Map())
+  const chainCashoutsRef = useRef(chainCashouts)
+  chainCashoutsRef.current = chainCashouts
+  /** The sim runs Crash live in the browser. Chain mode uses the blind block window. */
+  const runsLive = client.mode === 'sim'
 
   const refreshBalance = useCallback(() => {
     client.balance().then(setBalance).catch(() => {})
@@ -71,11 +93,15 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
   const resolveRound = useCallback(
     async (roundId: bigint, seed: Hex, liveState?: LiveState) => {
       const bets = pendingRef.current.filter((b) => b.roundId === roundId)
-      const resolved: ResolvedBet[] = bets.map((b) =>
-        liveState && GAMES[b.gameId].kind === 'crash'
-          ? { ...b, ...settleLive(liveState, b), autoCashout: liveState.auto.has(b.index) }
-          : { ...b, ...resolveBet(seed, b.gameId, b.choice, b.amount) },
-      )
+      const climb = cfgRef.current?.crashClimbBlocks
+      const resolved: ResolvedBet[] = bets.map((b) => {
+        if (GAMES[b.gameId].kind !== 'crash') return { ...b, ...resolveBet(seed, b.gameId, b.choice, b.amount) }
+        if (liveState) return { ...b, ...settleLive(liveState, b), autoCashout: liveState.auto.has(b.index) }
+        // On-chain: the click's block, or the end of the window if it rode all the way.
+        const manual = climb ? chainManualX100(chainCashoutsRef.current.get(betKey(b.roundId, b.index)), climb) : undefined
+        const r = resolveBet(seed, b.gameId, b.choice, b.amount, manual)
+        return { ...b, ...r, autoCashout: r.cashoutX100 === autoTargetX100(b.choice) }
+      })
       // Losing bets have nothing to claim, so they cost no gas.
       for (const b of resolved) if (b.won) await client.claim(b, b.payout)
 
@@ -148,20 +174,39 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
     return x
   }, [])
 
+  /** On-chain Crash: cash out every bet of the round still riding. Each one is a transaction. */
+  const cashOutChain = useCallback(
+    (roundId: bigint) =>
+      run('Cashing out', async () => {
+        if (!client.cashOut) throw new Error('This client has no on-chain cash-out')
+        const riding = pendingRef.current.filter(
+          (b) => b.roundId === roundId && GAMES[b.gameId].kind === 'crash' && !chainCashoutsRef.current.has(betKey(b.roundId, b.index)),
+        )
+        for (const b of riding) {
+          const k = await client.cashOut(b)
+          setChainCashouts((m) => new Map(m).set(betKey(b.roundId, b.index), k))
+        }
+      }),
+    [client],
+  )
+
   const checkRounds = useCallback(
     (head: bigint) => {
       const c = cfgRef.current
       if (!c) return
       const ids = [...new Set(pendingRef.current.map((b) => b.roundId))]
       for (const id of ids) {
-        if (head < lockBlock(id, c) || inFlight.current.has(id) || done.current.has(id)) continue
+        // With on-chain Crash, the contract won't take a settlement request until the climb
+        // window is over (so the seed can't reveal the crash point mid-climb).
+        const ready = c.crashClimbBlocks ? head > lockBlock(id, c) + BigInt(c.crashClimbBlocks) : head >= lockBlock(id, c)
+        if (!ready || inFlight.current.has(id) || done.current.has(id)) continue
         inFlight.current.add(id)
         client
           .roundState(id)
           .then(async (st) => {
             if (st.status === 'settled' && st.seed) {
               const hasCrash = pendingRef.current.some((b) => b.roundId === id && GAMES[b.gameId].kind === 'crash')
-              if (hasCrash) beginLive(id, st.seed)
+              if (hasCrash && runsLive) beginLive(id, st.seed)
               else await resolveRound(id, st.seed)
             }
             else if (st.status === 'none' && !client.autoSettles)
@@ -172,7 +217,7 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
           .finally(() => inFlight.current.delete(id))
       }
     },
-    [client, resolveRound, beginLive],
+    [client, resolveRound, beginLive, runsLive],
   )
 
   useEffect(() => {
@@ -246,10 +291,28 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
   }, [])
   const clearError = useCallback(() => setError(null), [])
 
+  // On-chain Crash in its climb window right now, from the head block.
+  const head = blocks[0]?.number ?? null
+  let chainCrash: ChainCrash | null = null
+  if (!runsLive && cfg?.crashClimbBlocks && head !== null) {
+    const crashBets = pending.filter((b) => GAMES[b.gameId].kind === 'crash' && head >= lockBlock(b.roundId, cfg))
+    const roundId = crashBets[0]?.roundId
+    if (roundId !== undefined) {
+      const bets = crashBets.filter((b) => b.roundId === roundId)
+      const at = climbAt(head, lockBlock(roundId, cfg), cfg.crashClimbBlocks)
+      const cashouts = new Map<number, number>()
+      for (const b of bets) {
+        const k = chainCashouts.get(betKey(roundId, b.index))
+        if (k !== undefined) cashouts.set(b.index, k)
+      }
+      chainCrash = { roundId, k: at.k, climbBlocks: cfg.crashClimbBlocks, open: at.open, bets, cashouts }
+    }
+  }
+
   return {
     cfg,
     blocks,
-    head: blocks[0]?.number ?? null,
+    head,
     account,
     balance,
     pending,
@@ -260,6 +323,8 @@ export function useCasino(client: CasinoClient, onRoundResolved: (r: RoundRecord
     liveCrash: live.current ? { roundId: live.current.roundId, state: live.current.state, bets: live.current.bets } : null,
     liveTick,
     cashOut,
+    chainCrash,
+    cashOutChain,
     needsSettle,
     busy,
     error,
