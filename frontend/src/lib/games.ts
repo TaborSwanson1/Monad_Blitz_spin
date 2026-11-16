@@ -1,7 +1,8 @@
 // Games 0-2 mirror the UniformGame contracts deployed by backend/script/Deploy.s.sol.
 // Game IDs must match the order passed to the BlockCasino constructor.
-// Games 3 (Crash) and 4 (Beauty Contest) are proposals that only exist in sim mode.
-// See src/lib/crash.ts and src/lib/beauty.ts.
+// Games 3 (Crash) and 4 (Beauty Contest) are proposals. Sim mode always has them. Chain mode
+// shows them once the contract's gameCount() includes them (frontend/INTEGRATION.md).
+// See src/lib/crash.ts, src/lib/crashChain.ts and src/lib/beauty.ts.
 
 import { CRASH_MANUAL, CRASH_TARGETS_X100, crashWinChance, fmtX } from './crash'
 
@@ -14,7 +15,7 @@ export interface GameDef {
   name: string
   short: string
   kind: GameKind
-  /** Not on the contract yet. Hidden in chain mode. */
+  /** Not on the deployed contract yet. Chain mode hides it until gameCount() includes it. */
   simOnly?: boolean
   range: number
   outcomes: number
@@ -75,8 +76,12 @@ export const GAMES: GameDef[] = [
 
 export const LANE_COLORS = ['var(--lane-red)', 'var(--lane-blue)', 'var(--lane-green)', 'var(--lane-gold)']
 
-/** Games the current client can actually play. */
-export const gamesFor = (mode: 'sim' | 'chain') => GAMES.filter((g) => mode === 'sim' || !g.simOnly)
+/**
+ * Games the current client can actually play. Chain mode: the games the contract has
+ * (`chainGameCount` from gameCount()), defaulting to the three uniform games.
+ */
+export const gamesFor = (mode: 'sim' | 'chain', chainGameCount = 3) =>
+  GAMES.filter((g) => mode === 'sim' || g.id < chainGameCount)
 
 // Fixed-odds games only. Beauty Contest's payout and odds depend on the other
 // bots, so BetPanel shows its payout from lib/beauty.ts instead.

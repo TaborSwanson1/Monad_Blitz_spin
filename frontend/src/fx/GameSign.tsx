@@ -12,7 +12,7 @@ const edge = `${HOUSE_EDGE_BPS / 100}%`
 function oddsLine(g: GameDef): string {
   if (g.kind === 'crash') {
     const t = CRASH_TARGETS_X100
-    return `Pick a target, ${fmtX(t[0])} to ${fmtX(t[t.length - 1])} · ${edge} house edge at every target`
+    return `Cash out any time · auto targets ${fmtX(t[0])} to ${fmtX(t[t.length - 1])} · ${edge} house edge at every point`
   }
   if (g.kind === 'beauty') return `Closest to two-thirds of the average wins · ${edge} house edge at every number`
   return `Pays ${multiplierFor(g, 0)}× · wins 1 time in ${g.outcomes} · ${edge} house edge`
@@ -20,8 +20,9 @@ function oddsLine(g: GameDef): string {
 
 export function GameSign({ game, theme }: { game: GameDef; theme: ThemeId }) {
   const americana = theme === 'americana'
+  const tone = americana ? 'plaque' : theme === 'space' ? 'space' : 'neon'
   return (
-    <Marquee tone={americana ? 'plaque' : 'neon'} spotlights={americana} className="game-sign">
+    <Marquee tone={tone} spotlights={americana} className={`game-sign ${tone === 'space' ? 'game-sign-small' : ''}`}>
       <span className="gs-sticker" aria-hidden>
         Play
         <br />

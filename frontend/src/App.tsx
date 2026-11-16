@@ -6,7 +6,7 @@ import { roundClock } from './lib/rounds'
 import { SessionBar } from './components/SessionBar'
 import { BlockStream } from './components/BlockStream'
 import { RoundHud } from './components/RoundHud'
-import { CrashLive } from './components/CrashLive'
+import { ChainCrashLive, CrashLive } from './components/CrashLive'
 import { BetPanel } from './components/BetPanel'
 import { History } from './components/History'
 import { RevealOverlay } from './components/RevealOverlay'
@@ -156,7 +156,9 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
       ? 'Session limit reached'
       : clock && !clock.open
         ? 'Betting locked'
-        : null
+        : stakeInCurrent
+          ? 'One bet per round'
+          : null
 
   return (
     <div className={`app ${view === 'game' && clock && !clock.open ? 'is-locked' : ''}`}>
@@ -185,11 +187,18 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         gas={gas}
       />
       {view === 'lobby' ? (
-        <Lobby mode={client.mode} onPlay={openGame} extra={extraTiles} onLimits={() => setEditingLimits(true)} />
+        <Lobby
+          mode={client.mode}
+          onPlay={openGame}
+          extra={extraTiles}
+          onLimits={() => setEditingLimits(true)}
+          chainGameCount={cfg?.gameCount}
+        />
       ) : view === 'slot' ? (
         <div className="shell sl-shell">
           <Sidebar
             mode={client.mode}
+            chainGameCount={cfg?.gameCount}
             gameId={gameId}
             onPick={(id) => {
               setGameId(id)
@@ -229,6 +238,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
       <div className="shell">
         <Sidebar
           mode={client.mode}
+          chainGameCount={cfg?.gameCount}
           gameId={gameId}
           onPick={setGameId}
           onEditLimits={() => setEditingLimits(true)}
@@ -236,7 +246,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         />
 
         <main className="main-col">
-          {loud && <GameSign game={GAMES[gameId]} theme={theme.id} />}
+          {(loud || theme.id === 'space') && <GameSign game={GAMES[gameId]} theme={theme.id} />}
           <SessionBar
             elapsedMs={session.elapsedMs}
             net={session.net}
@@ -255,6 +265,13 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
             </div>
           )}
           {casino.liveCrash && <CrashLive live={casino.liveCrash} onCashOut={casino.cashOut} />}
+          {casino.chainCrash && (
+            <ChainCrashLive
+              live={casino.chainCrash}
+              busy={casino.busy === 'Cashing out'}
+              onCashOut={() => casino.chainCrash && casino.cashOutChain(casino.chainCrash.roundId)}
+            />
+          )}
           {clock && cfg ? (
             <RoundHud
               clock={clock}
@@ -298,6 +315,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
               minBet={cfg.minBet}
               maxBet={cfg.maxBet}
               myBets={casino.pending}
+              chain={client.mode === 'chain'}
               onPlace={async (g, c, a) => {
                 const bet = await casino.placeBet(g, c, a)
                 if (!bet) return
