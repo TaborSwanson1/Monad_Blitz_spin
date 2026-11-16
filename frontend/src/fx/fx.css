@@ -168,9 +168,9 @@
 
 /* ---------- badges, stats */
 :root:is([data-theme='vegas'], [data-theme='americana']) .badge { height: 26px; padding: 0 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border: 2px solid currentColor; }
-:root:is([data-theme='vegas'], [data-theme='americana']) .stat-row { border-bottom: 2px solid var(--line); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .stat-row { border-bottom: 2px solid var(--line); background: rgb(8 4 36 / 0.42); border-radius: 16px; padding: 12px 18px 14px; } /* keeps the numbers readable over the bright beams */
 :root:is([data-theme='vegas'], [data-theme='americana']) .stat-label { font-weight: 700; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
-:root:is([data-theme='vegas'], [data-theme='americana']) .stat-value { font-family: var(--display); font-size: clamp(28px, 3vw, 40px); letter-spacing: 0.01em; text-shadow: 0 2px 0 rgb(0 0 0 / 0.35); }
+:root:is([data-theme='vegas'], [data-theme='americana']) .stat-value { font-family: var(--display); font-size: min(clamp(28px, 3vw, 40px), calc(100cqw / (var(--len, 6) * 0.95))); letter-spacing: 0.01em; text-shadow: 0 2px 0 rgb(0 0 0 / 0.35); white-space: nowrap; }
 :root:is([data-theme='vegas'], [data-theme='americana']) .stat-value.pos { text-shadow: 0 0 18px rgb(61 255 143 / 0.7); }
 :root:is([data-theme='vegas'], [data-theme='americana']) .stat-value.neg { text-shadow: 0 0 18px rgb(255 90 110 / 0.6); }
 

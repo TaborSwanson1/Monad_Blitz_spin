@@ -74,7 +74,7 @@ export function BetPanel({ gameId, canBet, disabledReason, busy, minBet, maxBet,
           </div>
           <div>
             <dt>Win pays</dt>
-            <dd>{choice === null ? 'Pick a number' : `${beautyMultiplier(choice).toFixed(2)}×`}</dd>
+            <dd>{choice === null ? 'Pick one' : `${beautyMultiplier(choice).toFixed(2)}×`}</dd>
           </div>
         </dl>
       ) : isCrash && choice === CRASH_MANUAL ? (

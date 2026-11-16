@@ -56,7 +56,9 @@ function Stat({
     <div className="stat">
       <div className="stat-label">{label}</div>
       <div className="stat-line">
-        <span className={`stat-value ${tone}`}>{value}</span>
+        <span className={`stat-value ${tone}`} style={{ '--len': value.length } as React.CSSProperties}>
+          {value}
+        </span>
         {sub && <span className="stat-sub">{sub}</span>}
         {badge}
       </div>

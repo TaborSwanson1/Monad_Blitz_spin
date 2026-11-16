@@ -70,7 +70,8 @@
 .lobby-h2 { margin: 12px 0 -6px; font-size: 16px; font-weight: 600; }
 .lobby-empty { padding: 32px 0; text-align: center; }
 
-.tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .tile-grid { gap: 12px; } .tile-art { aspect-ratio: 1 / 1; } .chips { flex: 1 1 100%; } .search { width: 100%; } }
 .tile { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .tile-art { position: relative; display: block; width: 100%; aspect-ratio: 4 / 5; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--tile-bg, var(--card-2)); transition: transform 0.18s ease, border-color 0.18s ease; }
 .tile-art:not(:disabled):hover { transform: translateY(-3px); border-color: var(--line-2); }
@@ -85,8 +86,8 @@
 @media (hover: none) { .tile-play { opacity: 1; transform: translate(-50%, 0); } }
 .tile-info-panel { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; padding: 16px; text-align: left; font-size: 13px; line-height: 1.5; background: rgb(12 12 14 / 0.92); color: var(--text); cursor: default; }
 .tile-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.tile-name { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; }
-.tile-name > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile-name { display: flex; align-items: flex-start; gap: 6px; font-weight: 600; font-size: 14px; }
+.tile-name > span { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; padding-top: 3px; } /* names wrap instead of being cut off */
 .tile-icon { flex: none; width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: none; color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1; }
 .tile-icon[aria-pressed='true'] { color: var(--text); border-color: var(--text); }
 .tile-fav { font-size: 12px; }
@@ -94,7 +95,7 @@
 .tile-provider { color: var(--faint); font-size: 12px; }
 .tile-odds { color: var(--muted); font-size: 12px; }
 
-.lobby-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 12px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--faint); font-size: 12px; }
+.lobby-foot { padding-bottom: 56px; /* clears the fixed Sound and Motion switches */ display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 12px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--faint); font-size: 12px; }
 .lobby-foot p { margin: 0; max-width: 70ch; }
 
 /* ---------- tile art (GameArt.tsx) */
