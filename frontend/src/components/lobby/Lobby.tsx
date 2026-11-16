@@ -3,6 +3,7 @@ import { CRASH_TARGETS_X100, fmtX } from '../../lib/crash'
 import { gamesFor, type GameDef } from '../../lib/games'
 import { BEAUTY_VOLATILITY, crashVolatility, fmtVolatility, volatilityOfBet } from '../../lib/volatility'
 import { GameArt, type ArtId } from './GameArt'
+import { HeroCrashArt } from './HeroCrashArt'
 import './lobby.css'
 
 // The lobby: every game as a tile, with filters and search, laid out like the big
@@ -165,7 +166,7 @@ export function Lobby({ mode, onPlay, extra = [], onLimits, chainGameCount }: Pr
           </div>
         </div>
         <div className="hero-art" aria-hidden>
-          <GameArt id="crash" />
+          <HeroCrashArt />
         </div>
       </section>
 
