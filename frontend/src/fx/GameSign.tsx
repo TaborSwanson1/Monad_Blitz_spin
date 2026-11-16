@@ -20,7 +20,7 @@ function oddsLine(g: GameDef): string {
 
 export function GameSign({ game, theme }: { game: GameDef; theme: ThemeId }) {
   const americana = theme === 'americana'
-  const tone = americana ? 'plaque' : theme === 'space' ? 'space' : 'neon'
+  const tone = americana ? 'plaque' : theme === 'space' ? 'space' : theme === 'race' ? 'race' : 'neon'
   return (
     <Marquee tone={tone} spotlights={americana} className={`game-sign ${tone === 'space' ? 'game-sign-small' : ''}`}>
       <span className="gs-sticker" aria-hidden>
@@ -30,6 +30,7 @@ export function GameSign({ game, theme }: { game: GameDef; theme: ThemeId }) {
       </span>
       <span className="gs-kicker">Now playing</span>
       <span className="gs-name">{game.name}</span>
+      {tone === 'race' && <span className="gs-tread" aria-hidden />}
       <span className="gs-odds">{oddsLine(game)}</span>
     </Marquee>
   )

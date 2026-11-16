@@ -28,6 +28,7 @@ import { GAMES, gamesFor } from './lib/games'
 import { Backdrop } from './fx/Backdrop'
 import { SpaceBackdrop } from './fx/SpaceBackdrop'
 import { CloverBackdrop } from './fx/CloverBackdrop'
+import { RaceBackdrop } from './fx/RaceBackdrop'
 import { Overlay } from './fx/Overlay'
 import { FxControls } from './fx/FxControls'
 import { GameSign } from './fx/GameSign'
@@ -196,6 +197,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     <div className={`app ${view === 'game' && clock && !clock.open ? 'is-locked' : ''}`}>
       <Backdrop mode={view === 'slot' ? 'off' : theme.id === 'americana' ? 'americana' : theme.id === 'vegas' ? 'vegas' : 'off'} />
       {view === 'slot' && <CloverBackdrop />}
+      {theme.id === 'race' && <RaceBackdrop />}
       {theme.id === 'space' && (
         // Stars speed up with the live Crash multiplier on screen (never the crash point).
         <SpaceBackdrop
@@ -278,7 +280,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         />
 
         <main className="main-col">
-          {(loud || theme.id === 'space') && <GameSign game={GAMES[gameId]} theme={theme.id} />}
+          {(loud || theme.id === 'space' || theme.id === 'race') && <GameSign game={GAMES[gameId]} theme={theme.id} />}
           <SessionBar
             elapsedMs={session.elapsedMs}
             net={session.net}

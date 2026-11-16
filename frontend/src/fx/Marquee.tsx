@@ -5,13 +5,14 @@ import { useEffect, useRef, type ReactNode } from 'react'
 //  <Marquee tone="plaque"> the blue Americana plaque, with sweeping spotlights
 //  <Marquee tone="neon">   the pink-and-gold Vegas sign
 //  <Marquee tone="space">  Crash: a small black sign with blue lights
+//  <Marquee tone="race">   Block Race: a pit board with checkered trim and tyre tracks
 //
 // `anchor="above-card"` parks it just above the result popup. Without it the sign
 // sits in the page like any block (used for the game title).
 
 interface Props {
   children: ReactNode
-  tone: 'plaque' | 'neon' | 'space'
+  tone: 'plaque' | 'neon' | 'space' | 'race'
   anchor?: 'above-card'
   spotlights?: boolean
   className?: string
