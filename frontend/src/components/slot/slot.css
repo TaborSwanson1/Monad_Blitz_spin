@@ -414,7 +414,7 @@
 @media (max-width: 760px) { .shell.sl-shell { grid-template-columns: minmax(0, 1fr); } }
 
 /* The name is longer than the other games', so the sign's lettering is a little smaller. */
-.sl-sign .gs-name { font-size: clamp(36px, 7.2cqw, 100px) !important; line-height: 1 !important; }
+.sl-sign .gs-name { font-family: 'Luckiest Guy', 'Bungee', sans-serif; font-size: clamp(36px, 8cqw, 112px) !important; line-height: 1 !important; letter-spacing: 0.03em; color: #fff3b0; -webkit-text-stroke: 2px #0d4a22; paint-order: stroke fill; } /* a chunky, playful face for the leprechaun sign (not Monoton) */
 
 /* ---------- meadow scene: the slot's page colours (fx/CloverBackdrop.tsx, set from App.tsx) ----------
    The slot reuses the Vegas layout, so this block overrides its purple tokens with a light grass
