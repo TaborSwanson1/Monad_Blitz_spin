@@ -27,6 +27,7 @@ import { EffectsDemo, effectsDemoEnabled } from './components/EffectsDemo'
 import { GAMES } from './lib/games'
 import { Backdrop } from './fx/Backdrop'
 import { SpaceBackdrop } from './fx/SpaceBackdrop'
+import { CloverBackdrop } from './fx/CloverBackdrop'
 import { Overlay } from './fx/Overlay'
 import { FxControls } from './fx/FxControls'
 import { GameSign } from './fx/GameSign'
@@ -126,7 +127,10 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
   const theme = view === 'game' ? themeForGame(gameId) : THEMES.vegas
   useEffect(() => {
     document.documentElement.dataset.theme = theme.id
-  }, [theme.id])
+    // The slot keeps the Vegas layout but swaps the purple colours for a meadow green (slot.css).
+    if (view === 'slot') document.documentElement.dataset.scene = 'leprechaun'
+    else delete document.documentElement.dataset.scene
+  }, [theme.id, view])
   const loud = theme.id === 'americana' || theme.id === 'vegas'
 
   // Background music follows the screen: one looping track per game (fx/music.ts).
@@ -169,7 +173,8 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
 
   return (
     <div className={`app ${view === 'game' && clock && !clock.open ? 'is-locked' : ''}`}>
-      <Backdrop mode={theme.id === 'americana' ? 'americana' : theme.id === 'vegas' ? 'vegas' : 'off'} />
+      <Backdrop mode={view === 'slot' ? 'off' : theme.id === 'americana' ? 'americana' : theme.id === 'vegas' ? 'vegas' : 'off'} />
+      {view === 'slot' && <CloverBackdrop />}
       {theme.id === 'space' && (
         // Stars speed up with the live Crash multiplier on screen (never the crash point).
         <SpaceBackdrop

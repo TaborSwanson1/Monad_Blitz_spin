@@ -176,6 +176,7 @@ Settled choices. Changing one means adding a new entry, not editing the old one.
 
 One line per session: who, date, what changed, which commits.
 
+- 2026-11-15, Zander + Claude: the slot page now has a light grass-green meadow background instead of the purple Vegas one (`fx/CloverBackdrop.tsx`: soft drifting light, faint rainbow, floating clovers and coins, a clover that pops open every few seconds, coin sparkles on click and pointer; `data-scene='leprechaun'` colour overrides and a green sign in `slot.css`). Layout is still the Vegas shell. Motion off gives a still frame.
 - 2026-11-15, Zander + Claude: lobby tile corner badge shows a volatility score (1 to 10, from the standard deviation of one bet per 1 staked; `lib/volatility.ts`) instead of "98% RTP". Crash and Beauty Contest show a range because it depends on your pick. The bet panels still show odds and the 2% edge before every bet.
 - 2026-11-15, Zander + Claude: slot uses the account's chips instead of its own demo balance (`adjustBalance` on the sim client, wired through `useCasino` and `App`); refill button is now the faucet.
 - 2026-11-15, Tabor + Claude: Exact Digit gets a game-show wheel (`Wheel.tsx`): pick by tapping a segment; the result card spins it and lands on the seeded digit, with the net, effects, stats and history held until it stops. Landing spot inside the segment is random and never depends on the pick (no near-miss staging). All safeguards kept. Wheel win/loss cases added to `?fx`.
