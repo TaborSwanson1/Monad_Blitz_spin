@@ -19,12 +19,12 @@ import { Lobby } from './components/lobby/Lobby'
 import { SettingsDialog } from './components/lobby/SettingsDialog'
 import { useWallet } from './hooks/useWallet'
 import { hasContracts } from './wallet/session'
-import type { Tile } from './components/lobby/Lobby'
+import { tileFor, type Tile } from './components/lobby/Lobby'
 import { SlotScreen } from './components/slot/SlotScreen'
 import { toChips } from './lib/format'
 import { THEMES, themeForGame, themeForRound } from './lib/themes'
 import { EffectsDemo, effectsDemoEnabled } from './components/EffectsDemo'
-import { GAMES } from './lib/games'
+import { GAMES, gamesFor } from './lib/games'
 import { Backdrop } from './fx/Backdrop'
 import { SpaceBackdrop } from './fx/SpaceBackdrop'
 import { CloverBackdrop } from './fx/CloverBackdrop'
@@ -59,12 +59,19 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
   const onResolved = useCallback((r: { paid: bigint }) => recordRound(r.paid), [recordRound])
   const casino = useCasino(client, onResolved)
   const [editingLimits, setEditingLimits] = useState(false)
-  const [gameId, setGameId] = useState(0)
+  // `?game=3` opens that game straight away (the on-chain site's simulator tiles link here).
+  const [linkedGame] = useState(() => {
+    const raw = new URLSearchParams(window.location.search).get('game')
+    const id = raw === null || raw === '' ? NaN : Number(raw)
+    return Number.isInteger(id) && gamesFor(client.mode).some((g) => g.id === id) ? id : null
+  })
+  const [gameId, setGameId] = useState(linkedGame ?? 0)
   // Lobby first, like casino sites. Owner of the lobby, top bar, wallet and settings: Zander.
-  const [view, setView] = useState<'lobby' | 'game' | 'slot'>('lobby')
+  const [view, setView] = useState<'lobby' | 'game' | 'slot'>(linkedGame !== null ? 'game' : 'lobby')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const wallet = useWallet()
 
+  const chainGameCount = casino.cfg?.gameCount
   const openGame = useCallback((id: number) => {
     setGameId(id)
     setView('game')
@@ -89,8 +96,20 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
           window.scrollTo(0, 0)
         },
       },
+      // On-chain site: games the contract doesn't have yet (Crash, Beauty Contest) still get a
+      // tile, marked "simulator", that opens them on the simulator build.
+      ...(client.mode === 'chain' && import.meta.env.VITE_OTHER_MODE_URL
+        ? GAMES.filter((g) => !gamesFor('chain', chainGameCount).includes(g)).map((g) => ({
+            ...tileFor(g, () => {
+              window.location.href = `${import.meta.env.VITE_OTHER_MODE_URL}?game=${g.id}`
+            }, 'chain'),
+            key: `sim-${g.id}`,
+            tag: 'simulator',
+            describe: `${g.describe} Plays on the simulator with free play chips, not on Monad yet.`,
+          }))
+        : []),
     ],
-    [],
+    [client.mode, chainGameCount],
   )
   const { recordBet } = session
   // The slot plays on the account's own chips: stakes come off the balance and wins go back on it.

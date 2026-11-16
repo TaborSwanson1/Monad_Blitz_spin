@@ -35,7 +35,7 @@ const ART_FOR: Record<string, ArtId> = {
   'Beauty Contest': 'beauty',
 }
 
-function tileFor(g: GameDef, onPlay: (id: number) => void, mode: 'sim' | 'chain'): Tile {
+export function tileFor(g: GameDef, onPlay: (id: number) => void, mode: 'sim' | 'chain'): Tile {
   const base = { key: `game-${g.id}`, name: g.name, art: ART_FOR[g.name] ?? 'digit', describe: g.describe, tag: g.simOnly && mode === 'sim' ? 'sim' : undefined, play: () => onPlay(g.id) }
   if (g.kind === 'crash') {
     const lo = CRASH_TARGETS_X100[0]
