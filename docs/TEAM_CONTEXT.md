@@ -7,7 +7,7 @@ Each person's Claude reads this at the start of a session and adds to it at the 
 _Last updated 2026-11-15 by finkierstead's Claude_
 
 - **Branch:** everyone works on `main`. The `scaffold` branch has been deleted.
-- **Frontend (Tabor, Lucas):** React + Vite + viem app in `frontend/`, redesigned 2026-11-15 as a three-pane dashboard (game sidebar, main, bet panel). Sim mode works without a backend. Crash (game 3) and Beauty Contest (game 4, with bots) work in sim mode only. Sim mode's clock and block display follow **live Monad testnet blocks** (falls back to fake blocks offline). **Live sim demo for anyone:** https://taborswanson1.github.io/Monad_blitz_gamble/ (served from the `gh-pages` branch; update it with `cd frontend && npm run deploy:pages`). Chain mode is written against the draft backend, which is now restored in `backend/`.
+- **Frontend (Tabor, Lucas):** React + Vite + viem app in `frontend/`, redesigned 2026-11-15 as a three-pane dashboard (game sidebar, main, bet panel). Sim mode works without a backend. Crash (game 3) and Beauty Contest (game 4, with bots) work in sim mode only. Sim mode's clock and block display follow **live Monad testnet blocks** (falls back to fake blocks offline). **Live sim demo for anyone:** https://taborswanson1.github.io/Monad_Blitz_spin/ (served from the `gh-pages` branch; update it with `cd frontend && npm run deploy:pages`). Chain mode is written against the draft backend, which is now restored in `backend/`.
 - **Backend (finkierstead):** Tabor's draft is restored, plus a Pyth Entropy adapter on Pyth's official SDK, a safer deploy script, and tests. **35 unit tests pass, and 2 fork tests pass against live Monad testnet** (Foundry 1.9.0). Mechanics write-up for game designers: `backend/docs/MECHANICS.md`.
 - **Seed toolkit (one source of randomness for every game):** `backend/contracts/lib/SeedLib.sol` turns the Pyth round seed into `gameSeed`, `draw`, `uniform`, `chance`, `weighted`, `coin` and `crashX100`. `backend/sdk/seedlib.mjs` is a bit-for-bit JavaScript copy, enforced by `test/SeedVectors.t.sol`. `crashX100` equals the frontend's `crashPointX100`.
 - **Mechanics sandbox:** its own top-level folder, `sandbox/`. Run `SANDBOX.md` with `cd sandbox && npm install && npm run sandbox`, or open `sandbox/mechanics.ipynb` (Python kernel) for charts. It pulls the live frontend models from `frontend/src/lib/` (read only), simulates every game and choice, checks the frontend math against the backend toolkit, and runs experiments written as ```` ```js experiment ```` blocks in the file. Last run: all parity checks match, and every house game returns ≈0.98.
@@ -34,6 +34,10 @@ _Last updated 2026-11-15 by finkierstead's Claude_
 ## Inbox
 
 Requests and questions between the two sides. Mark them `[done]` instead of deleting them.
+
+> **2026-11-15, from Tabor, for everyone: the repo moved to `TaborSwanson1/Monad_Blitz_spin`** (our Monad Blitz Oregon submission fork). All history and branches are there, and the old `Monad_blitz_gamble` repo is archived (read-only). In your clone, run once:
+> `git remote set-url origin https://github.com/TaborSwanson1/Monad_Blitz_spin.git`
+> GitHub Pages moved too: https://taborswanson1.github.io/Monad_Blitz_spin/ (and `/sim/`). The old Pages link stops updating. Issues and the project board stayed on the old repo for now.
 
 ### For Zander (lobby)
 - 2026-11-15, from Tabor: **the Crash tile's dot is now a rocket** (`GameArt.tsx`, one `<g>` in place of the `art-dot` circle). The rocket lives in `components/Rocket.tsx` and is shared with the header art, the live Crash graph and the replay. Its styles moved from `lobby.css` to `styles.css` (`.rocket`, `.rocket-flame`).

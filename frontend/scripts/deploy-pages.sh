@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds the demo and publishes it to the gh-pages branch, which GitHub Pages serves at
-# https://taborswanson1.github.io/Monad_blitz_gamble/
+# https://taborswanson1.github.io/Monad_Blitz_spin/
 #
 # Two versions, linked to each other from the top bar:
 #   /       the real app on Monad testnet: MetaMask, the deployed contracts, Pyth results.
@@ -59,5 +59,5 @@ cd - >/dev/null
 rm -rf "$TMP"
 
 echo "Deployed main@$COMMIT to gh-pages. Live in about a minute:"
-echo "  On Monad testnet: https://taborswanson1.github.io/Monad_blitz_gamble/"
-echo "  Simulator:        https://taborswanson1.github.io/Monad_blitz_gamble/sim/"
+echo "  On Monad testnet: https://taborswanson1.github.io/Monad_Blitz_spin/"
+echo "  Simulator:        https://taborswanson1.github.io/Monad_Blitz_spin/sim/"

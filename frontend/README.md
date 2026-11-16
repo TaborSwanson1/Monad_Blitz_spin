@@ -2,7 +2,7 @@
 
 React + Vite + viem. A calm three-pane dashboard: games on the left, the round and live blocks in the middle, the bet panel and history on the right.
 
-**Live demo (sim mode, nothing to install):** https://taborswanson1.github.io/Monad_blitz_gamble/
+**Live demo (sim mode, nothing to install):** https://taborswanson1.github.io/Monad_Blitz_spin/
 
 ```
 npm install
