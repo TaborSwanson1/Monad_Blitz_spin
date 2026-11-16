@@ -11,7 +11,11 @@ export interface Limits {
 }
 
 // On by default, per the root README. Players can change them.
-export const DEFAULT_LIMITS: Limits = { timeMin: 60, lossChips: 0, // off by default (team decision 2026-11-15); the player can still set one in Limits checkEveryMin: 15 }
+export const DEFAULT_LIMITS: Limits = {
+  timeMin: 60,
+  lossChips: 0, // off by default (team decision 2026-11-15); the player can still set one in Limits
+  checkEveryMin: 15,
+}
 const KEY = 'block-casino:limits'
 
 function loadLimits(): Limits {
