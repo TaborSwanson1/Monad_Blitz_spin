@@ -32,6 +32,7 @@ import { FxControls } from './fx/FxControls'
 import { GameSign } from './fx/GameSign'
 import { Marquee } from './fx/Marquee'
 import { EXACT_RTP } from './lib/slot'
+import { SLOT_VOLATILITY } from './lib/volatility'
 import { burst } from './fx/bus'
 import { sfx, unlockAudio } from './fx/sound'
 import { useClickSparks } from './effects/useClickSparks'
@@ -76,7 +77,7 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
         art: 'slot',
         category: 'house',
         odds: 'About 1 spin in 7 wins · jackpot 1,000×',
-        rtp: '98% RTP',
+        rtp: SLOT_VOLATILITY,
         tag: 'demo',
         describe:
           'Cascading reels, free spins, a buy-feature button and a 1,000× jackpot, played with your chips. Shows near-miss slot design, with a switch to the honest view of the same spins.',

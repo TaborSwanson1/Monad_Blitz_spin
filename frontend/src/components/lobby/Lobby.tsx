@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CRASH_TARGETS_X100, fmtX } from '../../lib/crash'
 import { gamesFor, type GameDef } from '../../lib/games'
+import { BEAUTY_VOLATILITY, crashVolatility, fmtVolatility, volatilityOfBet } from '../../lib/volatility'
 import { GameArt, type ArtId } from './GameArt'
 import './lobby.css'
 
@@ -16,6 +17,7 @@ export interface Tile {
   category: 'house' | 'players'
   /** Odds in one line, shown before anyone opens the game (CLAUDE.md honest UI). */
   odds: string
+  /** Corner badge: volatility score, see lib/volatility.ts. */
   rtp: string
   describe: string
   tag?: string
@@ -38,12 +40,12 @@ function tileFor(g: GameDef, onPlay: (id: number) => void): Tile {
   if (g.kind === 'crash') {
     const lo = CRASH_TARGETS_X100[0]
     const hi = CRASH_TARGETS_X100[CRASH_TARGETS_X100.length - 1]
-    return { ...base, category: 'house', odds: `Cash-out targets ${fmtX(lo)} to ${fmtX(hi)}`, rtp: '98% RTP' }
+    return { ...base, category: 'house', odds: `Cash-out targets ${fmtX(lo)} to ${fmtX(hi)}`, rtp: crashVolatility(CRASH_TARGETS_X100) }
   }
-  if (g.kind === 'beauty') return { ...base, category: 'players', odds: 'Closest to ⅔ of the average wins', rtp: '98% RTP' }
+  if (g.kind === 'beauty') return { ...base, category: 'players', odds: 'Closest to ⅔ of the average wins', rtp: BEAUTY_VOLATILITY }
   const chance = Math.round(100 / g.outcomes)
   const mult = (g.payoutBps / 10_000).toFixed(2)
-  return { ...base, category: 'house', odds: `${chance}% win chance · pays ${mult}×`, rtp: '98% RTP' }
+  return { ...base, category: 'house', odds: `${chance}% win chance · pays ${mult}×`, rtp: fmtVolatility(volatilityOfBet(1 / g.outcomes, g.payoutBps / 10_000)) }
 }
 
 const FAV_KEY = 'block-casino.favorites'
@@ -103,7 +105,7 @@ export function Lobby({ mode, onPlay, extra = [], onLimits }: Props) {
       <button className="tile-art" onClick={t.play} disabled={!t.play} aria-label={t.play ? `Play ${t.name}` : `${t.name}, in design`}>
         <GameArt id={t.art} />
         {t.tag && <span className="tile-tag">{t.tag}</span>}
-        <span className="tile-rtp">{t.rtp}</span>
+        <span className="tile-rtp" title="How bumpy the results are: 1 is steady, 10 is wild. Every house game still returns 98% on average.">{t.rtp}</span>
         {t.play ? <span className="tile-play">Play</span> : <span className="tile-play tile-play-soon">In design</span>}
         {info === t.key && (
           <span className="tile-info-panel" onClick={(e) => e.stopPropagation()}>
