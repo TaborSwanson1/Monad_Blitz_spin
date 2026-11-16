@@ -415,3 +415,32 @@
 
 /* The name is longer than the other games', so the sign's lettering is a little smaller. */
 .sl-sign .gs-name { font-size: clamp(36px, 7.2cqw, 100px) !important; line-height: 1 !important; }
+
+/* ---------- meadow scene: the slot's page colours (fx/CloverBackdrop.tsx, set from App.tsx) ----------
+   The slot reuses the Vegas layout, so this block overrides its purple tokens with a light grass
+   green. Panes and cards stay a deeper translucent green so the white text keeps its contrast. */
+:root[data-theme='vegas'][data-scene='leprechaun'] {
+  --page: #5db85a;
+  --pane: rgb(18 78 34 / 0.78);
+  --card: rgb(22 92 40 / 0.8);
+  --card-2: rgb(60 150 78 / 0.6);
+  --line: rgb(255 255 255 / 0.2);
+  --line-2: rgb(255 255 255 / 0.36);
+  --primary: #e0a010;
+  --primary-soft: rgb(224 160 16 / 0.26);
+  --secondary: #b6f27a;
+  --glow: rgb(255 214 90 / 0.7);
+}
+.backdrop-clover {
+  animation: none; background-size: auto;
+  background-image:
+    radial-gradient(75% 50% at 50% 0%, rgb(255 246 170 / 0.55), transparent 70%),
+    radial-gradient(55% 55% at 0% 100%, rgb(190 255 140 / 0.45), transparent 70%),
+    radial-gradient(55% 55% at 100% 100%, rgb(255 231 130 / 0.3), transparent 70%),
+    linear-gradient(170deg, #9be37a, #5db85a 55%, #3f9a48);
+}
+:root[data-scene='leprechaun'] .mq-neon .mq-face { background: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent 42%), linear-gradient(180deg, #2f8f4a, #14582d); box-shadow: 0 0 0 4px #7dffa6, 0 0 36px rgb(190 255 140 / 0.6), 0 16px 34px rgb(0 0 0 / 0.4); }
+:root[data-scene='leprechaun'] .mq-neon .gs-name { text-shadow: 0 0 6px #fff, 0 0 20px #7dffa6, 0 0 46px #7dffa6, 0 0 90px #2fbf5a; }
+:root[data-scene='leprechaun'] .backdrop-rays { display: none; }
+:root[data-scene='leprechaun'] .stat-row { background: rgb(18 78 34 / 0.72); border: 2px solid var(--line-2); border-radius: 16px; padding: 10px 22px; box-shadow: 0 8px 22px rgb(0 0 0 / 0.22); }
+:root[data-scene='leprechaun'] .sl-modebar > .muted, :root[data-scene='leprechaun'] .sl-modebar p { color: #0f3d1c; }
