@@ -3,6 +3,7 @@ import { fmtChips } from '../lib/format'
 import { MAX_CLIMB_MS, multAt } from '../lib/liveCrash'
 import type { ChainCrash, LiveCrash } from '../hooks/useCasino'
 import { blockMultX100 } from '../lib/crashChain'
+import { RocketMarker } from './Rocket'
 import { CrashScene, zoneOf } from './CrashScene'
 
 // The live Crash climb, in the game page (not a popup). The multiplier climbs after betting
@@ -94,6 +95,14 @@ export function CrashLive({ live, onCashOut }: { live: LiveCrash; onCashOut: () 
           ))}
           {elapsed > 0 && <polyline className="crash-line" points={pts.join(' ')} />}
         </svg>
+        {!crashed && (
+          <RocketMarker
+            head={[x(elapsed), y(m)]}
+            back={[x(Math.max(0, elapsed - 150)), y(Math.min(multAt(Math.max(0, elapsed - 150)), m))]}
+            view={[W, H]}
+            size={0.9}
+          />
+        )}
         </div>
       </div>
     </section>
@@ -196,6 +205,14 @@ export function ChainCrashLive({
               />
             )}
           </svg>
+          {live.open && live.k > 0 && (
+            <RocketMarker
+              head={[(live.k / live.climbBlocks) * W, y(blockMultX100(live.k))]}
+              back={[((live.k - 1) / live.climbBlocks) * W, y(blockMultX100(live.k - 1))]}
+              view={[W, H]}
+              size={0.9}
+            />
+          )}
         </div>
       </div>
     </section>

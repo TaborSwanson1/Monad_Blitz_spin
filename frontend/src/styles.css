@@ -219,6 +219,13 @@ h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .crash-line { fill: none; stroke: #ffffff; stroke-width: 2.5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px rgb(0 0 0 / 0.6)); }
 .crash-zone { position: absolute; top: 6px; left: 8px; z-index: 1; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; background: rgb(0 0 0 / 0.35); border-radius: 999px; padding: 2px 8px; }
 .crash-rocket { filter: drop-shadow(0 0 3px rgb(0 0 0 / 0.5)); }
+/* The shared Crash rocket (components/Rocket.tsx). */
+.rocket { filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45)); }
+.rocket-flame { transform-box: fill-box; transform-origin: 100% 50%; animation: rocket-flicker 0.16s ease-in-out infinite alternate; }
+@keyframes rocket-flicker { from { transform: scaleX(0.82); } to { transform: scaleX(1.12); } }
+@media (prefers-reduced-motion: reduce) { .rocket-flame { animation: none; } }
+.rocket-marker-box { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.rocket-marker { position: absolute; overflow: visible; }
 .crash-flame { fill: #ffb020; transform-box: fill-box; transform-origin: right center; animation: flame 0.12s ease-in-out infinite alternate; }
 @keyframes flame { from { transform: scaleX(0.7); fill: #ff7a1a; } to { transform: scaleX(1.25); fill: #ffd23f; } }
 .crash-boom circle { transform-box: fill-box; transform-origin: center; animation: boom 0.6s ease-out forwards; }

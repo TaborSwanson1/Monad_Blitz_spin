@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fmtX } from '../lib/crash'
 import { prefersReducedMotion } from '../lib/themes'
+import { Rocket } from './Rocket'
 import { CrashScene, zoneOf } from './CrashScene'
 
 // The climb is a replay. The crash point is already settled by the time this runs.
@@ -109,11 +110,8 @@ export function CrashClimb({ crashX100, targetsX100, onDone }: Props) {
             <circle r="5" />
           </g>
         ) : (
-          <g className="crash-rocket" transform={`translate(${hx} ${hy}) rotate(${angle})`}>
-            <path className="crash-flame" d="M-9 -3 L-20 0 L-9 3 Z" />
-            <path d="M-9 -4 L5 -4 Q 12 -4 14 0 Q 12 4 5 4 L-9 4 Z" fill="#eef1f8" />
-            <path d="M-9 -4 L-13 -8 L-5 -4 Z M-9 4 L-13 8 L-5 4 Z" fill="#836ef9" />
-            <circle cx="3" cy="0" r="2" fill="#4f8cff" />
+          <g transform={`translate(${hx} ${hy}) rotate(${angle}) scale(0.7)`}>
+            <Rocket />
           </g>
         )}
       </svg>

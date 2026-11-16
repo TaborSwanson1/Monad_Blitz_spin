@@ -1,6 +1,7 @@
 // Tile artwork for the lobby, drawn in SVG so there are no image files. Owner: Zander.
 
 import type { ReactElement } from 'react'
+import { Rocket } from '../Rocket'
 
 export type ArtId = 'highlow' | 'digit' | 'race' | 'crash' | 'beauty' | 'slot' | 'walk'
 
@@ -39,7 +40,9 @@ const ART: Record<ArtId, ReactElement> = {
   crash: (
     <g>
       <path d="M18 168 C 70 166, 104 140, 130 52" className="art-curve" />
-      <circle cx="130" cy="52" r="6" className="art-dot" />
+      <g transform="translate(130 52) rotate(-73) scale(0.95)">
+        <Rocket />
+      </g>
       <text x="24" y="58" className="art-label">2.37×</text>
     </g>
   ),
