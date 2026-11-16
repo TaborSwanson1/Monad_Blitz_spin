@@ -35,6 +35,8 @@ import { EXACT_RTP } from './lib/slot'
 import { SLOT_VOLATILITY } from './lib/volatility'
 import { burst } from './fx/bus'
 import { sfx, unlockAudio } from './fx/sound'
+import { setTrack, trackFor, unlockMusic } from './fx/music'
+import { Race } from './components/Race'
 import { useClickSparks } from './effects/useClickSparks'
 
 export default function App() {
@@ -126,6 +128,17 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
     document.documentElement.dataset.theme = theme.id
   }, [theme.id])
   const loud = theme.id === 'americana' || theme.id === 'vegas'
+
+  // Background music follows the screen: one looping track per game (fx/music.ts).
+  useEffect(() => setTrack(trackFor(view, gameId)), [view, gameId])
+  useEffect(() => {
+    window.addEventListener('pointerdown', unlockMusic, { once: true })
+    window.addEventListener('keydown', unlockMusic, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlockMusic)
+      window.removeEventListener('keydown', unlockMusic)
+    }
+  }, [])
 
   // Browsers only allow sound after a click or key press, so the first one unlocks it.
   useEffect(() => {
@@ -250,6 +263,15 @@ function Casino({ client }: { client: NonNullable<ReturnType<typeof createClient
             </div>
           )}
           {casino.liveCrash && <CrashLive live={casino.liveCrash} onCashOut={casino.cashOut} />}
+          {/* Block Race: the cars wait on the grid, and roll into pace laps once you've bet. */}
+          {gameId === 2 && (
+            <section className="card race-card">
+              <Race
+                pace={casino.pending.some((b) => b.gameId === 2)}
+                picked={casino.pending.filter((b) => b.gameId === 2).map((b) => b.choice)}
+              />
+            </section>
+          )}
           {clock && cfg ? (
             <RoundHud
               clock={clock}

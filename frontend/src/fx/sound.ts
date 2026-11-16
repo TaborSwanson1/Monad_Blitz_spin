@@ -195,6 +195,13 @@ export const sfx = {
     tone(2760, at + 0.02, 0.9, { type: 'square', gain: 0.03, to: 1540, vibrato: { rate: 34, depth: 170 }, lowpass: 4200, attack: 0.04 })
   },
 
+  /** A pack of stock cars at full throttle for `secs`, rising in pitch toward the line. */
+  engines(secs: number) {
+    for (const [f, g] of [[82, 0.1], [97, 0.08], [110, 0.07], [123, 0.06]] as const)
+      tone(f, 0, secs, { type: 'sawtooth', gain: g, to: f * 1.9, lowpass: 900, attack: 0.25, vibrato: { rate: 31, depth: 9 } })
+    noise(0, secs, { type: 'bandpass', freq: 500, to: 1400, q: 0.7, gain: 0.07 })
+  },
+
   /** Small loss: a short falling note. */
   loss() {
     tone(233, 0, 0.32, { type: 'triangle', gain: 0.16, to: 174, lowpass: 1200 })

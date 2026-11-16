@@ -359,3 +359,14 @@
 .txfeed-meta { font-size: 12px; color: var(--muted); }
 .txfeed-meta a { color: var(--secondary); }
 @media (max-width: 760px) { .txfeed { bottom: 56px; } }
+
+/* ---------- Block Race: the speedway (components/Race.tsx) */
+.race { display: flex; flex-direction: column; gap: 8px; }
+.race-card { padding: 12px; }
+.race-canvas { display: block; width: 100%; height: auto; border-radius: 14px; border: 3px solid #10131a; box-shadow: 0 0 0 3px #f2c230, 0 10px 24px rgb(0 0 0 / 0.45); }
+.reveal-card .race { width: min(620px, calc(100vw - 110px)); margin: 8px auto 6px; }
+.race-status { display: flex; align-items: center; gap: 10px; font-family: 'Oswald', var(--sans); font-weight: 700; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; }
+.race-flag { flex: none; width: 26px; height: 18px; border-radius: 3px; border: 2px solid #10131a; background: #2ec27e; }
+.race-grid .race-flag, .race-pace .race-flag { background: #f2c230; }
+.race-white .race-flag { background: #fff; }
+.race-checkered .race-flag { background: repeating-conic-gradient(#111 0 25%, #fff 0 50%) 0 0 / 9px 9px; }

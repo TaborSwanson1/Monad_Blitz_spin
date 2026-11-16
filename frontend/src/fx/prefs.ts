@@ -8,6 +8,7 @@ import { useSyncExternalStore } from 'react'
 export interface FxPrefs {
   motion: boolean
   sound: boolean
+  music: boolean
 }
 
 const KEY = 'block-casino.fx'
@@ -16,13 +17,13 @@ const listeners = new Set<() => void>()
 function load(): FxPrefs {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}')
-    return { motion: raw.motion !== false, sound: raw.sound !== false }
+    return { motion: raw.motion !== false, sound: raw.sound !== false, music: raw.music !== false }
   } catch {
-    return { motion: true, sound: true }
+    return { motion: true, sound: true, music: true }
   }
 }
 
-let prefs: FxPrefs = typeof window === 'undefined' ? { motion: true, sound: true } : load()
+let prefs: FxPrefs = typeof window === 'undefined' ? { motion: true, sound: true, music: true } : load()
 
 function apply() {
   if (typeof document === 'undefined') return

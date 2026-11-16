@@ -11,6 +11,7 @@ import { CrashClimb } from './CrashClimb'
 import { EAGLE_MS } from './Eagle'
 import { MonadTokens } from './MonadTokens'
 import { Nuke, NUKE_MS } from './Nuke'
+import { Race } from './Race'
 import { OutcomeStrip } from './OutcomeStrip'
 import { SlotDisplay } from './SlotDisplay'
 import { Wheel } from './Wheel'
@@ -73,7 +74,11 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
   const wheelBets = record.bets.filter((b) => b.gameId === 1)
   const [crashDone, setCrashDone] = useState(!replay)
   const [wheelDone, setWheelDone] = useState(wheelBets.length === 0)
-  const climbDone = crashDone && wheelDone
+  // Block Race runs its race first; the result shows at the checkered flag.
+  const raceBets = record.bets.filter((b) => b.gameId === 2)
+  const [raceDone, setRaceDone] = useState(raceBets.length === 0)
+  const raceFinished = useCallback(() => setRaceDone(true), [])
+  const climbDone = crashDone && wheelDone && raceDone
   const markDone = useCallback(() => setCrashDone(true), [])
   const wheelStopped = useCallback(() => setWheelDone(true), [])
   // Once every replay or spin has finished, the rest of the page may show the result.
@@ -170,6 +175,8 @@ export function RevealOverlay({ record, theme, wallet, onClose, onReplayDone, de
         {wheelBets.length > 0 && (
           <Wheel size={250} landOn={wheelBets[0].outcome} picked={wheelBets.map((b) => b.choice)} onDone={wheelStopped} />
         )}
+
+        {raceBets.length > 0 && <Race winner={raceBets[0].outcome} picked={raceBets.map((b) => b.choice)} onDone={raceFinished} />}
 
         {climbDone && (
           <>
