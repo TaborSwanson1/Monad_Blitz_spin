@@ -69,7 +69,7 @@ export const GAMES: GameDef[] = [
     payoutBps: 0,
     labels: Array.from({ length: 101 }, (_, i) => String(i)),
     describe:
-      'Everyone pays the same entry and picks a number from 0 to 100. Closest to 2/3 of the average wins the pot.',
+      'Everyone pays the same entry and picks a number from 0 to 100. Closest to 2/3 of the average wins. Each number pays its own odds.',
   },
 ]
 
@@ -79,7 +79,7 @@ export const LANE_COLORS = ['var(--lane-red)', 'var(--lane-blue)', 'var(--lane-g
 export const gamesFor = (mode: 'sim' | 'chain') => GAMES.filter((g) => mode === 'sim' || !g.simOnly)
 
 // Fixed-odds games only. Beauty Contest's payout and odds depend on the other
-// players, so BetPanel shows its pot rules instead.
+// bots, so BetPanel shows its payout from lib/beauty.ts instead.
 export const payoutBpsFor = (g: GameDef, choice: number) =>
   g.kind === 'crash' ? (choice === CRASH_MANUAL ? 0 : CRASH_TARGETS_X100[choice] * 100) : g.payoutBps
 
